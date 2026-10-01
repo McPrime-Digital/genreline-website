@@ -17,7 +17,7 @@ export const CHANGELOG: readonly ChangeEntry[] = [
     'Two-factor sign-in, passkeys and recovery codes; a studio can require two-factor and set session limits.',
     'Single sign-on (SAML and OIDC) with a DNS-proved domain, enforcement and just-in-time provisioning; SCIM 2.0 provisioning.',
     'One person, several studios: switch between organizations.',
-    'Production: scenes from the screenplay, breakdown, stripboard, shoot days on the calendar, and sealed, numbered call sheets.',
+    'Production: scenes and their elements read from the screenplay into a breakdown.',
     'The editor panel bridge: a token that acts as the person who minted it, for notes and resolves from inside the editor.',
     'Live updates across the product, with nothing private carried on the wire.',
   ]},

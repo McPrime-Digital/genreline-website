@@ -180,7 +180,9 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'APR-20', title: 'Watch evidence joined to the approval', space: 'review', status: 'built', timing: 'live', label: 'available' }),
   // ── 4.6 Meetings, calendar and scheduling
   F({ id: 'MTG-01', title: 'Audio and video meetings', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'MTG-02', title: 'Calendar on both sides — deadlines, invoice dates and shoot days by projection', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
+  // MTG-02 / CRW-07: public wording carries no shoot days, strips or call sheets (owner,
+  // 2026-10-01: AI and hybrid production have no physical shoot days). S-F-A's rows are unchanged.
+  F({ id: 'MTG-02', title: 'Calendar on both sides — review deadlines and invoice dates, by projection', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MTG-03', title: 'A real Today view', space: 'meetings', status: 'partial', timing: 'launch', label: 'hidden' }),
   F({ id: 'MTG-04', title: 'Booking — availability rules, overrides, time-zone safe; the meeting is the booking', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MTG-05', title: 'Schedule a meeting from inside the message hub', space: 'meetings', status: 'partial', timing: 'launch', label: 'hidden' }),
@@ -226,7 +228,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'CRW-04', title: 'Task engine — assignees on both rosters, comments, labels, subtasks, relations, watchers, search', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'CRW-05', title: 'Internal approvals', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'CRW-06', title: 'Call sheets — sealed, numbered, sent in the studio’s voice', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'CRW-07', title: 'Screenplay to scenes to breakdown to strips to shoot days', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'CRW-07', title: 'Screenplay to scenes to breakdown — every element read from the script', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'CRW-08', title: 'Shoot days on the calendar', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'CRW-09', title: 'CRM, pipeline and lead generation', space: 'crew', status: 'removed', timing: 'none', label: 'none' }),
   F({ id: 'CRW-10', title: 'Location library', space: 'crew', status: 'not-built', timing: 'v2', label: 'hidden' }),
@@ -314,6 +316,13 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'ENT-06', title: 'Organization-wide audit export', space: 'enterprise', status: 'partial', timing: 'v1.5', label: 'do-not-claim' }),
   F({ id: 'ENT-07', title: 'Capacity statement — staff, contractors, co-editors', space: 'enterprise', status: 'partial', timing: 'launch', label: 'enterprise', remainder: 'Seat and client-company capacity enforced' }),
 ] as const
+
+/** Built in the app and labelled Available in S-F-A, but NOT shown on the site:
+ *  the owner, 2026-10-01 — "there's nothing like shoot days in AI filmmaking … no
+ *  physical shoot days or call sheets … everything must conform to the AI
+ *  production cycle". One list, read by every surface that enumerates features
+ *  (the capability index, the search index) and by the label check. */
+export const OFF_SITE: ReadonlySet<string> = new Set(['CRW-06', 'CRW-08'])
 
 const BY_ID = new Map(FEATURES.map((f) => [f.id, f]))
 

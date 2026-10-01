@@ -30,6 +30,10 @@ export const FORBIDDEN: readonly Forbidden[] = [
   // W-10 (no Suite names) was overruled by the owner on 2026-10-01: the Suite is the
   // headline argument and its parts are named. Hidden Crew features stay unnamed.
   { pattern: /Provider mesh|Control Tower/, reason: 'FA-11 — hidden features are not published' },
+  // Owner, 2026-10-01, overriding §3.1's allowance below: "there's nothing like shoot days in AI
+  // filmmaking … no physical shoot days or call sheets … everything must conform to the AI
+  // production cycle". The app keeps the features (CRW-06, CRW-08); the site does not show them.
+  { pattern: /\bshoot[\s-]days?\b|\bcall[\s-]sheets?\b|\bstripboards?\b|\bstrips\b/i, reason: 'Owner 2026-10-01 — the site shows the AI and hybrid production cycle only' },
   { pattern: /McPrime/i, reason: 'S0-B — never a tenant’s name on the product’s site' },
   { pattern: /ZZ-HARNESS|rls-harness|Harness (Owner|Crew|Finance|Contractor)/i, reason: 'W-8 — harness names belong in captures, never in copy' },
 ]

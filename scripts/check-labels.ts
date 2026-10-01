@@ -17,7 +17,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { FEATURES } from '../content/features'
+import { FEATURES, OFF_SITE } from '../content/features'
 import { FORBIDDEN } from '../content/claims'
 import { PAGES } from '../content/pages'
 
@@ -77,6 +77,7 @@ for (const file of files) {
     const f = BY_ID.get(id)
     if (!f) { fail(route, `unknown S-F-A id ${id}`); continue }
     if (['hidden', 'internal', 'do-not-claim', 'none'].includes(f.label)) fail(route, `${id} is labelled ${f.label} and must not render`)
+    if (OFF_SITE.has(id)) fail(route, `${id} is off the site by the owner's decision and must not render`)
     if (AVAILABLE_ONLY.has(section) && !['available', 'security', 'enterprise'].includes(f.label)) fail(route, `${id} (${f.label}) on a ${section} page`)
     if (AVAILABLE_ONLY.has(section) && (f.label === 'security' || f.label === 'enterprise')) {
       // allowed only inside the security note
@@ -118,6 +119,18 @@ for (const file of files) {
     if (/^https?:\/\//.test(href) && !href.startsWith('https://app.genreline.com/') && !href.startsWith('https://genreline.com')) fail(route, `external link to ${href}`)
     if (/^\/product\/suite\/./.test(href)) fail(route, `Suite sub-address ${href} (W-10)`)
   }
+}
+
+// The search palette's index is visible text too: same forbidden list, same off-site rule.
+{
+  const route = '/search-index.json'
+  const items = JSON.parse(readFileSync(join(ROOT, 'search-index.json.body'), 'utf8')) as { title: string }[]
+  const text = items.map((i) => i.title).join(' · ')
+  for (const f of FORBIDDEN) {
+    const hit = text.match(f.pattern)
+    if (hit) fail(route, `forbidden "${hit[0]}" — ${f.reason}`)
+  }
+  checked++
 }
 
 const missing = PAGES.filter((p) => !files.some((f) => routeOf(f) === p.path))
