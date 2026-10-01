@@ -2,13 +2,14 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Feature, FeatureLabel, FeatureList } from '@/components/FeatureLabel'
 import { CtaBand, Rule, Section } from '@/components/site/Frame'
-import { Media, hasMedia } from '@/components/site/Media'
+import { Media, firstMedia, hasMedia } from '@/components/site/Media'
 import { CaptureTabs } from '@/components/interactive/CaptureTabs'
 import { RecordDemo } from '@/components/interactive/RecordDemo'
 import { StackRow, type StackJob } from '@/components/interactive/StackRow'
 import { BrandDemo } from '@/components/interactive/BrandDemo'
 import { APP, SUBLINE, TAGLINE } from '@/lib/site'
 import { pageMeta } from '@/lib/meta'
+import { HomeJsonLd } from '@/components/site/JsonLd'
 
 export const metadata = pageMeta('/')
 
@@ -25,8 +26,11 @@ const JOBS: StackJob[] = [
 ]
 
 export default function Home() {
+  const hero = firstMedia(['home-hero-room', 'client-messages', 'client-review-record'])
+  const brandPair = hasMedia('home-portal-brand-a') && hasMedia('home-portal-brand-b')
   return (
     <>
+      <HomeJsonLd />
       {/* 1. Hero */}
       <section className="pb-10 pt-14 sm:pt-20">
         <div className="container-wide">
@@ -43,14 +47,14 @@ export default function Home() {
           <CaptureTabs
             label="Screens from the product"
             tabs={[
-              { value: 'room', label: 'A client room', panel: <Media id="home-hero-room" priority sizes="(min-width: 1200px) 1136px, 100vw" /> },
+              ...(hero ? [{ value: 'room', label: hero === 'client-review-record' ? 'An approval record' : 'A client room', panel: <Media id={hero} priority sizes="(min-width: 1200px) 1136px, 100vw" /> }] : []),
               // Further tabs appear only when their capture exists — a hero is
               // never a row of placeholders.
               ...[
                 { value: 'record', label: 'An approval record', id: 'client-review-record' },
                 { value: 'portal', label: 'The client’s calendar', id: 'portal-calendar' },
                 { value: 'production', label: 'Production', id: 'crew-production' },
-              ].filter((t) => hasMedia(t.id)).map((t) => ({ value: t.value, label: t.label, panel: <Media id={t.id} /> })),
+              ].filter((t) => t.id !== hero && hasMedia(t.id)).map((t) => ({ value: t.value, label: t.label, panel: <Media id={t.id} /> })),
             ]}
           />
         </div>
@@ -94,12 +98,16 @@ export default function Home() {
 
       {/* 5. Your clients see your studio */}
       <Section id="your-brand" title="Your clients see your studio." lead="The portal, the screening links, the signing pages, the email and the sealed PDF wear your name and your colour. A client of your studio bought from your studio; nothing here says otherwise.">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Media id="home-portal-brand-a" sizes="(min-width: 1200px) 560px, (min-width: 768px) 50vw, 100vw" />
-          <Media id="home-portal-brand-b" sizes="(min-width: 1200px) 560px, (min-width: 768px) 50vw, 100vw" />
-        </div>
-        <p className="mt-4 text-[13px] text-muted-foreground">The same portal screen, in two studios’ brands.</p>
-        <div className="mt-14">
+        {brandPair && (
+          <>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Media id="home-portal-brand-a" sizes="(min-width: 1200px) 560px, (min-width: 768px) 50vw, 100vw" />
+              <Media id="home-portal-brand-b" sizes="(min-width: 1200px) 560px, (min-width: 768px) 50vw, 100vw" />
+            </div>
+            <p className="mt-4 text-[13px] text-muted-foreground">The same portal screen, in two studios’ brands.</p>
+          </>
+        )}
+        <div className={brandPair ? 'mt-14' : ''}>
           <h3 className="font-display text-2xl font-semibold text-foreground">One colour in. Readable type out, chosen by measurement.</h3>
           <p className="mt-2 max-w-[62ch] text-[15px] leading-7 text-muted-foreground">
             <Feature id="CLI-05">A studio picks one colour and the rest is derived — including the colour of the type that sits on it, so no choice produces an unreadable Approve button.</Feature>

@@ -1,0 +1,6 @@
+# RFC 9116. Reports go through the form, which reaches a person.
+Contact: https://genreline.com/security/disclosure#report
+Policy: https://genreline.com/security/disclosure
+Preferred-Languages: en
+Canonical: https://genreline.com/.well-known/security.txt
+Expires: 2027-10-01T00:00:00.000Z

@@ -48,6 +48,11 @@ const CASES: Case[] = [
   { path: '/robots.txt', expect: 'own' },
   { path: '/sitemap.xml', expect: 'own' },
   { path: '/brand/genreline-mark-gold.png', expect: 'own' },
+  { path: '/.well-known/security.txt', expect: 'own' },
+  { path: '/og/home', expect: 'own' },
+  { path: '/search-index.json', expect: 'own' },
+  { path: '/.well-known/apple-app-site-association', expect: 'forward' },
+  { path: '/api/inquiry', expect: 'notfound' },
   // unknown under an owned prefix → the website's 404, not a forward
   { path: '/product/nonsense', expect: 'notfound' },
   { path: '/solutions/nope', expect: 'notfound' },
@@ -62,7 +67,7 @@ async function main() {
     const detail = `${res.status}${loc ? ` → ${loc}` : ''}`
     if (c.expect === 'forward') ok = res.status === 308 && loc === `${APP}${c.path}`
     else if (c.expect === 'own') ok = res.status === 200
-    else ok = res.status === 404
+    else ok = res.status === 404 || (c.path === '/api/inquiry' && res.status === 405)
     if (!ok) failed++
     console.log(`${ok ? 'PASS' : 'FAIL'}  ${c.expect.padEnd(8)} ${c.path}  (${detail})`)
   }

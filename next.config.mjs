@@ -21,7 +21,7 @@ export const APP_ORIGIN = 'https://app.genreline.com'
 // An unknown path *under* an owned prefix (e.g. /product/nonsense) is not
 // forwarded and shows this site's 404, exactly as W-11 specifies.
 function ownedPrefixes() {
-  const owned = new Set(['_next', '_vercel'])
+  const owned = new Set(['_next', '_vercel', 'og'])
   const app = readdirSync(join(__dirname, 'app'), { withFileTypes: true })
   for (const e of app) {
     if (e.name.startsWith('(') || e.name.startsWith('_') || e.name.startsWith('[')) continue
@@ -45,7 +45,13 @@ function ownedPrefixes() {
     else if (['opengraph-image', 'twitter-image'].includes(base)) owned.add(base)
     else if (['icon', 'apple-icon', 'favicon'].includes(base)) owned.add(e.name)
   }
-  for (const e of readdirSync(join(__dirname, 'public'), { withFileTypes: true })) owned.add(e.name)
+  for (const e of readdirSync(join(__dirname, 'public'), { withFileTypes: true })) {
+    // A dot-directory (.well-known) is shared namespace: own its files, never
+    // the prefix, so a path the app may one day serve there still forwards.
+    if (e.isDirectory() && e.name.startsWith('.')) {
+      for (const f of readdirSync(join(__dirname, 'public', e.name))) owned.add(`${e.name}/${f}`)
+    } else owned.add(e.name)
+  }
   return [...owned]
 }
 
@@ -114,6 +120,9 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   images: { formats: ['image/avif', 'image/webp'] },
+  // `radix-ui` is a barrel re-exporting every primitive; without this the
+  // first page load carries primitives no page uses.
+  experimental: { optimizePackageImports: ['radix-ui'] },
   turbopack: { root: __dirname },
   async headers() {
     return [{ source: '/:path*', headers: [...securityHeaders, ...robotsHeaders] }]
