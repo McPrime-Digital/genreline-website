@@ -17,7 +17,8 @@
     "gen:roadmap": "tsx scripts/gen-roadmap.ts",
     "capture:optimize": "tsx scripts/optimize-captures.ts",
     "check:lighthouse": "tsx scripts/check-lighthouse.ts",
-    "check:licences": "tsx scripts/check-licences.ts"
+    "check:licences": "tsx scripts/check-licences.ts",
+    "export:claims": "tsx scripts/export-claims.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
