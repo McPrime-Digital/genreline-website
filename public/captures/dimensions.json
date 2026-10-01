@@ -1,0 +1,258 @@
+{
+  "client-brand-kit.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-brand-kit.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-companies.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-companies.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-contracts.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-contracts.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-guest-links.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-guest-links.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-invoices.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-invoices.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-meetings.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-meetings.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-messages.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-messages.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-overview.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-overview.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-projects.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-projects.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-review-record.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-review-record.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-review.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "client-review.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-calendar.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-calendar.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-chat.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-chat.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-directory.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-directory.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-integrations.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-integrations.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-production.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-production.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-security.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-security.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-sso.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-sso.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-tasks.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "crew-tasks.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "home-hero-room.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "home-hero-room.light": {
+    "w": 2248,
+    "h": 1616
+  },
+  "home-portal-brand-a.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "home-portal-brand-a.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "home-portal-brand-b.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "home-portal-brand-b.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-approvals.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-approvals.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-certificate.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-certificate.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-contracts.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-contracts.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-files.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-files.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-invoices.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-invoices.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-meetings.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-meetings.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-messages.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-messages.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-review.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-review.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-team.dark": {
+    "w": 2880,
+    "h": 1800
+  },
+  "portal-team.light": {
+    "w": 2880,
+    "h": 1800
+  },
+  "suite-library.dark": {
+    "w": 2248,
+    "h": 1616
+  },
+  "suite-library.light": {
+    "w": 2248,
+    "h": 1616
+  }
+}

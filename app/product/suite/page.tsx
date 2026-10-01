@@ -17,7 +17,7 @@ export default function Suite() {
       <PageHero
         title="Write it, board it, keep it."
         lead="The Suite is where the work is made: a screenplay editor the production reads from, storyboards, and a library of every asset the studio holds. Image and video generation is being built here, inside the production."
-        media="suite-library"
+        media={['suite-library', 'crew-production']}
       />
       <Section id="available" className="pt-0">
         <CapabilityBlock

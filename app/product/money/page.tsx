@@ -10,7 +10,7 @@ export default function Money() {
       <PageHero
         title="Money, with the controls in front of the spend."
         lead="Invoices for clients, credits for metered work, a budget for every person, and a ceiling on every AI call — in the same place as the work they pay for."
-        media="client-invoices"
+        media={['client-invoices', 'portal-invoices']}
       />
       <Section id="replaces" title="What it replaces">
         <Replaces items={['An invoicing tool', 'Shared AI accounts on a company card', 'A spreadsheet of who spent what']} />

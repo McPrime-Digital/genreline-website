@@ -10,7 +10,7 @@ export default function Client() {
       <PageHero
         title="Run client work in your studio’s brand."
         lead="Companies, projects, the conversation, the cuts, the approvals, the contracts and the invoices — and a portal your clients sign into that wears your name, not ours."
-        media="portal-dashboard"
+        media={['portal-dashboard', 'portal-messages', 'client-overview']}
       />
       <Section id="replaces" title="What it replaces">
         <Replaces items={['Email threads with clients', 'File-sharing links', 'A review tool', 'An e-signature tool', 'An invoicing tool', 'A client portal from somebody else’s brand']} />
@@ -40,7 +40,7 @@ export default function Client() {
           title="The client’s calendar"
           body={<p>The client sees what’s coming, ordered by whose move it is. Each pending decision says what happens if nobody responds: the stage advances automatically, and the production moves on.</p>}
           features={['MTG-02']}
-          media="portal-calendar"
+          media={['portal-calendar', 'crew-calendar']}
         />
         <CapabilityBlock
           title="The vault"

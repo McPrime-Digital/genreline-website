@@ -4,10 +4,10 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { FeatureList } from '@/components/FeatureLabel'
-import { Media } from '@/components/site/Media'
+import { Media, firstMedia } from '@/components/site/Media'
 import { APP } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
@@ -27,10 +27,11 @@ export function PageHero({
   title: React.ReactNode
   lead?: React.ReactNode
   children?: React.ReactNode
-  media?: string
+  media?: string | readonly string[]
   mediaPriority?: boolean
   size?: 'lg' | 'md'
 }) {
+  const m = firstMedia(media)
   return (
     <section className="pb-14 pt-14 sm:pt-20">
       <div className="container-wide">
@@ -41,9 +42,9 @@ export function PageHero({
         {lead && <p className="mt-6 max-w-[60ch] text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-8">{lead}</p>}
         {children && <div className="mt-8">{children}</div>}
       </div>
-      {media && (
+      {m && (
         <div className="container-wide mt-12">
-          <Media id={media} priority={mediaPriority} />
+          <Media id={m} priority={mediaPriority} />
         </div>
       )}
     </section>
@@ -103,20 +104,21 @@ export function CapabilityBlock({
   title: string
   body: React.ReactNode
   features?: ReadonlyArray<string | { id: string; text: React.ReactNode }>
-  media?: string
+  media?: string | readonly string[]
   reverse?: boolean
   id?: string
 }) {
+  const m = firstMedia(media)
   return (
-    <div id={id} className={cn('grid items-start gap-8 border-t border-border py-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14', reverse && 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]')}>
+    <div id={id} className={cn('grid items-start gap-8 border-t border-border py-12 lg:gap-14', m && (reverse ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]' : 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]'))}>
       <div className={cn('max-w-[52ch]', reverse && 'lg:order-2')}>
         <h3 className="font-display text-2xl font-semibold text-foreground">{title}</h3>
         <div className="mt-3 space-y-3 text-[15px] leading-7 text-muted-foreground">{body}</div>
         {features && features.length > 0 && <FeatureList items={features} className="mt-6" />}
       </div>
-      {media && (
+      {m && (
         <div className={cn(reverse && 'lg:order-1')}>
-          <Media id={media} sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, 100vw" />
+          <Media id={m} sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, 100vw" />
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ export default function Files() {
       <PageHero
         title="Files and screening."
         lead="A vault on both sides, uploads that pause and resume, versions that stack, and a screening room that records how far each guest actually watched."
-        media="client-files"
+        media={['client-files', 'portal-files', 'suite-library']}
       />
       <Section id="replaces" title="What it replaces">
         <Replaces items={['A file-transfer service', 'Shared drive folders', 'Review links that record nothing', 'Version numbers in file names']} />
@@ -20,7 +20,7 @@ export default function Files() {
           title="The vault"
           body={<p>Files by production, on the studio’s side and the client’s. Uploads go straight to storage rather than through a server. Above 8 MB they pause and resume, and the server checks every part before it accepts the file.</p>}
           features={['FIL-01', 'FIL-03', 'FND-20']}
-          media="portal-files"
+          media={['portal-files', 'client-guest-links']}
         />
         <CapabilityBlock
           reverse

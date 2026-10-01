@@ -41,8 +41,8 @@ const capture = (id: string, route: string, alt: string, persona: 'owner' | 'c1o
 export const MEDIA: readonly MediaSlot[] = [
   // ── Home
   capture('home-hero-room', '/studio/client/messages', 'The studio’s client message hub: a company room with a message that is also an approval request, the room list on the left and the thread on the right.'),
-  capture('home-portal-brand-a', '/dashboard', 'The client portal’s dashboard in one studio brand: the studio’s name and accent colour on the sidebar, pending approvals and what’s coming.', 'c1own', { brand: '#1F6F5B' }),
-  capture('home-portal-brand-b', '/dashboard', 'The same client portal dashboard in a second studio brand: a different accent colour, the same screen.', 'c1own', { brand: '#8B2A3C' }),
+  capture('home-portal-brand-a', '/projects', 'The client portal’s projects in one studio’s brand: the studio’s name and accent colour on the sidebar, each production with its progress.', 'c1own', { brand: '#1F6F5B' }),
+  capture('home-portal-brand-b', '/projects', 'The same portal screen in a second studio’s brand: a different accent colour, the same screen.', 'c1own', { brand: '#8B2A3C' }),
   // ── Crew
   capture('crew-directory', '/studio/crew/directory', 'The crew directory: people with department, role, seat class and availability.'),
   capture('crew-tasks', '/studio/crew/tasks', 'The task board: columns of tasks with assignees, labels and due dates.'),

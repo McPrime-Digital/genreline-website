@@ -11,7 +11,7 @@ export default function Product() {
       <PageHero
         title="One operating system. Three spaces."
         lead="Crew is where the studio works. Client is where it serves the companies it makes things for, in its own brand. The Suite is where the work is written, boarded and kept. Underneath all three is one record."
-        media="client-overview"
+        media={['client-overview', 'client-review', 'crew-tasks']}
       />
       <Section id="spaces" title="The spaces">
         <div className="grid gap-4 lg:grid-cols-3">

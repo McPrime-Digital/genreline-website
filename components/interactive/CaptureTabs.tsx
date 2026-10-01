@@ -7,6 +7,8 @@ import * as React from 'react'
 import { Tabs } from 'radix-ui'
 
 export function CaptureTabs({ tabs, label }: { tabs: { value: string; label: string; panel: React.ReactNode }[]; label: string }) {
+  if (tabs.length === 0) return null
+  if (tabs.length === 1) return <>{tabs[0].panel}</>
   return (
     <Tabs.Root defaultValue={tabs[0].value}>
       <Tabs.List aria-label={label} className="mb-4 flex gap-1 overflow-x-auto [scrollbar-width:none]">

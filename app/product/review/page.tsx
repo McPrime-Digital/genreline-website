@@ -47,7 +47,7 @@ export default function Review() {
           title="Frame-accurate review"
           body={<p>Notes anchored to the timecode, drawings on the frame that stay after the call, side-by-side and overlay compare with the second player following the first, and every version stacked on the one before it.</p>}
           features={['APR-14', 'APR-11', 'APR-13', 'APR-12', 'APR-08']}
-          media="portal-review"
+          media={['portal-review', 'client-review']}
         />
         <CapabilityBlock
           title="Notes that go straight into the edit"

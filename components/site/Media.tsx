@@ -11,14 +11,42 @@
  *    belongs there — never a stock image, never an invented screen (W-8).
  */
 import 'server-only'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import Image from 'next/image'
+import Image, { getImageProps } from 'next/image'
+import { preload } from 'react-dom'
 import { slot, type MediaSlot } from '@/content/media'
 import { PlayOnRequest } from '@/components/site/PlayOnRequest'
 import { cn } from '@/lib/utils'
 
 const pub = (p: string) => existsSync(join(process.cwd(), 'public', p))
+
+/** Real pixel sizes written by scripts/optimize-captures.ts. */
+const DIMS: Record<string, { w: number; h: number }> = (() => {
+  const f = join(process.cwd(), 'public', 'captures', 'dimensions.json')
+  return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}
+})()
+
+/** The first slot in the list that has a real file, or null. A page names
+ *  its preferred capture and its fallbacks in order. */
+export function firstMedia(ids: string | readonly string[] | undefined): string | null {
+  if (!ids) return null
+  const list = typeof ids === 'string' ? [ids] : ids
+  for (const id of list) {
+    const s = slot(id)
+    if (s.kind === 'upload' || hasMedia(id)) return id // an upload shows its placeholder
+  }
+  warnMissing(list)
+  return null
+}
+
+const warned = new Set<string>()
+function warnMissing(ids: readonly string[]) {
+  const key = ids.join(',')
+  if (warned.has(key)) return
+  warned.add(key)
+  console.warn(`[media] no capture yet for ${key} — left off the page (run the capture; see README)`)
+}
 
 /** True when the slot has a real file — lets a page drop a tab rather than show a placeholder. */
 export function hasMedia(id: string): boolean {
@@ -71,14 +99,33 @@ export function Media({
 
   if (s.kind === 'capture') {
     const f = mediaFiles(s) as { light: string | null; dark: string | null }
-    if (!f.light && !f.dark) return <Placeholder s={s} className={cn(frameCls, className)} />
+    // A product capture that does not exist yet is left off the page — a
+    // placeholder where a screenshot should be reads as unfinished. Only an
+    // owner upload (footage, photography) shows its labelled placeholder.
+    if (!f.light && !f.dark) {
+      warnMissing([id])
+      return null
+    }
     const light = f.light ?? f.dark!
     const dark = f.dark ?? f.light!
-    const common = { alt: s.alt, width: s.width * 2, height: s.height * 2, sizes, priority, className: 'h-auto w-full' }
+    const dim = (src: string) => DIMS[src.replace(/^\/captures\//, '').replace(/\.webp$/, '')] ?? { w: s.width * 2, h: s.height * 2 }
+    const [dl, dd] = [dim(light), dim(dark)]
+    if (priority) {
+      // The hero is usually the largest paint. Preload ONLY the image for the
+      // visitor's colour scheme — a media-scoped preload is skipped by the
+      // browser when it does not match, so the pair never costs two downloads.
+      for (const [src, d, scheme] of [[light, dl, 'light'], [dark, dd, 'dark']] as const) {
+        const { srcSet } = getImageProps({ src, alt: '', width: d.w, height: d.h, sizes }).props
+        if (srcSet) preload(src, { as: 'image', imageSrcSet: srcSet, imageSizes: sizes, fetchPriority: 'high', media: `(prefers-color-scheme: ${scheme})` } as Parameters<typeof preload>[1])
+      }
+    }
     return (
       <div className={cn(frameCls, className)}>
-        <Image src={light} {...common} alt={s.alt} className={cn(common.className, 'theme-light')} />
-        <Image src={dark} {...common} alt={s.alt} className={cn(common.className, 'theme-dark')} />
+        {/* A theme pair is never preloaded: `priority` would fetch BOTH images on
+            every visit. Lazy loading skips the display:none twin entirely;
+            fetchPriority lifts the visible one when it is the hero. */}
+        <Image src={light} alt={s.alt} width={dl.w} height={dl.h} sizes={sizes} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-light h-auto w-full" />
+        <Image src={dark} alt={s.alt} width={dd.w} height={dd.h} sizes={sizes} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-dark h-auto w-full" />
       </div>
     )
   }

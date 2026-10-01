@@ -44,7 +44,7 @@ export default function Meetings() {
           title="Booking, where the meeting is the booking"
           body={<p>Set availability with rules and overrides, safe across time zones. A client books from the portal, and the booking is a scheduled meeting on both calendars.</p>}
           features={['MTG-04']}
-          media="portal-meetings"
+          media={['portal-meetings', 'client-meetings']}
         />
       </Section>
       <Section id="connects" title="How it connects">
