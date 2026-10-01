@@ -1,0 +1,93 @@
+@import '../styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── WEBSITE-ONLY base rules. Everything token-shaped lives in styles/tokens.css. */
+@layer base {
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  /* Balanced headlines without a library (the frontend-design skill's line-length rule). */
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  /* Focus is visible on every interactive element (WCAG 2.2 AA, S-W §8). */
+  :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+  ::selection { background: hsl(var(--primary) / 0.28); }
+}
+
+/* The ambient canvas behind the page — a shade of the app's app-canvas, kept
+   quieter for reading. Two faint studio-light washes, no gradient hero. */
+.site-canvas {
+  background:
+    radial-gradient(1100px 520px at 88% -12%, hsl(var(--glow) / 0.07), transparent 62%),
+    radial-gradient(900px 520px at -8% 40%, hsl(var(--primary) / 0.05), transparent 62%),
+    hsl(var(--background));
+}
+.dark .site-canvas {
+  background:
+    radial-gradient(1100px 520px at 88% -12%, hsl(var(--glow) / 0.1), transparent 62%),
+    radial-gradient(900px 520px at -8% 40%, hsl(var(--primary) / 0.05), transparent 62%),
+    hsl(var(--background));
+}
+
+/* A capture frame: the main-panel material around a real screen. */
+.capture-frame {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--glow) / 0.18);
+  box-shadow:
+    0 0 0 0.5px hsl(var(--glow) / 0.08),
+    0 24px 60px -36px hsl(var(--glow) / 0.5),
+    inset 0 1px 0 hsl(0 0% 100% / 0.6);
+}
+.dark .capture-frame {
+  border-color: hsl(var(--glow) / 0.22);
+  box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.12), 0 24px 60px -36px hsl(var(--glow) / 0.55), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+}
+
+/* Theme-paired images: one of the pair shows, by theme class. */
+.theme-light { display: block; }
+.theme-dark { display: none; }
+.dark .theme-light { display: none; }
+.dark .theme-dark { display: block; }
+
+/* Press feedback lives on the press, and it is instant (apple-design §1). */
+@media (hover: hover) and (pointer: fine) {
+  .pressable:hover { filter: brightness(1.03); }
+}
+.pressable:active { transform: scale(0.98); }
+@media (prefers-reduced-motion: reduce) { .pressable:active { transform: none; } }
+
+/* Radix enter/exit on the house curves. Attribute-driven so a keyboard close
+   is as fast as a pointer close; held still under reduced motion. */
+@keyframes gw-in { from { opacity: 0; transform: translateY(-4px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes gw-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4px) scale(0.985); } }
+@keyframes gw-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gw-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes gw-rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes gw-rise-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(12px); } }
+.anim-in  { animation: gw-in var(--dur-pop) var(--ease-out); }
+.anim-out { animation: gw-out var(--dur-pop) var(--ease-out); }
+.anim-fade-in  { animation: gw-fade-in var(--dur-panel) var(--ease-out); }
+.anim-fade-out { animation: gw-fade-out var(--dur-pop) var(--ease-out); }
+.anim-rise-in  { animation: gw-rise-in var(--dur-panel) var(--ease-drawer); }
+.anim-rise-out { animation: gw-rise-out var(--dur-pop) var(--ease-drawer); }
+@media (prefers-reduced-motion: reduce) {
+  .anim-in, .anim-out, .anim-rise-in, .anim-rise-out { animation-name: gw-fade-in; animation-duration: 120ms; }
+  .anim-out, .anim-rise-out { animation-name: gw-fade-out; }
+}
+
+/* Crossfade with a touch of blur masks the two-object look of a swap (emil-design-eng). */
+.swap-enter { animation: gw-swap var(--dur-panel) var(--ease-out); }
+@keyframes gw-swap { from { opacity: 0; filter: blur(4px); } to { opacity: 1; filter: blur(0); } }
+@media (prefers-reduced-motion: reduce) { .swap-enter { animation: gw-fade-in 120ms; } }
+
+/* The placeholder slot — unmistakably not a screenshot. */
+.media-placeholder {
+  background:
+    repeating-linear-gradient(135deg, hsl(var(--border) / 0.5) 0 1px, transparent 1px 14px),
+    hsl(var(--card));
+  border: 1px dashed hsl(var(--border));
+}

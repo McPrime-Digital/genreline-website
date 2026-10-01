@@ -1,0 +1,48 @@
+{
+  "name": "genreline-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The marketing website at genreline.com (docs/specs/S-W-website.md in the app repository). Never imports from the app.",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "check:labels": "tsx scripts/check-labels.ts",
+    "check:links": "tsx scripts/check-links.ts",
+    "check:forward": "tsx scripts/check-forward.ts",
+    "check:a11y": "tsx scripts/check-a11y.ts",
+    "capture": "tsx scripts/capture.ts",
+    "gen:roadmap": "tsx scripts/gen-roadmap.ts"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^1.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.14.0",
+    "next": "16.2.6",
+    "next-themes": "^0.4.6",
+    "radix-ui": "^1.4.3",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.4.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^20.19.39",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "lighthouse": "^13.0.0",
+    "postcss": "^8.5.13",
+    "postcss-import": "^17.0.0",
+    "sharp": "^0.34.0",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.12",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,177 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOKENS — COPIED FROM THE APP, NOT INVENTED HERE (S-W W-4).
+
+   Source files, read on 2026-10-01 from the app repository at
+   branch `throughline`, commit 0262f66:
+     · app/globals.css        — the :root (light) and .dark blocks, the motion
+                                tokens, the status accents, the glass material
+                                system and the squircle radius hierarchy
+     · tailwind.config.ts     — the type scale and the semantic colour map
+     · app/layout.tsx         — the two font variables (--font-body = Geist,
+                                --font-display = Schibsted Grotesk)
+   S-B (docs/specs/S-B-design-language.md) is authoritative for every visual
+   decision. When the app's tokens change, this file is re-copied from them —
+   it is never edited to taste. The two things added for the website are
+   marked WEBSITE-ONLY and justified in place.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  /* ── Light theme — white canvas, shark surfaces ── */
+  :root {
+    color-scheme: light;
+    --background: 210 36% 98%;        /* #F7F9FB near-white canvas */
+    --foreground: 216 22% 12%;        /* #171C23 cool near-black */
+    --card: 208 26% 92%;              /* #E2E8ED soft shark surface */
+    --card-foreground: 216 22% 12%;
+    --popover: 0 0% 100%;             /* #FFFFFF clean menus/popovers */
+    --popover-foreground: 216 22% 12%;
+    --primary: 40 57% 45%;            /* deeper gold for legibility on white */
+    --primary-foreground: 226 60% 10%;
+    --secondary: 208 24% 87%;         /* #D5DEE4 shark fill / hover */
+    --secondary-foreground: 216 22% 12%;
+    --muted: 208 24% 87%;
+    --muted-foreground: 211 13% 37%;  /* #525C66 */
+    --accent: 208 24% 87%;
+    --accent-foreground: 216 22% 12%;
+    --destructive: 350 65% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 208 20% 78%;            /* #BFCAD3 shark border / divider */
+    --input: 208 20% 78%;
+    --ring: 40 57% 45%;
+    --text-faint: 210 10% 48%;        /* #6F7881 */
+    --radius: 0.5rem;
+    /* Luminous violet — the shell's edge-light. Every glass panel, hairline
+       and glow derives from this one token. */
+    --glow: 262 60% 54%;
+
+    /* ── MOTION TOKENS — the four house curves and three durations.
+       Theme-independent. Nothing on this site types a cubic-bezier by hand. */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);      /* entering / exiting */
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);  /* moving on screen */
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);   /* sheets, drawers */
+    --ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);      /* the house overshoot */
+    --dur-press: 120ms;   /* button :active feedback */
+    --dur-pop: 180ms;     /* tooltips, small popovers, menus */
+    --dur-panel: 240ms;   /* dropdowns, sheets, larger surfaces */
+
+    /* Status accents — shared across themes */
+    --status-blue: 205 60% 50%;
+    --status-amber: 24 73% 50%;
+    --status-violet: 265 55% 62%;
+    --status-green: 98 45% 38%;
+    --status-gray: 210 8% 45%;
+  }
+
+  /* ── Dark theme — deep navy ── */
+  .dark {
+    color-scheme: dark;
+    --background: 228 90% 9%;         /* #020A2B deep navy canvas */
+    --foreground: 226 39% 92%;        /* #E8EBF5 off-white */
+    --card: 225 70% 19%;              /* #0C1E55 lifted card / panel */
+    --card-foreground: 226 39% 92%;
+    --popover: 225 70% 19%;
+    --popover-foreground: 226 39% 92%;
+    --primary: 42 55% 55%;            /* #C8A24A gold */
+    --primary-foreground: 226 60% 8%;
+    --secondary: 225 68% 25%;         /* #142A6B */
+    --secondary-foreground: 226 39% 92%;
+    --muted: 225 55% 22%;
+    --muted-foreground: 226 29% 69%;  /* #9AA5C8 */
+    --accent: 225 68% 25%;
+    --accent-foreground: 226 39% 92%;
+    --destructive: 348 62% 59%;
+    --destructive-foreground: 226 39% 96%;
+    --border: 226 45% 30%;
+    --input: 226 45% 30%;
+    --ring: 42 55% 55%;
+    --text-faint: 227 23% 49%;        /* #606C99 */
+    --glow: 262 78% 72%;
+
+    --status-blue: 205 65% 62%;
+    --status-amber: 30 80% 60%;
+    --status-violet: 265 60% 70%;
+    --status-green: 98 42% 52%;
+    --status-gray: 220 12% 58%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body, sans-serif);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display, sans-serif);
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display, sans-serif); }
+  .font-body { font-family: var(--font-body, sans-serif); }
+  .focus-gold:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+}
+
+/* ── Squircle corners — the radius hierarchy carries meaning (S-B):
+   26 the main panel, 22 a card, 18 a list container, 12 a control. */
+.squircle-sm { border-radius: 12px; }
+.squircle    { border-radius: 18px; }
+.squircle-lg { border-radius: 22px; }
+.squircle-xl { border-radius: 26px; }
+@supports (corner-shape: squircle) {
+  .squircle-sm, .squircle, .squircle-lg, .squircle-xl { corner-shape: squircle; }
+}
+
+/* ── Liquid glass — Layer 1, a floating glass panel (rail, topbar). */
+.glass-panel {
+  background: linear-gradient(180deg, hsl(0 0% 100% / 0.74), hsl(0 0% 100% / 0.52));
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid hsl(var(--glow) / 0.22);
+  box-shadow:
+    0 0 0 0.5px hsl(var(--glow) / 0.1),
+    0 18px 40px -26px hsl(var(--glow) / 0.4),
+    0 2px 8px -4px hsl(216 22% 12% / 0.06),
+    inset 0 1px 0 hsl(0 0% 100% / 0.9);
+}
+.dark .glass-panel {
+  background: linear-gradient(180deg, hsl(225 70% 19% / 0.72), hsl(225 72% 14% / 0.6));
+  border-color: hsl(var(--glow) / 0.3);
+  box-shadow:
+    0 0 0 0.5px hsl(var(--glow) / 0.14),
+    0 18px 40px -26px hsl(var(--glow) / 0.45),
+    inset 0 1px 0 hsl(0 0% 100% / 0.08);
+}
+/* A quiet inset surface inside a glass panel. */
+.glass-inset {
+  background: hsl(0 0% 100% / 0.38);
+  border: 1px solid hsl(var(--glow) / 0.16);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.55);
+}
+.dark .glass-inset {
+  background: hsl(0 0% 100% / 0.04);
+  border-color: hsl(var(--glow) / 0.2);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.06);
+}
+/* The main content panel. */
+.main-panel {
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--glow) / 0.16);
+  box-shadow:
+    0 0 0 0.5px hsl(var(--glow) / 0.07),
+    0 18px 44px -32px hsl(var(--glow) / 0.4),
+    inset 0 1px 0 hsl(0 0% 100% / 0.7);
+}
+.dark .main-panel {
+  border-color: hsl(var(--glow) / 0.2);
+  box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.1), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+}
+/* Glow hairlines — a section seam inside glass. */
+.glow-divider-x { height: 1px; background: linear-gradient(90deg, transparent, hsl(var(--glow) / 0.35), transparent); }
+.glow-divider-y { width: 1px; align-self: stretch; background: linear-gradient(180deg, transparent, hsl(var(--glow) / 0.5), transparent); }
+
+/* Reduced transparency (apple-design §14): frost the glass rather than fake it. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel { background: hsl(var(--popover)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
