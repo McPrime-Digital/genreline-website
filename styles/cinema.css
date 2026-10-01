@@ -1,0 +1,153 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CINEMA — the website's own visual layer (owner direction, 2026-10-01:
+   "background, 3D features, reactive and responsive panels, moving cards,
+   proper FILM OS design"). This OVERRIDES S-B principle 4 ("nothing
+   decorative moves on its own") for the marketing site only; the product
+   keeps its restraint. Every moving thing here stops under reduced motion.
+   Built on the app's tokens (styles/tokens.css) — no new colours.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Film grain — an SVG turbulence tile, fixed over the page, never intercepting input. */
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 1.2s steps(6) infinite;
+}
+.dark .grain::after { opacity: 0.09; }
+@keyframes grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
+}
+
+/* The aurora — studio light washing the canvas: violet from the top right,
+   gold from the left, slowly breathing. */
+.aurora { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.aurora::before, .aurora::after {
+  content: ''; position: absolute; border-radius: 9999px; filter: blur(80px); will-change: transform;
+}
+.aurora::before {
+  width: 70vmax; height: 70vmax; right: -25vmax; top: -35vmax;
+  background: radial-gradient(circle, hsl(var(--glow) / 0.35), transparent 60%);
+  animation: drift-a 22s ease-in-out infinite alternate;
+}
+.aurora::after {
+  width: 60vmax; height: 60vmax; left: -28vmax; top: 10vmax;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.28), transparent 60%);
+  animation: drift-b 26s ease-in-out infinite alternate;
+}
+:root:not(.dark) .aurora::before { background: radial-gradient(circle, hsl(var(--glow) / 0.18), transparent 60%); }
+:root:not(.dark) .aurora::after { background: radial-gradient(circle, hsl(var(--primary) / 0.16), transparent 60%); }
+@keyframes drift-a { to { transform: translate(-8vmax, 6vmax) scale(1.08); } }
+@keyframes drift-b { to { transform: translate(6vmax, -4vmax) scale(0.94); } }
+
+/* A faint frame grid — the viewfinder. */
+.viewfinder {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+}
+
+/* Anamorphic flare — a thin horizontal light streak. */
+.flare {
+  position: absolute; left: -10%; right: -10%; height: 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.0) 20%, hsl(var(--primary) / 0.7) 50%, hsl(var(--glow) / 0.5) 62%, transparent 85%);
+  filter: blur(1px);
+  box-shadow: 0 0 24px 2px hsl(var(--primary) / 0.35);
+  animation: flare 9s ease-in-out infinite;
+}
+@keyframes flare { 0%, 100% { opacity: 0.25; transform: translateX(-4%); } 50% { opacity: 0.9; transform: translateX(4%); } }
+
+/* The pointer spotlight — a surface lit where the cursor is (set by <Spotlight>). */
+.spotlight { position: relative; isolation: isolate; }
+.spotlight::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--primary) / 0.14), transparent 60%);
+  opacity: var(--spot, 0); transition: opacity 300ms var(--ease-out);
+}
+.spot-border { position: relative; }
+.spot-border::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--primary) / 0.7), hsl(var(--glow) / 0.35) 40%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: var(--spot, 0); transition: opacity 300ms var(--ease-out);
+}
+
+/* Reveal on entering view (set by <Reveal>). */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); transition-delay: var(--delay, 0ms); }
+.reveal[data-in='true'] { opacity: 1; transform: none; }
+
+/* 3D stage */
+.stage-3d { perspective: 1600px; }
+.tilt { transform-style: preserve-3d; transition: transform 600ms var(--ease-out); will-change: transform; }
+.float-a { animation: float-a 9s ease-in-out infinite; }
+.float-b { animation: float-b 11s ease-in-out infinite; }
+.float-c { animation: float-c 13s ease-in-out infinite; }
+@keyframes float-a { 0%, 100% { translate: 0 0; } 50% { translate: 0 -14px; } }
+@keyframes float-b { 0%, 100% { translate: 0 0; } 50% { translate: 0 12px; } }
+@keyframes float-c { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
+
+/* A screen, lit: glass edge, reflection, deep shadow. */
+.screen {
+  position: relative; overflow: hidden; border-radius: 22px;
+  border: 1px solid hsl(var(--glow) / 0.28);
+  background: hsl(var(--card));
+  box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.2), 0 40px 120px -40px hsl(var(--glow) / 0.55), 0 30px 60px -30px hsl(228 90% 3% / 0.6);
+}
+.screen::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, hsl(0 0% 100% / 0.14), transparent 32%, transparent 70%, hsl(0 0% 100% / 0.05));
+}
+
+/* Marquee — an endless strip; duplicate the content once inside .marquee-track. */
+.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.marquee-track { display: flex; width: max-content; animation: marquee var(--marquee-dur, 60s) linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-reverse .marquee-track { animation-direction: reverse; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* Film strip — sprocket holes above and below a row of frames. */
+.filmstrip { position: relative; padding: 22px 0; background: hsl(228 90% 5%); }
+:root:not(.dark) .filmstrip { background: hsl(216 22% 12%); }
+.filmstrip::before, .filmstrip::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 10px;
+  background-image: radial-gradient(circle at 50% 50%, hsl(0 0% 100% / 0.85) 0 3px, transparent 3.5px);
+  background-size: 22px 10px; opacity: 0.18;
+}
+.filmstrip::before { top: 6px; } .filmstrip::after { bottom: 6px; }
+
+/* The through-line — the brand's three nodes on a line, drawn as you scroll. */
+.through-line { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.6s var(--ease-in-out); }
+[data-in='true'] .through-line { stroke-dashoffset: 0; }
+
+/* A blinking record light. */
+.rec { animation: rec 1.6s steps(2) infinite; }
+@keyframes rec { 50% { opacity: 0.25; } }
+
+/* Gold text — headline emphasis via the material, not a second colour word. */
+.text-gold-sheen {
+  background: linear-gradient(100deg, hsl(var(--foreground)) 20%, hsl(var(--primary)) 45%, hsl(var(--foreground)) 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: sheen 7s ease-in-out infinite;
+}
+@keyframes sheen { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
+
+/* Progress bar for auto-advancing showcases. */
+.autoprogress { transform-origin: left center; animation: autoprogress var(--dur, 7s) linear forwards; }
+@keyframes autoprogress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .grain::after, .aurora::before, .aurora::after, .flare, .float-a, .float-b, .float-c, .marquee-track, .rec, .text-gold-sheen, .autoprogress { animation: none !important; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .tilt { transition: none; transform: none !important; }
+  .through-line { stroke-dashoffset: 0; transition: none; }
+}

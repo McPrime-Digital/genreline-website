@@ -1,207 +1,303 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Feature, FeatureLabel, FeatureList } from '@/components/FeatureLabel'
-import { CtaBand, Rule, Section } from '@/components/site/Frame'
-import { Media, firstMedia, hasMedia } from '@/components/site/Media'
-import { CaptureTabs } from '@/components/interactive/CaptureTabs'
-import { RecordDemo } from '@/components/interactive/RecordDemo'
-import { StackRow, type StackJob } from '@/components/interactive/StackRow'
+import { Feature, FeatureLabel } from '@/components/FeatureLabel'
+import { Media, hasMedia } from '@/components/site/Media'
 import { BrandDemo } from '@/components/interactive/BrandDemo'
-import { APP, SUBLINE, TAGLINE } from '@/lib/site'
-import { pageMeta } from '@/lib/meta'
 import { HomeJsonLd } from '@/components/site/JsonLd'
+import { HeroStage } from '@/components/cinema/HeroStage'
+import { SpacesShowcase, type SpacePanel } from '@/components/cinema/SpacesShowcase'
+import { WhoItsFor } from '@/components/cinema/WhoItsFor'
+import { CollaboratorMap } from '@/components/cinema/CollaboratorMap'
+import { ProductionReel, type ReelFrame } from '@/components/cinema/ProductionReel'
+import { RecordLedger } from '@/components/cinema/RecordLedger'
+import { Reveal } from '@/components/cinema/Reveal'
+import { Tilt } from '@/components/cinema/Tilt'
+import { Spotlight } from '@/components/cinema/Spotlight'
+import { Button } from '@/components/ui/button'
+import { Check } from '@/components/icons'
+import { feature, siteLabel } from '@/content/features'
+import { COLLABORATORS, SEGMENTS } from '@/content/segments'
+import { APP } from '@/lib/site'
+import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/')
 
-const JOBS: StackJob[] = [
-  { job: 'Chat', surface: 'Rooms where the client company is the other side', body: 'Each client company is a room the studio and the client share, with project tags, threads, mentions, read receipts and voice notes. The crew has its own rooms the client never sees.', href: '/product/client' },
-  { job: 'Review', surface: 'Frame-accurate review that ends in a record', body: 'Notes anchored to a timecode, drawings on the frame, version compare, and markers out to Resolve, Final Cut and Premiere — attached to the approval they inform.', href: '/product/review' },
-  { job: 'Approvals', surface: 'Approval as a record, not a status', body: 'Stages, review windows and reminders. When nobody answers, the stage advances and the record says so — never written as a sign-off nobody gave.', href: '/product/review' },
-  { job: 'Signing', surface: 'Contracts sealed with the evidence inside', body: 'Templates, fields placed on the PDF, consent before signature, a cryptographic seal and a certificate of completion inside the file.', href: '/product/contracts' },
-  { job: 'Scheduling', surface: 'A calendar and booking where the meeting is the booking', body: 'Approval deadlines, invoice dates and shoot days land on the calendar by themselves. Clients book from your availability.', href: '/product/meetings' },
-  { job: 'Files', surface: 'A vault with resumable uploads and versions', body: 'Large uploads pause and resume. A new version stacks on its predecessor. Screening links record how far a guest actually watched.', href: '/product/files' },
-  { job: 'Invoices', surface: 'Invoices and credits in the same place as the work', body: 'Invoices for clients, credits for metered work, a budget per person, and a ceiling on every AI call.', href: '/product/money' },
-  { job: 'Scripts', surface: 'A screenplay editor the production reads from', body: 'Industry formatting, locked scenes, tracked changes and live co-editing. The breakdown is read from the script, not retyped from it.', href: '/product/suite' },
-  { job: 'Call sheets', surface: 'Call sheets sealed, numbered and sent in your voice', body: 'Scenes, breakdown, stripboard and shoot days lead to a call sheet that goes out under your studio’s name, with every change a new version.', href: '/product/production' },
+const shot = (id: string, sizes = '(min-width: 1024px) 680px, 100vw') => (hasMedia(id) ? <Media id={id} frame={false} sizes={sizes} /> : null)
+const shots = (list: [string, string][]) => list.filter(([id]) => hasMedia(id)).map(([id, label]) => ({ key: id, label, node: shot(id)! }))
+const feat = (featureId: string, text: string) => ({ featureId, text, badge: (siteLabel(featureId) ?? 'Available') as 'Available' | 'Coming' })
+
+const SPACES: SpacePanel[] = [
+  {
+    id: 'crew', name: 'Crew', tagline: 'Where the studio works.', href: '/product/crew',
+    body: 'Who is on the job, what they are doing and what they may see — and the schedule that comes straight out of the script.',
+    features: [
+      feat('CRW-02', 'A directory that is a production database — skills, rates, union, kit, availability'),
+      feat('CRW-04', 'Tasks with assignees from both rosters, subtasks, relations and watchers'),
+      feat('MSG-02', 'Internal rooms, threads and a call button in every room'),
+      feat('CRW-07', 'Script to scenes to breakdown to stripboard to shoot days'),
+      feat('CRW-06', 'Call sheets — sealed, numbered, sent in your voice'),
+      feat('IDN-04', 'Roles, project roles, seats, grants and denials with expiry'),
+    ],
+    people: ['Producers', 'Coordinators', 'Editors', 'Freelancers, scoped to their jobs', 'Finance'],
+    shots: shots([['crew-tasks', 'Tasks'], ['crew-production', 'Breakdown and stripboard'], ['crew-chat', 'Crew rooms'], ['crew-directory', 'Directory'], ['crew-calendar', 'Calendar']]),
+  },
+  {
+    id: 'client', name: 'Client', tagline: 'Where clients meet the work — in your brand.', href: '/product/client',
+    body: 'Every client company gets its own room, vault and portal. They review frame by frame, sign, book and pay — and never see a vendor’s name but yours.',
+    features: [
+      feat('MSG-01', 'One room per client company, with project tags and threads'),
+      feat('APR-14', 'Frame-accurate review, notes on the timecode, drawings on the frame'),
+      feat('APR-02', 'Approval records with a printable certificate'),
+      feat('DOC-10', 'Contracts and releases that write the rights they prove'),
+      feat('CLI-08', 'Screening links for people with no account'),
+      feat('CLI-05', 'Your colour and logo on the portal, email and sealed PDFs'),
+    ],
+    people: ['Client owners', 'Reviewers and approvers', 'Client legal and finance', 'Guests on a screening link', 'Signers'],
+    shots: shots([['client-messages', 'The client room'], ['portal-review', 'Review in the portal'], ['client-review-record', 'The approval record'], ['portal-contracts', 'Contracts'], ['home-portal-brand-a', 'The portal, in your brand']]),
+  },
+  {
+    id: 'suite', name: 'The Suite', tagline: 'Where the work is made.', href: '/product/suite',
+    body: 'A screenplay editor the production reads from, storyboards, and a library of every asset the studio holds. Image and video generation is being built here, inside the production.',
+    features: [
+      feat('SWR-01', 'A screenplay editor — industry format, locked scenes, tracked changes'),
+      feat('SWR-06', 'Live co-editing with visible cursors'),
+      feat('SWR-09', 'Storyboards — shots, types, prompts, ordering'),
+      feat('FIL-07', 'A studio-wide library with facets and per-production footprint'),
+      feat('STG-01', 'Image and video generation, with a budget and a record'),
+      feat('SWR-04', 'Final Draft (FDX) import and export'),
+    ],
+    people: ['Writers, co-editing live', 'Directors', 'Storyboard artists', 'Producers'],
+    shots: shots([['suite-library', 'The library']]),
+  },
 ]
 
+const REEL: ReelFrame[] = [
+  { tc: '00:00:01:00', title: 'Script', body: 'Written and co-edited in the screenplay editor.', featureId: 'SWR-01' },
+  { tc: '00:00:12:00', title: 'Breakdown', body: 'Scenes and elements read from the script.', media: 'crew-production', featureId: 'CRW-07' },
+  { tc: '00:00:24:00', title: 'Shoot days', body: 'On the studio’s calendar and the client’s.', media: 'crew-calendar', featureId: 'CRW-08' },
+  { tc: '00:00:31:00', title: 'Call sheet', body: 'Sealed, numbered, sent in your voice.', featureId: 'CRW-06' },
+  { tc: '00:00:44:00', title: 'Crew', body: 'Tasks, rooms and people on the job.', media: 'crew-tasks', featureId: 'CRW-04' },
+  { tc: '00:00:58:00', title: 'Cut', body: 'Versions stacked in the vault.', media: 'portal-files', featureId: 'APR-08' },
+  { tc: '00:01:09:00', title: 'Review', body: 'Notes on the timecode, in sync.', media: 'portal-review', featureId: 'APR-14' },
+  { tc: '00:01:21:00', title: 'Approval', body: 'On the record, with a certificate.', media: 'client-review-record', featureId: 'APR-02' },
+  { tc: '00:01:33:00', title: 'Contract', body: 'Consent, signature, seal.', media: 'client-contracts', featureId: 'DOC-05' },
+  { tc: '00:01:45:00', title: 'Invoice', body: 'Numbered, in the client’s portal.', media: 'client-invoices', featureId: 'MON-01' },
+]
+
+const STRIP_A = ['MSG-08', 'MSG-12', 'MSG-15', 'MSG-27', 'APR-12', 'APR-16', 'APR-17', 'APR-19', 'MTG-04', 'MTG-10', 'FIL-03', 'DOC-02']
+const STRIP_B = ['IDN-15', 'IDN-16', 'IDN-14', 'IDN-18', 'MON-05', 'MON-06', 'CLI-11', 'NTF-02', 'NTF-03', 'UX-02', 'IDN-19', 'APR-18']
+
+function Strip({ ids, reverse }: { ids: string[]; reverse?: boolean }) {
+  const items = [...ids, ...ids]
+  return (
+    <div className={`marquee ${reverse ? 'marquee-reverse' : ''}`} style={{ ['--marquee-dur' as string]: '70s' }}>
+      <ul className="marquee-track py-2">
+        {items.map((id, n) => (
+          <li key={n} data-feature-id={id} className="mx-1.5 whitespace-nowrap rounded-full border border-border bg-card/50 px-4 py-2 text-[14px] text-foreground backdrop-blur">
+            {feature(id).title.split(' — ')[0]}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function Heading({ kicker, title, lead }: { kicker: string; title: React.ReactNode; lead?: string }) {
+  return (
+    <Reveal>
+      <p className="font-display text-[13px] font-semibold text-primary">{kicker}</p>
+      <h2 className="mt-3 max-w-[22ch] font-display text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-5xl lg:text-[56px]">{title}</h2>
+      {lead && <p className="mt-5 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">{lead}</p>}
+    </Reveal>
+  )
+}
+
 export default function Home() {
-  const hero = firstMedia(['home-hero-room', 'client-messages', 'client-review-record'])
-  const brandPair = hasMedia('home-portal-brand-a') && hasMedia('home-portal-brand-b')
+  const segShots = Object.fromEntries(SEGMENTS.flatMap((s) => s.media).filter(hasMedia).map((id) => [id, shot(id, '(min-width: 1024px) 420px, 100vw')]))
   return (
     <>
       <HomeJsonLd />
-      {/* 1. Hero */}
-      <section className="pb-10 pt-14 sm:pt-20">
+      <HeroStage />
+
+      {/* The three spaces */}
+      <section id="spaces" className="relative py-24 sm:py-32">
         <div className="container-wide">
-          <Rule />
-          <h1 className="mt-7 max-w-[15ch] font-display text-[40px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-display-lg">{TAGLINE}</h1>
-          <p className="mt-6 max-w-[58ch] text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-8">{SUBLINE}</p>
-          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <Button asChild variant="primary" size="lg" data-primary-cta><a href={APP.signup}>Open your studio</a></Button>
-            <Link href="#the-record" className="text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-primary">See how approval works</Link>
-          </div>
-          <p className="mt-5 text-[13px] text-muted-foreground">Inside in under a minute. Your clients are invited by you, never by us.</p>
-        </div>
-        <div className="container-wide mt-12">
-          <CaptureTabs
-            label="Screens from the product"
-            tabs={[
-              ...(hero ? [{ value: 'room', label: hero === 'client-review-record' ? 'An approval record' : 'A client room', panel: <Media id={hero} priority sizes="(min-width: 1200px) 1136px, 100vw" /> }] : []),
-              // Further tabs appear only when their capture exists — a hero is
-              // never a row of placeholders.
-              ...[
-                { value: 'record', label: 'An approval record', id: 'client-review-record' },
-                { value: 'portal', label: 'The client’s calendar', id: 'portal-calendar' },
-                { value: 'production', label: 'Production', id: 'crew-production' },
-              ].filter((t) => t.id !== hero && hasMedia(t.id)).map((t) => ({ value: t.value, label: t.label, panel: <Media id={t.id} /> })),
-            ]}
-          />
+          <Heading kicker="Three spaces, one record" title="Everything a studio does, in the space it belongs." lead="Crew is where you work. Client is where your clients meet the work. The Suite is where the work is made. Underneath all three is one record of who did what, and when." />
+          <div className="mt-14"><SpacesShowcase spaces={SPACES} /></div>
         </div>
       </section>
 
-      {/* 2. The stack you're replacing */}
-      <Section id="the-stack" title="Production lives across a dozen tools. The seams are where time and money go." lead="Pick a job your studio does today, and see where it lives in Genreline.">
-        <StackRow jobs={JOBS} />
-      </Section>
-
-      {/* 3. The record — the wedge */}
-      <Section
-        id="the-record"
-        title="When a client doesn’t respond, the production moves on — and the record says exactly that."
-        lead="Not “approved”. Not a red badge. A named, timestamped automatic advance, and a certificate that says so in plain words. Step through it."
-      >
-        <RecordDemo />
-        <p className="mt-10 max-w-[60ch] border-l-2 border-primary pl-4 text-lg leading-relaxed text-foreground">
-          Every other tool reminds you. This one can tell you what happens if nobody answers, because it is the system that will do it.
-        </p>
-        <p className="mt-6"><Link href="/product/review" className="text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Review and approval, in full</Link></p>
-      </Section>
-
-      {/* 4. Three spaces */}
-      <Section id="three-spaces" title="Three spaces, one record." lead="The studio works in Crew, serves clients in Client, and makes the work in the Suite. Everything they do lands in the same record.">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {[
-            { name: 'Crew', href: '/product/crew', body: 'The team and the production: who is on the job, what they may see, and the schedule that comes out of the script.', items: ['CRW-04', 'CRW-07', 'CRW-06'] },
-            { name: 'Client', href: '/product/client', body: 'Client work in your studio’s brand: the room, the cuts, the approvals, the contracts and the invoices.', items: ['MSG-01', 'APR-01', 'CLI-08'] },
-            { name: 'The Suite', href: '/product/suite', body: 'Writing, boards and the library — and image and video generation, being built.', items: ['SWR-01', 'FIL-07', 'STG-01'] },
-          ].map((s) => (
-            <div key={s.name} className="flex flex-col squircle-lg border border-border bg-card/40 p-6">
-              <h3 className="font-display text-xl font-semibold text-foreground">{s.name}</h3>
-              <p className="mt-2 text-[15px] leading-7 text-muted-foreground">{s.body}</p>
-              <FeatureList items={s.items} className="mt-5 flex-1" />
-              <Link href={s.href} className="mt-6 text-sm font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">The {s.name === 'The Suite' ? 'Suite' : `${s.name} space`}</Link>
-            </div>
-          ))}
+      {/* Who it's for */}
+      <section id="who" className="relative overflow-hidden py-24 sm:py-32">
+        <div className="aurora -z-10 opacity-60" />
+        <div className="container-wide">
+          <Heading kicker="Who it is for" title="Built for the companies that make the work." lead="Pick the one that sounds like you — and see your setup, who you invite and exactly what each of them can see." />
+          <div className="mt-14"><WhoItsFor segments={SEGMENTS} shots={segShots} /></div>
         </div>
-      </Section>
+      </section>
 
-      {/* 5. Your clients see your studio */}
-      <Section id="your-brand" title="Your clients see your studio." lead="The portal, the screening links, the signing pages, the email and the sealed PDF wear your name and your colour. A client of your studio bought from your studio; nothing here says otherwise.">
-        {brandPair && (
-          <>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Media id="home-portal-brand-a" sizes="(min-width: 1200px) 560px, (min-width: 768px) 50vw, 100vw" />
-              <Media id="home-portal-brand-b" sizes="(min-width: 1200px) 560px, (min-width: 768px) 50vw, 100vw" />
-            </div>
-            <p className="mt-4 text-[13px] text-muted-foreground">The same portal screen, in two studios’ brands.</p>
-          </>
-        )}
-        <div className={brandPair ? 'mt-14' : ''}>
-          <h3 className="font-display text-2xl font-semibold text-foreground">One colour in. Readable type out, chosen by measurement.</h3>
-          <p className="mt-2 max-w-[62ch] text-[15px] leading-7 text-muted-foreground">
-            <Feature id="CLI-05">A studio picks one colour and the rest is derived — including the colour of the type that sits on it, so no choice produces an unreadable Approve button.</Feature>
-          </p>
-          <div className="mt-8"><BrandDemo /></div>
+      {/* Everyone on the production */}
+      <section id="people" className="py-24 sm:py-32">
+        <div className="container-wide">
+          <Heading kicker="Collaboration" title="Everyone on the production. Each with exactly what they need." lead="Your staff, your freelancers, your clients’ teams, the colourist you bring in for one job, the agency producer watching a screener, the actor signing a release. One system, and none of them sees more than their part." />
+          <div className="mt-16"><CollaboratorMap people={COLLABORATORS} /></div>
         </div>
-      </Section>
+      </section>
 
-      {/* 6. Contracts that hold up */}
-      <Section id="contracts" title="Contracts that hold up.">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      {/* The production, as a reel */}
+      <section id="production" className="py-24 sm:py-32">
+        <div className="container-wide">
+          <Heading kicker="The whole production" title="From the first page of the script to the last invoice." lead="One chain, not a dozen tools. Each step reads from the one before it, so nothing is retyped and nothing falls through a gap." />
+        </div>
+        <div className="mt-14"><ProductionReel frames={REEL} /></div>
+        <div className="container-wide mt-8"><Link href="/product/production" className="text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">How production works in Genreline</Link></div>
+      </section>
+
+      {/* The record */}
+      <section id="the-record" className="relative overflow-hidden py-24 sm:py-32">
+        <div className="viewfinder -z-10" />
+        <div className="container-wide grid items-center gap-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <div>
-            <p className="text-lg leading-relaxed text-muted-foreground">Fields placed on the PDF, consent before signature, a cryptographic seal, and a certificate of completion sealed inside the file — so the file proves itself to anybody who holds it.</p>
-            <p className="mt-4 text-lg font-medium leading-relaxed text-foreground">A signed release writes the rights it proves.</p>
-            <FeatureList items={['DOC-02', 'DOC-04', 'DOC-05', 'DOC-06', 'DOC-10']} className="mt-6" />
-            <Link href="/product/contracts" className="mt-6 inline-block text-sm font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Contracts and signing</Link>
+            <Heading kicker="Review and approval" title="Every sign‑off, provable." />
+            <Reveal delay={100}>
+              <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+                Who it went to, how much of the cut they actually watched, what they said on which frame, and when they decided — kept as one record with a printable certificate. Years later, “who approved v4?” takes ten seconds to answer.
+              </p>
+              <ul className="mt-6 space-y-3 text-[15px] leading-6 text-foreground">
+                <Feature id="APR-20" as="li" className="flex items-start gap-2.5"><Check aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />What the approver watched, joined to the decision</Feature>
+                <Feature id="APR-11" as="li" className="flex items-start gap-2.5"><Check aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />Notes anchored to the timecode</Feature>
+                <Feature id="APR-01" as="li" className="flex items-start gap-2.5"><Check aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />Review windows and a reminder ladder</Feature>
+                <Feature id="APR-02" as="li" className="flex items-start gap-2.5"><Check aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />A certificate anyone can be handed</Feature>
+              </ul>
+              <p className="mt-6 border-l-2 border-primary pl-4 text-[15px] leading-6 text-muted-foreground">
+                And if a review window closes with no answer, the production moves on and the record says exactly that — never a sign-off nobody gave.
+              </p>
+              <Link href="/product/review" className="mt-6 inline-block text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Review and approval, in full</Link>
+            </Reveal>
           </div>
-          <Media id="client-contracts" sizes="(min-width: 1200px) 660px, 100vw" />
+          <Reveal delay={150}><RecordLedger /></Reveal>
         </div>
-      </Section>
+      </section>
 
-      {/* 7. Review together, keep the notes */}
-      <Section id="review-together" title="Review together, keep the notes.">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-          <Media id="portal-review" sizes="(min-width: 1200px) 660px, 100vw" />
-          <div>
-            <p className="text-lg leading-relaxed text-muted-foreground">A shared playhead that stays in sync across the room, drawings on the frame that outlive the call, and markers that go straight into the edit.</p>
-            <FeatureList items={['APR-15', 'APR-13', { id: 'APR-16', text: 'Marker export to Resolve, Final Cut and Premiere' }, 'APR-19']} className="mt-6" />
-            <Link href="/product/meetings" className="mt-6 inline-block text-sm font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Meetings and review sessions</Link>
+      {/* Your clients see your studio */}
+      <section id="your-brand" className="relative overflow-hidden py-24 sm:py-32">
+        <div className="aurora -z-10 opacity-50" />
+        <div className="container-wide">
+          <Heading kicker="White-label" title="Your clients see your studio. Not us." lead="The portal, the screening links, the signing pages, the email and the sealed PDF carry your name and your colour. A client of your studio bought from your studio." />
+          {hasMedia('home-portal-brand-a') && hasMedia('home-portal-brand-b') && (
+            <div className="stage-3d mt-14 grid gap-6 md:grid-cols-2">
+              <Reveal><div style={{ transform: 'rotateY(8deg)' }}><Tilt className="screen" max={5}><Media id="home-portal-brand-a" frame={false} sizes="(min-width: 768px) 560px, 100vw" /></Tilt></div></Reveal>
+              <Reveal delay={120}><div style={{ transform: 'rotateY(-8deg)' }}><Tilt className="screen" max={5}><Media id="home-portal-brand-b" frame={false} sizes="(min-width: 768px) 560px, 100vw" /></Tilt></div></Reveal>
+            </div>
+          )}
+          <div className="mt-16 rounded-3xl border border-border bg-card/40 p-6 backdrop-blur sm:p-10">
+            <h3 className="font-display text-2xl font-bold text-foreground">Try it: one colour in, an accessible palette out.</h3>
+            <p className="mt-2 max-w-[62ch] text-[15px] leading-7 text-muted-foreground"><Feature id="CLI-05">Pick any colour. The type that sits on it is chosen by measured contrast, so no choice produces an unreadable Approve button.</Feature></p>
+            <div className="mt-8"><BrandDemo /></div>
           </div>
         </div>
-      </Section>
+      </section>
 
-      {/* 8. AI with a budget and a record */}
-      <Section id="ai">
-        <div className="squircle-xl border border-border bg-card/40 p-6 sm:p-10">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 id="ai-title" className="font-display text-3xl font-bold text-foreground sm:text-4xl">AI with a budget and a record.</h2>
-            <FeatureLabel id="STG-01" />
-          </div>
-          <p className="mt-4 max-w-[62ch] text-lg leading-relaxed text-muted-foreground">
-            Image and video generation is being built inside the production, not beside it: many models through one gate, a ceiling on every call, a budget for every person, and provenance on every asset.
-          </p>
-          <p className="mt-4 max-w-[62ch] text-[15px] leading-7 text-muted-foreground">
-            The controls already exist for text: <Feature id="MON-05">a per-call ceiling that asks before anything expensive runs</Feature>, and <Feature id="MON-06">a budget per person, visible to the person it governs</Feature>.
-          </p>
-          <Link href="/ai" className="mt-6 inline-block text-sm font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">AI and provenance</Link>
+      {/* Contracts + review, side by side */}
+      <section className="py-24 sm:py-32">
+        <div className="container-wide grid gap-6 lg:grid-cols-2">
+          <Spotlight as="article" className="overflow-hidden rounded-3xl border border-border bg-card/40 p-6 sm:p-8">
+            <p className="font-display text-[13px] font-semibold text-primary">Contracts and signing</p>
+            <h3 className="mt-2 font-display text-3xl font-bold text-foreground">Contracts that hold up.</h3>
+            <p className="mt-3 text-[15px] leading-7 text-muted-foreground">Fields placed on the PDF, consent before signature, a cryptographic seal with the certificate inside the file — and a signed release writes the rights it proves.</p>
+            <div className="mt-6 screen">{shot('client-contracts', '(min-width: 1024px) 560px, 100vw')}</div>
+            <ul className="mt-6 grid gap-2 text-[14px] text-foreground sm:grid-cols-2">
+              {([['DOC-02', 'Fields placed on the PDF'], ['DOC-04', 'Consent before signature'], ['DOC-05', 'A cryptographic seal'], ['DOC-10', 'Releases that write rights']] as const).map(([id, t]) => <Feature key={id} id={id} as="li" className="flex items-center gap-2"><Check aria-hidden className="size-4 text-primary" />{t}</Feature>)}
+            </ul>
+          </Spotlight>
+          <Spotlight as="article" className="overflow-hidden rounded-3xl border border-border bg-card/40 p-6 sm:p-8">
+            <p className="font-display text-[13px] font-semibold text-primary">Meetings and review sessions</p>
+            <h3 className="mt-2 font-display text-3xl font-bold text-foreground">Review together. Keep the notes.</h3>
+            <p className="mt-3 text-[15px] leading-7 text-muted-foreground">A shared playhead that stays in sync across the room, drawings on the frame that outlive the call, and markers straight into Resolve, Final Cut and Premiere.</p>
+            <div className="mt-6 screen">{shot('portal-review', '(min-width: 1024px) 560px, 100vw')}</div>
+            <ul className="mt-6 grid gap-2 text-[14px] text-foreground sm:grid-cols-2">
+              {([['APR-15', 'Synchronised playback'], ['APR-13', 'Drawings kept after the call'], ['APR-16', 'Markers to Resolve, FCP, Premiere'], ['APR-19', 'A colour-space warning']] as const).map(([id, t]) => <Feature key={id} id={id} as="li" className="flex items-center gap-2"><Check aria-hidden className="size-4 text-primary" />{t}</Feature>)}
+            </ul>
+          </Spotlight>
         </div>
-      </Section>
+      </section>
 
-      {/* 9. Built like infrastructure */}
-      <Section id="infrastructure" title="Built like infrastructure." lead="What a studio’s security team asks first, answered precisely.">
-        <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { id: 'FND-01', title: 'Isolation in the database', body: 'Studio isolation is enforced in the database, and proven by 76 automated security checks.' },
-            { id: 'IDN-15', title: 'Two-factor and passkeys', body: 'Two-factor sign-in, passkeys, recovery codes, and a second check before sensitive actions.' },
-            { id: 'IDN-14', title: 'Single sign-on and SCIM', body: 'SAML and OIDC with a proved domain, enforcement, just-in-time provisioning and SCIM 2.0.' },
-            { id: 'IDN-17', title: 'Your own rules', body: 'A studio can require two-factor and set its own session limits.' },
-            { id: 'FND-19', title: 'Application protections', body: 'Rate limiting, a per-request content security policy, bot protection and breached-password checks.' },
-            { id: 'FND-13', title: 'Retention and erasure', body: 'Soft delete with a grace window, seven-year retention of the activity ledger, and person erasure with a stable pseudonym.' },
-          ].map((f) => (
-            <Feature key={f.id} id={f.id} as="li">
-              <Link href="/security" className="group block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="font-display text-[17px] font-semibold text-foreground underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-primary">{f.title}</span>
-                <span className="mt-1 block text-[15px] leading-7 text-muted-foreground">{f.body}</span>
-              </Link>
-            </Feature>
-          ))}
-        </ul>
-      </Section>
+      {/* Everything else, moving */}
+      <section aria-label="More of what is in Genreline" className="py-10">
+        <Strip ids={STRIP_A} />
+        <Strip ids={STRIP_B} reverse />
+      </section>
 
-      {/* 10. The network */}
-      <Section id="network" title="The filmmaker network." lead="Theater, Community, streaming and a marketplace — for filmmakers, studios and working actors. Being built, with early access open.">
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { id: 'TOP-02', name: 'Theater', body: 'Filmmakers show their films, and what went into them.' },
-            { id: 'TOP-03', name: 'Community', body: 'Live feeds for the professional industry.' },
-            { id: 'TOP-05', name: 'Streaming', body: 'Free or by subscription.' },
-            { id: 'TOP-01', name: 'Marketplace', body: 'Likenesses, avatars and voices, licensed with contracts.' },
-          ].map((n) => (
-            <Feature key={n.id} id={n.id} as="li" className="squircle border border-border bg-card/40 p-5">
-              <span className="flex items-center justify-between gap-3">
-                <span className="font-display text-lg font-semibold text-foreground">{n.name}</span>
-                <FeatureLabel id={n.id} />
-              </span>
-              <span className="mt-2 block text-[14px] leading-6 text-muted-foreground">{n.body}</span>
-            </Feature>
-          ))}
-        </ul>
-        <Link href="/network#early-access" className="mt-8 inline-block text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Join early access</Link>
-      </Section>
+      {/* Security */}
+      <section id="security" className="py-24 sm:py-32">
+        <div className="container-wide">
+          <Heading kicker="Built like infrastructure" title="What a studio’s security team asks first, answered precisely." />
+          <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { id: 'FND-01', title: 'Isolation in the database', body: 'Studio isolation is enforced in the database, and proven by 76 automated security checks.' },
+              { id: 'IDN-15', title: 'Two-factor and passkeys', body: 'Two-factor sign-in, passkeys, recovery codes, and a second check before sensitive actions.' },
+              { id: 'IDN-14', title: 'Single sign-on and SCIM', body: 'SAML and OIDC on a proved domain, enforcement, just-in-time provisioning and SCIM 2.0.' },
+              { id: 'IDN-17', title: 'Your own rules', body: 'Required two-factor, a maximum session age and an idle timeout, set by the studio.' },
+              { id: 'FND-19', title: 'Application protections', body: 'Rate limiting, a per-request content security policy, bot protection and breached-password checks.' },
+              { id: 'FND-13', title: 'Retention and erasure', body: 'A grace window before purge, seven years of activity ledger, and erasure with a stable pseudonym.' },
+            ].map((f, n) => (
+              <Reveal as="li" key={f.id} delay={n * 60}>
+                <Spotlight className="h-full rounded-2xl border border-border bg-card/40 p-6">
+                  <Feature id={f.id} as="div">
+                    <p className="font-display text-lg font-semibold text-foreground">{f.title}</p>
+                    <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{f.body}</p>
+                  </Feature>
+                </Spotlight>
+              </Reveal>
+            ))}
+          </ul>
+          <Link href="/security" className="mt-8 inline-block text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Every control, and every gap, on the security page</Link>
+        </div>
+      </section>
 
-      {/* 11. Close */}
-      <CtaBand />
+      {/* What's next: AI and the network */}
+      <section id="next" className="relative overflow-hidden py-24 sm:py-32">
+        <div className="aurora -z-10 opacity-70" />
+        <div className="container-wide grid gap-6 lg:grid-cols-2">
+          <Spotlight className="rounded-3xl border border-border bg-card/40 p-8 backdrop-blur">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="font-display text-3xl font-bold text-foreground">AI with a budget and a record.</h2>
+              <FeatureLabel id="STG-01" />
+            </div>
+            <p className="mt-4 text-[16px] leading-7 text-muted-foreground">Image and video generation is being built inside the production: many models through one gate, a ceiling on every call, a budget for every person, and provenance on every asset.</p>
+            <p className="mt-3 text-[15px] leading-6 text-muted-foreground">The controls already govern text: <Feature id="MON-05">a per-call ceiling</Feature> and <Feature id="MON-06">a budget per person</Feature>.</p>
+            <Link href="/ai" className="mt-6 inline-block text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">AI and provenance</Link>
+          </Spotlight>
+          <Spotlight className="rounded-3xl border border-border bg-card/40 p-8 backdrop-blur">
+            <h2 className="font-display text-3xl font-bold text-foreground">The filmmaker network.</h2>
+            <p className="mt-4 text-[16px] leading-7 text-muted-foreground">Theater, Community, streaming and a marketplace — for filmmakers, studios and working actors.</p>
+            <ul className="mt-6 grid grid-cols-2 gap-3">
+              {[['TOP-02', 'Theater'], ['TOP-03', 'Community'], ['TOP-05', 'Streaming'], ['TOP-01', 'Marketplace']].map(([id, name]) => (
+                <Feature key={id} id={id} as="li" className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background/40 px-3 py-2.5">
+                  <span className="font-display text-[15px] font-semibold text-foreground">{name}</span>
+                  <FeatureLabel id={id} />
+                </Feature>
+              ))}
+            </ul>
+            <Link href="/network#early-access" className="mt-6 inline-block text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Join early access</Link>
+          </Spotlight>
+        </div>
+      </section>
+
+      {/* Close */}
+      <section className="relative isolate overflow-hidden py-28 sm:py-40">
+        <div className="aurora -z-10" />
+        <div className="flare top-1/2 -z-10" />
+        <div className="container-wide text-center">
+          <Reveal>
+            <h2 className="mx-auto max-w-[18ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.03em] text-foreground sm:text-7xl">The record starts with the first approval.</h2>
+            <p className="mx-auto mt-6 max-w-[48ch] text-lg text-muted-foreground">Open a studio, invite your team, add your first client.</p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Button asChild variant="primary" size="lg" data-primary-cta className="h-12 px-7 text-[15px] shadow-[0_10px_40px_-10px_hsl(var(--primary)/0.7)]"><a href={APP.signup}>Open your studio</a></Button>
+              <a href={APP.login} className="inline-flex h-12 items-center rounded-lg border border-border bg-background/40 px-6 text-[15px] font-medium text-foreground backdrop-blur hover:bg-secondary/60">Sign in</a>
+            </div>
+          </Reveal>
+        </div>
+      </section>
     </>
   )
 }

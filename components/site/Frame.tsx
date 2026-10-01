@@ -8,6 +8,8 @@ import { ShieldCheck } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { FeatureList } from '@/components/FeatureLabel'
 import { Media, firstMedia } from '@/components/site/Media'
+import { Tilt } from '@/components/cinema/Tilt'
+import { Reveal } from '@/components/cinema/Reveal'
 import { APP } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +25,7 @@ export function PageHero({
   media,
   mediaPriority = true,
   size = 'lg',
+  kicker,
 }: {
   title: React.ReactNode
   lead?: React.ReactNode
@@ -30,23 +33,31 @@ export function PageHero({
   media?: string | readonly string[]
   mediaPriority?: boolean
   size?: 'lg' | 'md'
+  kicker?: string
 }) {
   const m = firstMedia(media)
   return (
-    <section className="pb-14 pt-14 sm:pt-20">
-      <div className="container-wide">
-        <Rule />
-        <h1 className={cn('mt-7 max-w-[18ch] font-display font-bold text-foreground', size === 'lg' ? 'text-[40px] leading-[1.05] tracking-[-0.025em] sm:text-display-lg' : 'text-4xl sm:text-display')}>
+    <section className="relative isolate -mt-16 overflow-hidden pb-16 pt-16">
+      <div className="aurora -z-10" />
+      <div className="viewfinder -z-10" />
+      <div className="container-wide pt-14 sm:pt-20">
+        {kicker ? <p className="font-display text-[13px] font-semibold text-primary">{kicker}</p> : <Rule />}
+        <h1 className={cn('mt-6 max-w-[18ch] font-display font-bold text-foreground', size === 'lg' ? 'text-[44px] leading-[1.02] tracking-[-0.03em] sm:text-[64px] lg:text-[76px]' : 'text-[40px] leading-[1.05] tracking-[-0.03em] sm:text-[56px]')}>
           {title}
         </h1>
         {lead && <p className="mt-6 max-w-[60ch] text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-8">{lead}</p>}
         {children && <div className="mt-8">{children}</div>}
       </div>
       {m && (
-        <div className="container-wide mt-12">
-          <Media id={m} priority={mediaPriority} />
+        <div className="container-wide stage-3d mt-14">
+          <div className="float-a" style={{ transform: 'rotateX(6deg)' }}>
+            <Tilt className="screen" max={5}>
+              <Media id={m} frame={false} priority={mediaPriority} />
+            </Tilt>
+          </div>
         </div>
       )}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
     </section>
   )
 }
@@ -71,7 +82,7 @@ export function Section({
     <section id={id} aria-labelledby={title ? headingId : undefined} className={cn('py-16 sm:py-24', className)}>
       <div className={width === 'wide' ? 'container-wide' : 'container-measure'}>
         {title && (
-          <h2 id={headingId} className="max-w-[24ch] font-display text-3xl font-bold text-foreground sm:text-4xl">
+          <h2 id={headingId} className="max-w-[24ch] font-display text-4xl font-bold tracking-[-0.025em] text-foreground sm:text-5xl">
             {title}
           </h2>
         )}
@@ -112,13 +123,13 @@ export function CapabilityBlock({
   return (
     <div id={id} className={cn('grid items-start gap-8 border-t border-border py-12 lg:gap-14', m && (reverse ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]' : 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]'))}>
       <div className={cn('max-w-[52ch]', reverse && 'lg:order-2')}>
-        <h3 className="font-display text-2xl font-semibold text-foreground">{title}</h3>
+        <h3 className="font-display text-3xl font-bold tracking-[-0.02em] text-foreground">{title}</h3>
         <div className="mt-3 space-y-3 text-[15px] leading-7 text-muted-foreground">{body}</div>
         {features && features.length > 0 && <FeatureList items={features} className="mt-6" />}
       </div>
       {m && (
         <div className={cn(reverse && 'lg:order-1')}>
-          <Media id={m} sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, 100vw" />
+          <Reveal><div className="stage-3d"><div style={{ transform: reverse ? 'rotateY(6deg)' : 'rotateY(-6deg)' }}><Tilt className="screen" max={5}><Media id={m} frame={false} sizes="(min-width: 1200px) 660px, (min-width: 1024px) 56vw, 100vw" /></Tilt></div></div></Reveal>
         </div>
       )}
     </div>

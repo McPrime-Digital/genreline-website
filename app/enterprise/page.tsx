@@ -1,22 +1,15 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { CapabilityBlock, PageHero, Section } from '@/components/site/Frame'
+import { CapabilityBlock, Section } from '@/components/site/Frame'
 import { InquiryForm } from '@/components/interactive/InquiryForm'
 import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
 import { pageMeta } from '@/lib/meta'
+import { SegmentPage } from '@/components/site/SegmentPage'
 
 export const metadata = pageMeta('/enterprise')
 
 export default function Enterprise() {
   return (
-    <>
-      <PageHero
-        title="Built for the security review."
-        lead="Identity your IT team already runs, permissions that say exactly who sees what, isolation enforced in the database, and a security page that states the gaps as plainly as the controls."
-        media="crew-sso"
-      >
-        <Button asChild variant="primary" size="lg" data-primary-cta><Link href="#talk">Talk to us</Link></Button>
-      </PageHero>
+    <SegmentPage id="enterprise">
       <Section id="capabilities" className="pt-0">
         <CapabilityBlock
           title="Identity"
@@ -56,6 +49,6 @@ export default function Enterprise() {
       <Section id="talk" title="Talk to us" width="measure">
         <InquiryForm kind="sales" defaultTopic="enterprise" enabled={inquiryEnabled('sales')} siteKey={TURNSTILE_SITE_KEY} submitLabel="Send" messageLabel="What do you need to know?" messageHint="Your identity provider, your questionnaire, what your content-security team needs to see." />
       </Section>
-    </>
+    </SegmentPage>
   )
 }

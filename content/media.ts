@@ -80,7 +80,7 @@ export const MEDIA: readonly MediaSlot[] = [
   // ── Suite
   capture('suite-library', '/studio/suite/library', 'The asset library: every asset across the studio with facets and a per-production footprint.'),
   // ── Owner uploads
-  { kind: 'upload', id: 'hero-loop', brief: 'A muted screen recording of a review session: shared playhead, a note drawn on a frame. Poster-first loop, under 3 MB.', width: 1440, height: 900, format: 'mp4', alt: 'A review session in progress: synchronised playback with a drawing on the frame.' },
+  { kind: 'upload', id: 'hero-reel', brief: 'The hero reel — 10 to 20 seconds of your strongest footage or a product walk-through, muted, looping, 1920×1080, H.264, under 6 MB. Also add hero-reel.poster.webp (the first frame).', width: 1920, height: 1080, format: 'mp4', alt: 'The Genreline reel.' },
   { kind: 'upload', id: 'solutions-production-companies', brief: 'A production still you own the rights to — a set, a crew at work. No faces without a release.', width: 1600, height: 1000, format: 'webp', alt: 'A film crew at work on set.' },
   { kind: 'upload', id: 'solutions-agencies', brief: 'An agency edit suite or review room you own the rights to.', width: 1600, height: 1000, format: 'webp', alt: 'A review room in a creative agency.' },
   { kind: 'upload', id: 'solutions-in-house', brief: 'An in-house studio floor you own the rights to.', width: 1600, height: 1000, format: 'webp', alt: 'An in-house production team at work.' },
