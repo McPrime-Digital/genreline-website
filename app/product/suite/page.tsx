@@ -4,7 +4,7 @@ import { SuiteSection } from '@/components/cinema/SuiteSection'
 import { Reveal } from '@/components/cinema/Reveal'
 import { Motif, type MotifName } from '@/components/cinema/Motif'
 
-const STAGE_MOTIF: Record<string, MotifName> = { write: 'slate', visualise: 'constellation', stage: 'nebula', hybrid: 'sprockets', automate: 'stripboard', sound: 'waveform', post: 'timecode', adapt: 'brand', worlds: 'vault', keep: 'ledger' }
+const STAGE_MOTIF: Record<string, MotifName> = { write: 'slate', visualise: 'constellation', stage: 'contactsheet', hybrid: 'sprockets', automate: 'stripboard', sound: 'waveform', post: 'timecode', adapt: 'brand', worlds: 'vault', keep: 'ledger' }
 import { Spotlight } from '@/components/cinema/Spotlight'
 import { Media, hasMedia } from '@/components/site/Media'
 import { feature, siteLabel } from '@/content/features'
@@ -19,7 +19,7 @@ export default function Suite() {
   return (
     <>
       <PageHero
-        motif="nebula"
+        motif="contactsheet"
         kicker="The Suite"
         title="The whole making of a film, in one suite."
         lead="Write it, board it, generate it, shoot it, cut it, score it, finish it, remaster it and send it to every screen — inside the same production, with a budget on every generation and a record of every asset."

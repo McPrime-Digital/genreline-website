@@ -4,7 +4,7 @@
  */
 import { Media, hasMedia } from '@/components/site/Media'
 
-export type ReelFrame = { tc: string; title: string; body: string; media?: string; featureId: string }
+export type ReelFrame = { tc: string; title: string; body: string; media?: string; featureId: string; coming?: boolean }
 
 function Frame({ f }: { f: ReelFrame }) {
   const m = f.media && hasMedia(f.media) ? f.media : null
@@ -17,7 +17,7 @@ function Frame({ f }: { f: ReelFrame }) {
         <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 font-display text-[11px] tabular-nums text-white/90">{f.tc}</span>
       </div>
       <div className="p-4">
-        <p className="font-display text-[16px] font-semibold text-white">{f.title}</p>
+        <p className="flex items-center gap-2 font-display text-[16px] font-semibold text-white">{f.title}{f.coming && <span data-feature-label="coming" data-feature-id={f.featureId} className="rounded bg-status-blue/25 px-1.5 py-0.5 text-[10px] font-medium text-[hsl(205_80%_80%)]">Coming</span>}</p>
         <p className="mt-1 text-[13px] leading-5 text-white/65">{f.body}</p>
       </div>
     </div>

@@ -90,12 +90,14 @@ export function Media({
   sizes = '(min-width: 1200px) 1136px, 100vw',
   className,
   frame = true,
+  quality,
 }: {
   id: string
   priority?: boolean
   sizes?: string
   className?: string
   frame?: boolean
+  quality?: number
 }) {
   const s = slot(id)
   const frameCls = frame ? 'capture-frame squircle-xl' : 'overflow-hidden squircle-lg'
@@ -127,8 +129,8 @@ export function Media({
         {/* A theme pair is never preloaded: `priority` would fetch BOTH images on
             every visit. Lazy loading skips the display:none twin entirely;
             fetchPriority lifts the visible one when it is the hero. */}
-        <Image src={light} alt={s.alt} width={dl.w} height={dl.h} sizes={sizes} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-light h-auto w-full" />
-        <Image src={dark} alt={s.alt} width={dd.w} height={dd.h} sizes={sizes} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-dark h-auto w-full" />
+        <Image src={light} alt={s.alt} width={dl.w} height={dl.h} sizes={sizes} quality={quality} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-light h-auto w-full" />
+        <Image src={dark} alt={s.alt} width={dd.w} height={dd.h} sizes={sizes} quality={quality} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-dark h-auto w-full" />
       </div>
     )
   }

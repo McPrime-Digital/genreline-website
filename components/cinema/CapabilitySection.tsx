@@ -1,6 +1,9 @@
 /** Server wrapper: every capability the site may name, from features.ts. */
 import { CapabilityIndex, type Cap } from '@/components/cinema/CapabilityIndex'
 import { FEATURES, SPACE_NAMES } from '@/content/features'
+import { Icon, type IconName } from '@/components/Icon'
+
+const GROUP_ICON: Record<string, IconName> = { 'The Suite': 'Clapperboard', Crew: 'UsersRound', 'Client and portal': 'AppWindow', 'Review and approval': 'ScanEye', Messaging: 'MessagesSquare', 'Meetings and calendar': 'Video', Contracts: 'FileSignature', Files: 'FolderOpen', Money: 'Receipt', 'Identity and permissions': 'KeyRound', 'Platform and security': 'ShieldCheck', Enterprise: 'Landmark', 'The network': 'Globe' }
 
 const GROUP: Record<string, string> = {
   suite: 'The Suite', generation: 'The Suite', sound: 'The Suite', post: 'The Suite', sets: 'The Suite',
@@ -20,5 +23,7 @@ export function CapabilitySection({ initial }: { initial?: number }) {
   // The Suite first: it is the argument.
   const order = ['The Suite', 'Crew', 'Client and portal', 'Review and approval', 'Messaging', 'Meetings and calendar', 'Contracts', 'Files', 'Money', 'Identity and permissions', 'Platform and security', 'Enterprise', 'The network']
   caps.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group))
-  return <CapabilityIndex caps={caps} initial={initial} />
+  const groupIcons = Object.fromEntries(Object.entries(GROUP_ICON).map(([g, n]) => [g, <Icon key={g} name={n} className="size-4" />]))
+  // Physical-shoot features are not part of the AI production story (owner, 2026-10-01).
+  return <CapabilityIndex caps={caps.filter((c) => !['CRW-06', 'CRW-08'].includes(c.id))} initial={initial} groupIcons={groupIcons} />
 }

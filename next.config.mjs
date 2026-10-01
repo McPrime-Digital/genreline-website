@@ -121,7 +121,7 @@ const robotsHeaders = indexable || process.env.LIGHTHOUSE_AS_PRODUCTION === '1' 
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  images: { formats: ['image/avif', 'image/webp'] },
+  images: { formats: ['image/avif', 'image/webp'], qualities: [45, 75] },
   // `radix-ui` is a barrel re-exporting every primitive; without this the
   // first page load carries primitives no page uses.
   experimental: { optimizePackageImports: ['radix-ui'] },

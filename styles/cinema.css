@@ -154,3 +154,20 @@
 :root[data-live='true'] .flare { animation: flare 9s ease-in-out infinite; }
 :root[data-live='true'] .text-gold-sheen { animation: sheen 7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { :root[data-live='true'] .grain::after, :root[data-live='true'] .aurora::before, :root[data-live='true'] .aurora::after, :root[data-live='true'] .flare, :root[data-live='true'] .text-gold-sheen, :root[data-live='true'] .float-a, :root[data-live='true'] .float-b, :root[data-live='true'] .float-c, :root[data-live='true'] .rec, :root[data-live='true'] .marquee-track { animation: none !important; } }
+
+/* ═══ ENTERPRISE PASS (owner, 2026-10-01: "reduce the gradient thing… it must
+   feel enterprise"). The decorative light is withdrawn; the product's own
+   screens, icons and film-world objects carry the page. These rules come
+   last so they override the first pass above. */
+.aurora::before, .aurora::after { display: none !important; }
+.aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.05), transparent 40%); }
+:root:not(.dark) .aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.035), transparent 40%); }
+.flare { display: none !important; }
+.text-gold-sheen { background: none; -webkit-background-clip: initial; background-clip: initial; color: hsl(var(--primary)); animation: none !important; }
+/* Floating screens stay (owner, 2026-10-01: "floating motion isn't too bad"). */
+.grain::after { opacity: 0.025 !important; animation: none !important; }
+.spotlight::before { background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--foreground) / 0.04), transparent 60%); }
+.spot-border::after { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--primary) / 0.55), transparent 70%); }
+.screen { box-shadow: 0 0 0 0.5px hsl(var(--foreground) / 0.06), 0 30px 80px -40px hsl(228 90% 3% / 0.8); border-color: hsl(var(--foreground) / 0.12); }
+.screen::after { background: linear-gradient(115deg, hsl(0 0% 100% / 0.06), transparent 30%); }
+.site-canvas, .dark .site-canvas { background: hsl(var(--background)); }

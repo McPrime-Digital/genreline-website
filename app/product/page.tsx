@@ -30,7 +30,7 @@ export default function Product() {
           items={[
             { href: '/product/review', title: 'Review and approval', body: 'Approval as a record: stages, review windows, automatic advance on silence, and a certificate.' },
             { href: '/product/contracts', title: 'Contracts and signing', body: 'Templates, fields on the PDF, consent before signature, a seal, and releases that write rights.' },
-            { href: '/product/production', title: 'Production', body: 'Scenes from the screenplay, breakdown, stripboard, shoot days and sealed call sheets.' },
+            { href: '/product/production', title: 'Production', body: 'The AI production cycle: script, breakdown, boards, generation, continuity, assembly, review, rights and delivery.' },
             { href: '/product/meetings', title: 'Meetings and scheduling', body: 'Meetings, synchronised review playback, recording, a calendar on both sides, and booking.' },
             { href: '/product/money', title: 'Money', body: 'Invoices, credits, a budget per person and a ceiling on every AI call.' },
             { href: '/product/files', title: 'Files and screening', body: 'The vault, resumable large uploads, versions, and a screening room that records what a guest watched.' },

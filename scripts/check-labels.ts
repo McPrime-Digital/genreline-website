@@ -24,7 +24,7 @@ import { PAGES } from '../content/pages'
 const ROOT = join(process.cwd(), '.next', 'server', 'app')
 const BY_ID = new Map(FEATURES.map((f) => [f.id, f]))
 const SUITE_SPACES = new Set(['suite', 'generation', 'sound', 'post', 'sets'])
-const COMING_PAGES = new Set(['/', '/product', '/product/suite', '/ai', '/network', '/roadmap'])
+const COMING_PAGES = new Set(['/', '/product', '/product/suite', '/product/production', '/ai', '/network', '/roadmap'])
 const AVAILABLE_ONLY = new Set(['crew', 'client', 'portal'])
 
 function htmlFiles(dir: string): string[] {

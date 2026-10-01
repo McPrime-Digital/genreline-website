@@ -37,7 +37,7 @@ export default function Meetings() {
         <CapabilityBlock
           reverse
           title="A calendar on both sides"
-          body={<p>Approval deadlines, invoice due dates and shoot days are projected onto the calendar — and removed when they no longer apply — for the studio and for the client.</p>}
+          body={<p>Approval deadlines and invoice due dates are projected onto the calendar — and removed when they no longer apply — for the studio and for the client.</p>}
           features={['MTG-02']}
           media="crew-calendar"
         />
@@ -52,7 +52,7 @@ export default function Meetings() {
         <Connects
           items={[
             { href: '/product/review', title: 'Review and approval', body: 'The notes from a session sit beside the approval they inform.' },
-            { href: '/product/production', title: 'Production', body: 'Shoot days land on the same calendar.' },
+            { href: '/product/production', title: 'Production', body: 'Every stage of the cycle, on the same calendar.' },
             { href: '/product/client', title: 'The client’s portal', body: 'Clients join and book from the portal.' },
           ]}
         />

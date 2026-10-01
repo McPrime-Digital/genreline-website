@@ -8,7 +8,7 @@ import * as React from 'react'
 import { cx } from '@/lib/cx'
 
 export type SuiteModule = { id: string; title: string; detail?: string; points?: string[]; badge: 'Available' | 'Coming' }
-export type SuiteStageData = { id: string; name: string; line: string; modules: SuiteModule[] }
+export type SuiteStageData = { id: string; name: string; line: string; modules: SuiteModule[]; icon?: React.ReactNode }
 
 const DUR = 6500
 
@@ -45,7 +45,7 @@ export function SuiteUniverse({ stages }: { stages: SuiteStageData[] }) {
               onClick={() => { setI(n); setAuto(false) }}
               className={cx('group relative min-w-[118px] flex-1 overflow-hidden rounded-xl border px-3 pb-3 pt-2.5 text-left outline-none transition-colors duration-[--dur-panel] focus-visible:ring-2 focus-visible:ring-ring', n === i ? 'border-glow/60 bg-glow/10' : 'border-border bg-card/30 hover:bg-card/60')}
             >
-              <span className="block font-display text-[11px] tabular-nums text-muted-foreground">{String(n + 1).padStart(2, '0')}</span>
+              <span className="flex items-center justify-between"><span className={cx('size-4', n === i ? 'text-glow' : 'text-muted-foreground')}>{st.icon}</span><span className="font-display text-[11px] tabular-nums text-muted-foreground">{String(n + 1).padStart(2, '0')}</span></span>
               <span className={cx('block font-display text-[14px] font-semibold', n === i ? 'text-foreground' : 'text-muted-foreground')}>{st.name}</span>
               <span className="absolute inset-x-0 bottom-0 h-0.5 bg-border/50">
                 {n === i && auto && !hover && seen ? <span key={i} className="autoprogress block h-full bg-glow" style={{ ['--dur' as string]: `${DUR}ms` }} /> : n === i ? <span className="block h-full bg-glow" /> : n < i ? <span className="block h-full bg-glow/40" /> : null}
@@ -58,7 +58,10 @@ export function SuiteUniverse({ stages }: { stages: SuiteStageData[] }) {
       {/* the console */}
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div key={s.id} className="swap-enter">
-          <p className="font-display text-[13px] tabular-nums text-glow">STAGE {String(i + 1).padStart(2, '0')} / {String(stages.length).padStart(2, '0')}</p>
+          <div className="flex items-center gap-3">
+            <span className="grid size-12 place-items-center rounded-xl border border-glow/40 bg-glow/10 text-glow [&>span]:size-6">{s.icon}</span>
+            <p className="font-display text-[13px] tabular-nums text-muted-foreground">Stage {String(i + 1).padStart(2, '0')} of {String(stages.length).padStart(2, '0')}</p>
+          </div>
           <p className="mt-2 font-display text-5xl font-bold tracking-[-0.03em] text-foreground sm:text-6xl">{s.name}</p>
           <p className="mt-4 max-w-[44ch] text-lg leading-relaxed text-muted-foreground">{s.line}</p>
           <p className="mt-8 text-[13px] text-muted-foreground"><span className="font-semibold tabular-nums text-foreground">{total}</span> tools across the Suite · <span className="font-semibold tabular-nums text-foreground">{live}</span> in use today, the rest being built</p>

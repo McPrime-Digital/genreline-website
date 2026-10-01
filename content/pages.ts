@@ -9,14 +9,14 @@ export type Section = 'home' | 'crew' | 'client' | 'portal' | 'suite' | 'capabil
 export type SitePage = { path: string; title: string; description: string; section: Section; search?: string }
 
 export const PAGES: readonly SitePage[] = [
-  { path: '/', title: 'Run the production. Keep the record.', description: 'The operating system for film and media studios — approvals that are records, a client portal that wears your studio’s name, releases that write the rights they prove.', section: 'home', search: 'home overview' },
+  { path: '/', title: 'Every space of production. One operating system.', description: 'Genreline is the operating system for AI and hybrid film production — the Crew space, the Client space and portal, and the Suite where the work is written, boarded, generated, edited and finished.', section: 'home', search: 'home overview' },
   { path: '/product', title: 'Product', description: 'Three spaces — Crew, Client, the Suite — and the platform beneath them.', section: 'capability' },
-  { path: '/product/crew', title: 'The Crew space', description: 'Running the team and the production: directory, tasks, internal rooms, call sheets, breakdown to shoot days, permissions.', section: 'crew' },
+  { path: '/product/crew', title: 'The Crew space', description: 'Running the team and the production: directory, tasks, internal rooms, script breakdown and permissions.', section: 'crew' },
   { path: '/product/client', title: 'The Client space and portal', description: 'Client work in your studio’s brand: companies, projects, the message hub, invoices, the vault, review and approval, contracts, meetings, the screening room.', section: 'client' },
   { path: '/product/suite', title: 'The Suite', description: 'Writing, boards and the library today; image and video generation, being built.', section: 'suite' },
   { path: '/product/review', title: 'Review and approval', description: 'Approval as a record, not a status: stages, review windows, automatic advance on silence, the certificate, frame-accurate review, annotation, markers.', section: 'capability' },
   { path: '/product/contracts', title: 'Contracts and signing', description: 'Templates, field placement, consent before signature, a cryptographic seal, single-use signing links, and releases that write the rights they prove.', section: 'capability' },
-  { path: '/product/production', title: 'Production', description: 'From the screenplay to scenes, breakdown, stripboard, shoot days and sealed call sheets.', section: 'capability' },
+  { path: '/product/production', title: 'Production', description: 'The AI and hybrid production cycle — script, breakdown, boards, generation, continuity, assembly, review, rights and delivery.', section: 'capability' },
   { path: '/product/meetings', title: 'Meetings and scheduling', description: 'Meetings, synchronised review playback, recording, a calendar on both sides, and booking where the meeting is the booking.', section: 'capability' },
   { path: '/product/money', title: 'Money', description: 'Invoices, credits, per-member budgets and a ceiling on every AI call.', section: 'capability' },
   { path: '/product/files', title: 'Files and screening', description: 'The vault, resumable large uploads, version stacking, and a screening room that records what a guest actually watched.', section: 'capability' },

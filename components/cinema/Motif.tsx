@@ -3,12 +3,25 @@
  * SVG/CSS on the app's tokens. Decorative: aria-hidden, pointer-transparent,
  * faded into the canvas.
  */
-export type MotifName = 'stripboard' | 'timecode' | 'sprockets' | 'seal' | 'ledger' | 'waveform' | 'clapper' | 'brand' | 'nebula' | 'vault' | 'constellation' | 'slate'
+export type MotifName = 'contactsheet' | 'stripboard' | 'timecode' | 'sprockets' | 'seal' | 'ledger' | 'waveform' | 'clapper' | 'brand' | 'nebula' | 'vault' | 'constellation' | 'slate'
 
 const fade = 'pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_80%_70%_at_70%_40%,#000_20%,transparent_75%)]'
 
 export function Motif({ name }: { name: MotifName }) {
   switch (name) {
+    case 'contactsheet':
+      return (
+        <div aria-hidden className={fade}>
+          <div className="absolute right-[-2%] top-10 grid w-[64%] grid-cols-5 gap-3 -rotate-3 opacity-80">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div key={i} className="relative aspect-video rounded-[3px] border border-foreground/15 bg-foreground/[0.025]">
+                <span className="absolute bottom-1 left-1.5 font-display text-[9px] tabular-nums text-foreground/35">{String(i + 1).padStart(3, '0')}{i % 4 === 1 ? ' ★' : ''}</span>
+                {i % 4 === 1 && <span className="absolute inset-0 rounded-[3px] border border-primary/50" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )
     case 'stripboard': {
       const colours = ['hsl(0 0% 100% / .10)', 'hsl(48 90% 60% / .16)', 'hsl(210 80% 60% / .16)', 'hsl(140 50% 50% / .14)', 'hsl(0 0% 100% / .08)', 'hsl(48 90% 60% / .12)']
       return (

@@ -1,96 +1,98 @@
 /**
- * THE HERO. A full-height stage: the owner's reel (or the lit stage), the
- * aurora and an anamorphic flare, a viewfinder grid, the headline, and three
- * real product screens floating in perspective — the room, the record and
- * the production — each leaning toward the pointer.
+ * THE HERO — the product itself as the background. A wall of real Genreline
+ * screens, tilted and moving slowly, behind a headline that names every space
+ * and portal. No decorative light: the screens are the image.
  */
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { Button } from '@/components/ui/button'
 import { Media, hasMedia } from '@/components/site/Media'
-import { Tilt } from '@/components/cinema/Tilt'
+import { Icon, type IconName } from '@/components/Icon'
 import { Timecode } from '@/components/cinema/Timecode'
 import { HeroReel } from '@/components/cinema/HeroReel'
 import { APP, INDEXABLE } from '@/lib/site'
 
 const exists = (p: string) => existsSync(join(process.cwd(), 'public', p))
 
+const ROWS = [
+  ['client-messages', 'crew-tasks', 'portal-review', 'client-review-record', 'suite-library', 'crew-production', 'home-portal-brand-a'],
+  ['crew-calendar', 'client-contracts', 'portal-files', 'crew-chat', 'client-guest-links', 'portal-certificate', 'client-brand-kit'],
+  ['client-overview', 'portal-meetings', 'crew-directory', 'client-invoices', 'portal-messages', 'home-portal-brand-b', 'crew-sso'],
+]
+
+const ENTRIES: { href: string; icon: IconName; name: string; line: string }[] = [
+  { href: '#space-crew', icon: 'UsersRound', name: 'Crew space', line: 'Your team, tasks, rooms and permissions' },
+  { href: '#space-client', icon: 'Building2', name: 'Client space', line: 'Every client company, in one room' },
+  { href: '#space-portal', icon: 'AppWindow', name: 'Client portal', line: 'Review, sign and pay — in your brand' },
+  { href: '#space-suite', icon: 'Clapperboard', name: 'The Suite', line: 'Write, board, generate, edit, finish' },
+  { href: '#space-platform', icon: 'ShieldCheck', name: 'Platform', line: 'Identity, security and the record' },
+]
+
+function Wall() {
+  return (
+    <div aria-hidden className="absolute inset-0 -z-20 hidden overflow-hidden md:block">
+      <div className="absolute left-[62%] top-[46%] w-[2400px] -translate-x-1/2 -translate-y-1/2 space-y-5 opacity-[0.85] dark:opacity-[0.7]" style={{ transform: 'translate(-50%, -50%) perspective(2000px) rotateX(28deg) rotateZ(-10deg)' }}>
+        {ROWS.map((row, r) => {
+          const ids = row.filter(hasMedia)
+          return (
+            <div key={r} className={`marquee ${r % 2 ? 'marquee-reverse' : ''}`} style={{ ['--marquee-dur' as string]: `${140 + r * 30}s`, maskImage: 'none' }}>
+              <div className="marquee-track">
+                {[...ids, ...ids].map((id, n) => (
+                  <div key={n} className="mx-2.5 w-[340px] shrink-0 overflow-hidden rounded-xl border border-foreground/10 bg-card">
+                    <Media id={id} frame={false} sizes="340px" quality={45} className="!rounded-none" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {/* the scrim: the screens recede, the headline reads */}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--background))_0%,hsl(var(--background)/0.96)_34%,hsl(var(--background)/0.55)_58%,hsl(var(--background)/0.25)_80%,hsl(var(--background)/0.45)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent" />
+    </div>
+  )
+}
+
 export function HeroStage() {
   const reel = exists('media/hero-reel.mp4') ? '/media/hero-reel.mp4' : null
   const poster = exists('media/hero-reel.poster.webp') ? '/media/hero-reel.poster.webp' : null
-  const front = ['home-hero-room', 'client-messages'].find(hasMedia)
-  const left = ['client-review-record', 'portal-review'].find(hasMedia)
-  const right = ['crew-production', 'crew-tasks'].find(hasMedia)
   return (
     <section className="relative isolate -mt-16 overflow-hidden pt-16">
-      <HeroReel src={reel} poster={poster} showSlot={!INDEXABLE} />
-      <div className="aurora -z-10" />
-      <div className="viewfinder -z-10" />
-      <div className="flare top-[38%] -z-10" />
-
-      <div className="container-wide relative pb-10 pt-16 sm:pt-24 lg:pt-28">
-        {/* the slate */}
+      {reel ? <HeroReel src={reel} poster={poster} showSlot={false} /> : <Wall />}
+      {!reel && <HeroReel src={null} poster={null} showSlot={!INDEXABLE} />}
+      <div className="container-wide relative pb-20 pt-20 sm:pt-28">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-medium text-muted-foreground">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 px-3 py-1 backdrop-blur">
-            <span className="rec size-2 rounded-full bg-destructive" aria-hidden />
-            The production operating system for film
+          <span className="inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-2.5 py-1 backdrop-blur">
+            <span className="rec size-1.5 rounded-full bg-destructive" aria-hidden />
+            The operating system for AI and hybrid film production
           </span>
-          <span className="hidden font-display text-foreground/70 sm:inline">SC 01 · TK 1</span>
-          <Timecode className="hidden font-display text-foreground/70 sm:inline" />
+          <Timecode className="hidden font-display text-foreground/60 sm:inline" />
         </div>
-
-        <h1 className="mt-8 max-w-[14ch] font-display text-[46px] font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:text-[72px] lg:text-[92px]">
-          From the first page{' '}
-          <span className="text-gold-sheen">to the final frame.</span>
+        <h1 className="mt-8 max-w-[16ch] font-display text-[44px] font-bold leading-[1] tracking-[-0.035em] text-foreground sm:text-[68px] lg:text-[84px]">
+          Every space of production. <span className="text-primary">One operating system.</span>
         </h1>
-        <p className="mt-7 max-w-[56ch] text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-8">
-          Genreline is the production operating system for film and media studios. Your crew, your clients, and the Suite where the work is written, boarded, generated, cut, scored, finished and remastered — one system, one record, from the script to the signed release.
+        <p className="mt-7 max-w-[62ch] text-lg leading-relaxed text-muted-foreground sm:text-[19px] sm:leading-8">
+          Genreline runs AI and hybrid film production end to end — the Crew space where your team works, the Client space and a portal in your brand where clients review, approve, sign and pay, and the Suite where the work is written, boarded, generated, edited and finished. Contracts, rights, money and security run underneath all of it, on one record.
         </p>
-        <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-4">
-          <Button asChild variant="primary" size="lg" data-primary-cta className="h-12 px-6 text-[15px] shadow-[0_10px_40px_-10px_hsl(var(--primary)/0.7)]">
-            <a href={APP.signup}>Open your studio</a>
-          </Button>
-          <a href="#spaces" className="inline-flex h-12 items-center rounded-lg border border-border bg-background/40 px-5 text-[15px] font-medium text-foreground backdrop-blur transition-colors hover:bg-secondary/60">
-            Tour the three spaces
-          </a>
+        <div className="mt-9 flex flex-wrap items-center gap-3">
+          <Button asChild variant="primary" size="lg" data-primary-cta className="h-12 px-6 text-[15px]"><a href={APP.signup}>Open your studio</a></Button>
+          <a href="/contact?topic=sales" className="inline-flex h-12 items-center rounded-lg border border-border bg-background/70 px-5 text-[15px] font-medium text-foreground backdrop-blur hover:bg-secondary/60">Talk to sales</a>
         </div>
-        <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4">
-          {[['3', 'spaces — Crew, Client, the Suite'], ['10', 'stages of making in the Suite'], ['1', 'record, from script to release']].map(([n, l]) => (
-            <div key={l} className="flex items-baseline gap-3"><dt className="font-display text-4xl font-bold tabular-nums text-foreground">{n}</dt><dd className="max-w-[16ch] text-[13px] leading-5 text-muted-foreground">{l}</dd></div>
-          ))}
-        </dl>
-      </div>
 
-      {/* three screens in depth */}
-      {front && (
-        <div className="container-wide relative pb-24">
-          <div className="stage-3d relative mx-auto max-w-[1100px]">
-            {left && (
-              <div className="absolute -left-4 top-10 hidden w-[46%] lg:block" style={{ transform: 'rotateY(18deg) rotateX(4deg) translateZ(-120px)' }}>
-                <div className="float-b opacity-80"><div className="screen"><Media id={left} frame={false} sizes="520px" /></div></div>
-              </div>
-            )}
-            {right && (
-              <div className="absolute -right-4 top-16 hidden w-[44%] lg:block" style={{ transform: 'rotateY(-18deg) rotateX(4deg) translateZ(-140px)' }}>
-                <div className="float-c opacity-80"><div className="screen"><Media id={right} frame={false} sizes="500px" /></div></div>
-              </div>
-            )}
-            <div className="relative mx-auto lg:w-[74%]" style={{ transform: 'rotateX(8deg)' }}>
-              <div className="float-a">
-                <Tilt className="screen rounded-[22px]" max={6}>
-                  <Media id={front} frame={false} priority sizes="(min-width: 1024px) 820px, 100vw" />
-                </Tilt>
-              </div>
-              {/* a live note pinned on the frame */}
-              <div className="absolute -bottom-6 left-6 hidden items-center gap-3 rounded-xl border border-border bg-popover/90 px-4 py-3 shadow-2xl backdrop-blur sm:flex">
-                <span className="grid size-8 place-items-center rounded-full bg-primary/15 font-display text-[12px] font-bold text-foreground">ML</span>
-                <span className="text-[13px] leading-5 text-foreground">Approved — Spring campaign, rough cut v4<br /><span className="text-muted-foreground">On the record · 11:15 AM</span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background" />
+        <nav aria-label="The spaces and portals" className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
+          {ENTRIES.map((e) => (
+            <a key={e.href} href={e.href} className="group flex items-start gap-3 bg-background/85 p-5 backdrop-blur transition-colors hover:bg-card">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border bg-card text-primary transition-colors group-hover:border-primary/50"><Icon name={e.icon} className="size-5" /></span>
+              <span>
+                <span className="block font-display text-[15px] font-semibold text-foreground">{e.name}</span>
+                <span className="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{e.line}</span>
+              </span>
+            </a>
+          ))}
+        </nav>
+      </div>
     </section>
   )
 }

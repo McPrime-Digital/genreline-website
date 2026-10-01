@@ -21,7 +21,7 @@ export const PRODUCT_MENU: NavColumn[] = [
     links: [
       { label: 'Review and approval', href: '/product/review', description: 'Approval as a record, not a status' },
       { label: 'Contracts and signing', href: '/product/contracts', description: 'Sealed signatures; releases that write rights' },
-      { label: 'Production', href: '/product/production', description: 'Breakdown, stripboard, shoot days, call sheets' },
+      { label: 'Production', href: '/product/production', description: 'The AI production cycle, script to delivery' },
       { label: 'Meetings and scheduling', href: '/product/meetings', description: 'Meetings, synced review, calendar, booking' },
       { label: 'Money', href: '/product/money', description: 'Invoices, credits, budgets, cost control' },
       { label: 'Files and screening', href: '/product/files', description: 'The vault, large uploads, versions, the screening room' },
