@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Schibsted_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { LiveSwitch } from '@/components/cinema/LiveSwitch'
 import { SiteHeader, type HeaderNav } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { NETWORK_EARLY_ACCESS, NETWORK_MENU, PRODUCT_MENU, SOLUTIONS_MENU } from '@/content/nav'
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteHeader nav={nav} />
           <main id="main" tabIndex={-1} className="outline-none">{children}</main>
           <SiteFooter />
+          <LiveSwitch />
         </ThemeProvider>
         {/* Cookieless (Vercel's docs: "does not use cookies"; visitors are a
             daily-reset request hash) — W-9 confirmed at Item 0. Rendered only
