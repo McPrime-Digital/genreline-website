@@ -32,3 +32,13 @@ export const LEGAL_ENTITY: string | null = null
 
 /** S-W §13 owner input. Null: the About page carries no "who" section. */
 export const FOUNDER: { name: string; role: string; bio: string } | null = null
+
+/**
+ * Indexable ONLY when this is a production build whose production domain is
+ * genreline.com (Vercel sets VERCEL_PROJECT_PRODUCTION_URL at build). Any
+ * other host — a preview, a temporary deployment, a vercel.app alias — is
+ * noindex and renders no analytics (S-W §8: previews carry noindex).
+ */
+export const INDEXABLE =
+  process.env.VERCEL_ENV === 'production' &&
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? '').replace(/^www\./, '') === 'genreline.com'

@@ -6,14 +6,14 @@ import { SiteHeader, type HeaderNav } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { NETWORK_EARLY_ACCESS, NETWORK_MENU, PRODUCT_MENU, SOLUTIONS_MENU } from '@/content/nav'
 import { siteLabel } from '@/content/features'
-import { PRODUCT_NAME, DESCRIPTION, SITE_ORIGIN } from '@/lib/site'
+import { PRODUCT_NAME, DESCRIPTION, SITE_ORIGIN, INDEXABLE } from '@/lib/site'
 import './globals.css'
 
 // The two faces, self-hosted and preloaded by next/font at build (S-W §8).
 const geist = Geist({ subsets: ['latin'], variable: '--font-body', display: 'swap' })
 const schibsted = Schibsted_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap', preload: false })
 
-const isProduction = process.env.VERCEL_ENV === 'production'
+const indexable = INDEXABLE || process.env.LIGHTHOUSE_AS_PRODUCTION === '1'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: { siteName: PRODUCT_NAME, type: 'website', locale: 'en_US' },
   twitter: { card: 'summary_large_image' },
   // Preview deployments carry noindex (S-W §8); the header does the same.
-  robots: isProduction ? { index: true, follow: true } : { index: false, follow: false },
+  robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
   formatDetection: { telephone: false, email: false, address: false },
 }
 
@@ -59,8 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
         {/* Cookieless (Vercel's docs: "does not use cookies"; visitors are a
             daily-reset request hash) — W-9 confirmed at Item 0. Rendered only
-            on Vercel, where /_vercel/insights exists. */}
-        {process.env.VERCEL === '1' && <Analytics />}
+            on the production site, never on a preview. */}
+        {INDEXABLE && <Analytics />}
       </body>
     </html>
   )

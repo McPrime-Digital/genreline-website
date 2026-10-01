@@ -41,7 +41,7 @@ npm run check:labels       # over the built HTML: labels, forbidden claims, exte
 npm run check:forward      # W-11: every app path 308s with its query string; owned paths don't
 npm run check:links        # every internal link and #anchor resolves; every app link answers 200
 npm run check:a11y         # axe, every page, both themes, menu open, phone drawer open
-npm run check:lighthouse   # mobile; build with VERCEL_ENV=production so robots allows indexing
+npm run check:lighthouse   # mobile; build with LIGHTHOUSE_AS_PRODUCTION=1 so robots allows indexing
 npm run check:licences     # the production dependency tree, transitively
 ```
 

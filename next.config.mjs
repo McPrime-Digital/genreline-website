@@ -112,8 +112,10 @@ const securityHeaders = [
 
 // Preview deployments carry noindex (S-W §8). VERCEL_ENV is set by Vercel at
 // build; locally it is unset and the site is treated as a preview.
-const isProduction = process.env.VERCEL_ENV === 'production'
-const robotsHeaders = isProduction ? [] : [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+// Same rule as lib/site.ts INDEXABLE: only a production build for genreline.com.
+const indexable = process.env.VERCEL_ENV === 'production' &&
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? '').replace(/^www\./, '') === 'genreline.com'
+const robotsHeaders = indexable || process.env.LIGHTHOUSE_AS_PRODUCTION === '1' ? [] : [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

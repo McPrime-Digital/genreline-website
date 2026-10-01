@@ -4,7 +4,7 @@
  * Performance, Accessibility, Best Practices and SEO. SEO is scored with the
  * production robots policy — a preview's noindex would otherwise fail the
  * crawlable check by design — so run against a build made with
- * VERCEL_ENV=production. Uses Playwright's Chromium.
+ * LIGHTHOUSE_AS_PRODUCTION=1 (robots and headers as genreline.com will serve them). Uses Playwright's Chromium.
  */
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync } from 'node:fs'
