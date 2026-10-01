@@ -165,3 +165,33 @@ GitHub at runtime now read a pinned snapshot.
 
 Where a skill contradicts `S-B` (Title Case, `&`, "no custom easing", "no tracking
 changes"), `S-B` wins — it is the app's design, and W-4 says the site wears it.
+
+## 8. Replan after the research (before the pages were built)
+
+What the skills and the code reads changed, before a page was written:
+
+- **Forms** (sumi form-design): one column, labels above, validate on blur, errors
+  that name the fix, 44px targets, `autocomplete` and `inputmode` on every field.
+- **Copy** (sumi micro-copy, vercel writing): verbs on buttons, `…` and curly quotes,
+  second person; sentence case and "and" over S-B's objections to Title Case and `&`.
+- **Metadata** (ui-skills fixing-metadata): title, description, canonical and og:url
+  from ONE source per page (`lib/meta.ts`); `theme-color` per scheme; JSON-LD only
+  for what the page renders, no invented prices or ratings.
+- **Motion** (ui-skills fixing-motion-performance, apple-design): compositor-only;
+  no scroll listeners — IntersectionObserver for the header's state; the drawer's
+  swipe uses pointer capture and WAAPI, not a library.
+- **A hero is never a row of placeholders**: capture tabs appear only when their
+  capture exists (`hasMedia`).
+- **Found in the app while writing copy, and designed around**:
+  · the portal calendar still says "approved automatically" (`lib/portalCalendar.ts`
+    159–167) — so the site never quotes it as the product's sentence, and the capture
+    script refuses any screen containing a forbidden phrase;
+  · the certificate sentence S-W quotes IS the product's, word for word
+    (`components/shared/ApprovalCertificate.tsx`) — quoted as such;
+  · recording ingest rides the job queue, which has never run in production (app
+    commit a079e7f) — the site says "record a session", not where it lands;
+  · the app's CSP is report-only (live header) — the security page says so;
+  · `whiteLabel` and `sso` in `lib/billing/plans.ts` have no consumers — the pricing
+    page shows them as plan terms, and the report flags that nothing enforces them;
+  · FND-03 (internal-only) is not enforced — the in-house page says so and links to
+    the roadmap instead of describing a configuration that does not exist.

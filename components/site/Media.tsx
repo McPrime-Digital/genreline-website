@@ -20,6 +20,11 @@ import { cn } from '@/lib/utils'
 
 const pub = (p: string) => existsSync(join(process.cwd(), 'public', p))
 
+/** True when the slot has a real file — lets a page drop a tab rather than show a placeholder. */
+export function hasMedia(id: string): boolean {
+  return Object.values(mediaFiles(slot(id))).some(Boolean)
+}
+
 export function mediaFiles(s: MediaSlot) {
   if (s.kind === 'capture') {
     const light = `/captures/${s.id}.light.webp`
