@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { PageHero, Section } from '@/components/site/Frame'
 import { APP } from '@/lib/site'
+import { InquiryForm } from '@/components/interactive/InquiryForm'
+import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/contact')
@@ -24,7 +26,10 @@ export default function Contact() {
             <p className="mt-1 text-[15px] leading-7 text-muted-foreground"><Link href="/network#early-access" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Join early access</Link>.</p>
           </div>
         </div>
-        <div id="write" className="mt-14" />
+        <div id="write" className="mt-14">
+          <h2 className="mb-6 font-display text-2xl font-semibold text-foreground">Write to us</h2>
+          <InquiryForm kind="sales" enabled={inquiryEnabled('sales')} siteKey={TURNSTILE_SITE_KEY} submitLabel="Send message" />
+        </div>
       </Section>
     </>
   )

@@ -1,4 +1,6 @@
 import { PageHero, Section } from '@/components/site/Frame'
+import { InquiryForm } from '@/components/interactive/InquiryForm'
+import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/security/disclosure')
@@ -44,6 +46,9 @@ export default function Disclosure() {
           </div>
           <div id="report">
             <h2 className="font-display text-xl font-semibold text-foreground">Send a report</h2>
+            <div className="mt-4">
+              <InquiryForm kind="security" enabled={inquiryEnabled('security')} siteKey={TURNSTILE_SITE_KEY} submitLabel="Send report" messageLabel="What you found" messageHint="Where it is, the steps that reproduce it, and what an attacker could do with it." />
+            </div>
           </div>
         </div>
       </Section>

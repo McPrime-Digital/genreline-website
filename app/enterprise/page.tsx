@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { CapabilityBlock, PageHero, Section } from '@/components/site/Frame'
+import { InquiryForm } from '@/components/interactive/InquiryForm'
+import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/enterprise')
@@ -13,7 +15,7 @@ export default function Enterprise() {
         lead="Identity your IT team already runs, permissions that say exactly who sees what, isolation enforced in the database, and a security page that states the gaps as plainly as the controls."
         media="crew-sso"
       >
-        <Button asChild variant="primary" size="lg" data-primary-cta><Link href="/contact?topic=enterprise">Talk to us</Link></Button>
+        <Button asChild variant="primary" size="lg" data-primary-cta><Link href="#talk">Talk to us</Link></Button>
       </PageHero>
       <Section id="capabilities" className="pt-0">
         <CapabilityBlock
@@ -50,9 +52,9 @@ export default function Enterprise() {
         <p className="text-lg leading-relaxed text-muted-foreground">
           Genreline holds no certification yet, and says so: the <Link href="/security#not-yet" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">security page</Link> lists what has not been done, and the <Link href="/roadmap?area=enterprise" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">roadmap</Link> carries the plan for each. Talk to us about your questionnaire, your identity provider and what your content-security team needs to see.
         </p>
-        <div className="mt-8">
-          <Button asChild variant="primary" size="lg" data-primary-cta><Link href="/contact?topic=enterprise">Talk to us</Link></Button>
-        </div>
+      </Section>
+      <Section id="talk" title="Talk to us" width="measure">
+        <InquiryForm kind="sales" defaultTopic="enterprise" enabled={inquiryEnabled('sales')} siteKey={TURNSTILE_SITE_KEY} submitLabel="Send" messageLabel="What do you need to know?" messageHint="Your identity provider, your questionnaire, what your content-security team needs to see." />
       </Section>
     </>
   )

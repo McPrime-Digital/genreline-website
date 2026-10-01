@@ -1,6 +1,8 @@
 import { Feature, FeatureLabel } from '@/components/FeatureLabel'
 import { Media } from '@/components/site/Media'
 import { PageHero, Section } from '@/components/site/Frame'
+import { InquiryForm } from '@/components/interactive/InquiryForm'
+import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/network')
@@ -39,7 +41,7 @@ export default function Network() {
         </div>
       </Section>
       <Section id="early-access" title="Join early access" lead="Tell us who you are and what you make. We will write when there is something to see.">
-        <div id="early-access-form" />
+        <InquiryForm kind="early-access" enabled={inquiryEnabled('early-access')} siteKey={TURNSTILE_SITE_KEY} submitLabel="Join early access" messageLabel="What do you make?" messageHint="A sentence or two about your work is plenty." />
       </Section>
     </>
   )
