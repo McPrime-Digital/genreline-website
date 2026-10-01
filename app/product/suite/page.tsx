@@ -1,86 +1,90 @@
 import Link from 'next/link'
-import { FeatureLabel, FeatureList } from '@/components/FeatureLabel'
-import { CapabilityBlock, CtaBand, PageHero, Section } from '@/components/site/Frame'
-import { PeopleGrid } from '@/components/site/PeopleGrid'
+import { CtaBand, PageHero, Section } from '@/components/site/Frame'
+import { SuiteSection } from '@/components/cinema/SuiteSection'
+import { Reveal } from '@/components/cinema/Reveal'
+import { Motif, type MotifName } from '@/components/cinema/Motif'
+
+const STAGE_MOTIF: Record<string, MotifName> = { write: 'slate', visualise: 'constellation', stage: 'nebula', hybrid: 'sprockets', automate: 'stripboard', sound: 'waveform', post: 'timecode', adapt: 'brand', worlds: 'vault', keep: 'ledger' }
+import { Spotlight } from '@/components/cinema/Spotlight'
+import { Media, hasMedia } from '@/components/site/Media'
+import { feature, siteLabel } from '@/content/features'
+import { SUITE_DETAIL, SUITE_STAGES } from '@/content/suite'
+import { TOOL_GROUPS } from '@/content/tools'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/product/suite')
 
-// Described by what each part does, never by a working title (S-W W-10).
-const NEXT = ['STG-01', 'SWR-11']
-const WRITING = ['SWR-04', 'SWR-03', 'SWR-05', 'SWR-07', 'SWR-10', 'SWR-08', 'SWR-12']
-const GENERATION = ['STG-07', 'STG-08', 'STG-09', 'STG-10', 'STG-11', 'STG-12', 'STG-13', 'STG-15']
-const LATER = ['SND-01', 'SND-02', 'SND-03', 'PST-01', 'PST-02', 'PST-04', 'PST-03', 'S3D-01', 'S3D-02', 'S3D-03', 'AGT-03']
-
 export default function Suite() {
+  const suiteTools = TOOL_GROUPS.find((g) => g.space === 'The Suite')!.tools
   return (
     <>
       <PageHero
+        motif="nebula"
         kicker="The Suite"
-        title="Where the work is made."
-        lead="The Suite is where the work is made: a screenplay editor the production reads from, storyboards, and a library of every asset the studio holds. Image and video generation is being built here, inside the production."
-        media={['suite-library', 'crew-production']}
-      />
-      <Section id="available" className="pt-0">
-        <CapabilityBlock
-          title="A screenplay editor the production reads from"
-          body={<p>Industry formatting and pagination, locked scenes, tracked changes, comments and snapshots, with live co-editing and visible cursors. The breakdown in the Crew space reads from it — nobody retypes a scene.</p>}
-          features={['SWR-01', 'SWR-06', 'SWR-02']}
-        />
-        <CapabilityBlock
-          reverse
-          title="Storyboards"
-          body={<p>Boards of shots, with shot types, prompts and ordering.</p>}
-          features={['SWR-09']}
-        />
-        <CapabilityBlock
-          title="The library"
-          body={<p>Every asset across the studio, with facets and the footprint of each production.</p>}
-          features={['FIL-07']}
-          media="suite-library"
-        />
-        <CapabilityBlock
-          reverse
-          title="An assistant inside the work"
-          body={<p>Ask for help inside the screenplay and the documents. Every call is priced before it runs, a ceiling asks before anything expensive, and the person’s budget applies.</p>}
-          features={['AGT-01', 'MON-05']}
-        />
-      </Section>
-      <Section id="being-built" title="Being built" lead="Shown honestly. Each is marked available when it meets the bar for its category — and not before.">
-        <div className="space-y-12">
-          <div>
-            <h3 className="font-display text-xl font-semibold text-foreground">Next</h3>
-            <FeatureList items={NEXT} className="mt-4 max-w-3xl" />
-          </div>
-          <div>
-            <h3 className="font-display text-xl font-semibold text-foreground">Writing</h3>
-            <FeatureList items={WRITING} className="mt-4 max-w-3xl" />
-          </div>
-          <div>
-            <h3 className="font-display text-xl font-semibold text-foreground">Generation</h3>
-            <FeatureList items={GENERATION} className="mt-4 max-w-3xl" />
-          </div>
-          <div>
-            <h3 className="font-display text-xl font-semibold text-foreground">Sound, post-production and virtual sets</h3>
-            <FeatureList items={LATER} className="mt-4 max-w-3xl" />
-          </div>
+        title="The whole making of a film, in one suite."
+        lead="Write it, board it, generate it, shoot it, cut it, score it, finish it, remaster it and send it to every screen — inside the same production, with a budget on every generation and a record of every asset."
+        media={['suite-library']}
+      >
+        <div className="flex flex-wrap gap-2">
+          {SUITE_STAGES.map((s) => <a key={s.id} href={`#${s.id}`} className="rounded-full border border-glow/40 bg-glow/10 px-3.5 py-1.5 text-[13px] font-medium text-foreground backdrop-blur hover:bg-glow/20">{s.name}</a>)}
         </div>
-        <div className="mt-12 flex flex-wrap items-center gap-3 squircle border border-border bg-card/40 p-5">
-          <FeatureLabel id="STG-01" />
-          <p className="text-[15px] text-muted-foreground">Generation runs through one gate: a budget, a ceiling and provenance on every asset. <Link href="/ai" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">How it will work</Link></p>
-        </div>
-        <p className="mt-6 text-[15px] text-muted-foreground">Everything else being built, in every space, is on the <Link href="/roadmap" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">roadmap</Link>.</p>
+      </PageHero>
+
+      <Section id="console" kicker="Ten stages of making" title="Every stage, one place.">
+        <SuiteSection />
       </Section>
-      <Section id="people" kicker="Who works here" title="Everyone in it, with exactly what they need">
-        <PeopleGrid
-          people={[
-            { role: 'Writers', sees: 'The screenplay, co-edited live with visible cursors', featureId: 'SWR-06' },
-            { role: 'Directors and storyboard artists', sees: 'The boards, shot by shot', featureId: 'SWR-09' },
-            { role: 'Producers', sees: 'The library, with each production’s footprint', featureId: 'FIL-07' },
-          ]}
-        />
+
+      {SUITE_STAGES.map((st, n) => {
+        const ids = st.ids.filter((id) => siteLabel(id))
+        return (
+          <section key={st.id} id={st.id} className="relative isolate overflow-hidden py-20 sm:py-24">
+            <Motif name={STAGE_MOTIF[st.id] ?? 'slate'} />
+            <div className="container-wide">
+              <Reveal>
+                <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-t border-border pt-10">
+                  <span className="font-display text-[15px] tabular-nums text-glow">{String(n + 1).padStart(2, '0')}</span>
+                  <h2 className="font-display text-4xl font-bold tracking-[-0.03em] text-foreground sm:text-5xl">{st.name}</h2>
+                </div>
+                <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">{st.line}</p>
+              </Reveal>
+              <ul className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {ids.map((id, k) => {
+                  const d = SUITE_DETAIL[id]
+                  const label = siteLabel(id)!
+                  return (
+                    <Reveal as="li" key={id} delay={k * 60}>
+                      <Spotlight className="h-full rounded-2xl border border-border bg-card/40 p-6 backdrop-blur" >
+                        <div data-feature-id={id}>
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="font-display text-xl font-semibold leading-snug text-foreground">{feature(id).title.split(' — ')[0]}</p>
+                            <span data-feature-label={label.toLowerCase()} data-feature-id={id} className={`mt-1 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${label === 'Coming' ? 'bg-status-blue/15 text-status-blue' : 'bg-status-green/15 text-status-green'}`}>{label}</span>
+                          </div>
+                          {d && <p className="mt-2 text-[15px] leading-6 text-muted-foreground">{d.does}</p>}
+                          {d && <ul className="mt-4 space-y-1.5">{d.points.map((p) => <li key={p} className="flex gap-2.5 text-[14px] leading-5 text-foreground/90"><span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-glow" />{p}</li>)}</ul>}
+                        </div>
+                      </Spotlight>
+                    </Reveal>
+                  )
+                })}
+              </ul>
+              {st.id === 'keep' && hasMedia('suite-library') && <div className="mt-10 screen"><Media id="suite-library" frame={false} /></div>}
+            </div>
+          </section>
+        )
+      })}
+
+      <Section id="replaces" kicker="What the Suite replaces" title="A tab and a subscription for every step — or one suite.">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {suiteTools.map((t) => (
+            <li key={t.job} data-feature-id={t.featureId} className="rounded-2xl border border-border bg-card/40 p-5">
+              <p className="font-display text-lg font-semibold text-foreground">{t.job}</p>
+              <p className="mt-1 text-[14px] text-muted-foreground line-through decoration-destructive/50">{t.today}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-8 text-[15px] text-muted-foreground">Every generation runs through one gate — a budget, a ceiling and provenance on every asset. <Link href="/ai" className="font-medium text-foreground underline underline-offset-4">How it works</Link></p>
       </Section>
-      <CtaBand />
+      <CtaBand line="Open a studio and start writing. The Suite grows with every stage." />
     </>
   )
 }

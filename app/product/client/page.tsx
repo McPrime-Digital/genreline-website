@@ -8,7 +8,7 @@ export const metadata = pageMeta('/product/client')
 export default function Client() {
   return (
     <>
-      <PageHero
+      <PageHero motif="brand"
         kicker="The Client space and portal"
         title="Where clients meet the work — in your brand."
         lead="Companies, projects, the conversation, the cuts, the approvals, the contracts and the invoices — and a portal your clients sign into that wears your name, not ours."

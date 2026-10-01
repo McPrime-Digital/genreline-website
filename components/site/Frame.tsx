@@ -10,6 +10,7 @@ import { FeatureList } from '@/components/FeatureLabel'
 import { Media, firstMedia } from '@/components/site/Media'
 import { Tilt } from '@/components/cinema/Tilt'
 import { Reveal } from '@/components/cinema/Reveal'
+import { Motif, type MotifName } from '@/components/cinema/Motif'
 import { APP } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
@@ -27,6 +28,7 @@ export function PageHero({
   size = 'lg',
   kicker,
   visual,
+  motif = 'slate',
 }: {
   title: React.ReactNode
   lead?: React.ReactNode
@@ -36,12 +38,14 @@ export function PageHero({
   size?: 'lg' | 'md'
   kicker?: string
   visual?: React.ReactNode
+  motif?: MotifName
 }) {
   const m = firstMedia(media)
   return (
     <section className="relative isolate -mt-16 overflow-hidden pb-16 pt-16">
       <div className="aurora -z-10" />
       <div className="viewfinder -z-10" />
+      <Motif name={motif} />
       <div className={cn('container-wide pt-14 sm:pt-20', visual && 'grid items-center gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]')}>
         <div>
         {kicker ? <p className="font-display text-[13px] font-semibold text-primary">{kicker}</p> : <Rule />}

@@ -15,7 +15,7 @@ const STEPS = [
 export default function Production() {
   return (
     <>
-      <PageHero
+      <PageHero motif="stripboard"
         kicker="Production"
         title="From the first page of the script to the shoot day."
         lead="Scenes come from the screenplay the writer is in. Breakdown, stripboard and shoot days follow, and a call sheet goes out sealed and numbered in your studio’s voice."

@@ -7,7 +7,7 @@ export const metadata = pageMeta('/product/contracts')
 export default function Contracts() {
   return (
     <>
-      <PageHero
+      <PageHero motif="seal"
         kicker="Contracts and signing"
         title="Contracts that hold up — and prove themselves."
         lead="Templates, fields placed on the PDF, consent before signature, a cryptographic seal, and a certificate of completion sealed inside the file — so the file proves itself to anybody who holds it."

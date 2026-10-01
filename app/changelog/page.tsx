@@ -11,7 +11,7 @@ const date = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', 
 export default function Changelog() {
   return (
     <>
-      <PageHero title="Changelog" lead="What shipped, dated." size="md" />
+      <PageHero motif="timecode" title="Changelog" lead="What shipped, dated." size="md" />
       <Section className="pt-0" width="measure">
         <ol className="space-y-14">
           {CHANGELOG.map((e) => (

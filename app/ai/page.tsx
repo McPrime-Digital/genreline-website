@@ -19,7 +19,7 @@ const GATE = [
 export default function Ai() {
   return (
     <>
-      <PageHero
+      <PageHero motif="nebula"
         title="AI with a budget and a record."
         lead="Image and video generation is being built inside the production: many models through one gate, a ceiling on every call, a budget for every person, and provenance on every asset."
         size="md"

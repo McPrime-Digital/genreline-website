@@ -7,7 +7,7 @@ export const metadata = pageMeta('/product/files')
 export default function Files() {
   return (
     <>
-      <PageHero
+      <PageHero motif="sprockets"
         kicker="Files and the screening room"
         title="Every file, every version, every viewer."
         lead="A vault on both sides, uploads that pause and resume, versions that stack, and a screening room that records how far each guest actually watched."

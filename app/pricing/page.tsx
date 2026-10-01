@@ -20,7 +20,7 @@ const QUESTIONS = [
 export default function Pricing() {
   return (
     <>
-      <PageHero
+      <PageHero motif="ledger"
         title="Seats, plus usage credits."
         lead="A production company carries a bench. Pricing that charged for every freelancer would punish exactly that, so plans count crew seats and client companies, and metered work is paid from credits."
         size="md"

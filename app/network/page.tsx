@@ -18,7 +18,7 @@ const PARTS = [
 export default function Network() {
   return (
     <>
-      <PageHero
+      <PageHero motif="constellation"
         title="The filmmaker network."
         lead="Theater, Community, streaming and a marketplace — for filmmakers, studios and working actors. It lives outside every studio, and it is being built. Early access is open."
         size="md"

@@ -1,6 +1,8 @@
 import { Connects, CtaBand, PageHero, Section } from '@/components/site/Frame'
 import { pageMeta } from '@/lib/meta'
 import { SpacesSection } from '@/components/cinema/SpacesSection'
+import { ToolStack } from '@/components/cinema/ToolStack'
+import { CapabilitySection } from '@/components/cinema/CapabilitySection'
 
 export const metadata = pageMeta('/product')
 
@@ -8,6 +10,7 @@ export default function Product() {
   return (
     <>
       <PageHero
+        motif="slate"
         kicker="Product"
         title="One operating system. Three spaces."
         lead="Crew is where the studio works. Client is where it serves the companies it makes things for, in its own brand. The Suite is where the work is written, boarded and kept. Underneath all three is one record."
@@ -16,7 +19,13 @@ export default function Product() {
       <Section id="spaces" kicker="The spaces" title="Crew, Client and the Suite">
         <SpacesSection />
       </Section>
-      <Section id="capabilities" title="Capabilities that run across the spaces">
+      <Section id="replaces" kicker="What it replaces" title="Dozens of tools, one system.">
+        <ToolStack />
+      </Section>
+      <Section id="all-capabilities" kicker="Every capability" title="Live, and being built.">
+        <CapabilitySection initial={60} />
+      </Section>
+      <Section id="capabilities" kicker="Capabilities in depth" title="Capabilities that run across the spaces">
         <Connects
           items={[
             { href: '/product/review', title: 'Review and approval', body: 'Approval as a record: stages, review windows, automatic advance on silence, and a certificate.' },

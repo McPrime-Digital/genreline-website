@@ -9,7 +9,7 @@ export const metadata = pageMeta('/roadmap')
 export default function Roadmap() {
   return (
     <>
-      <PageHero
+      <PageHero motif="stripboard"
         title="Everything being built."
         lead="Nothing is hidden. Every feature that is not available today is here with its honest status — Being built, or Planned. No dates until they are real."
         size="md"

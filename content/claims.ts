@@ -25,9 +25,11 @@ export const FORBIDDEN: readonly Forbidden[] = [
   { pattern: /\b99(\.\d+)?\s?%|\buptime\b|\bSLA\b|always[\s-]on\b/i, reason: 'S0 §4 — no SLA and no copy implying one' },
   { pattern: /trusted by|customers include|\d[\d,]* (studios|users|teams|productions) (use|trust|rely)/i, reason: '§3.2 — no customer claims without written permission' },
   { pattern: /\bcreators?\b|\binfluencers?\b|\bviral\b|audience growth/i, reason: '§2.4 — never creator language' },
-  { pattern: /\bmagic(al)?\b|\beffortless(ly)?\b|\brevolutionary\b|\b10x\b|asset factory|content engine/i, reason: '§2.4 — vocabulary to avoid' },
+  { pattern: /(?<!Movie )\bmagic(al)?\b|\beffortless(ly)?\b|\brevolutionary\b|\b10x\b|asset factory|content engine/i, reason: '§2.4 — vocabulary to avoid' },
   { pattern: /coming soon/i, reason: '§2.4 — "being built" or "on the roadmap", never "coming soon"' },
-  { pattern: /Script Design|PrimeOS|The Stage|Provider mesh|Model Arena|Studio Kits|\bRemaster\b|Control Tower/, reason: 'W-10 / FA-12 — Suite working titles and hidden features are not published' },
+  // W-10 (no Suite names) was overruled by the owner on 2026-10-01: the Suite is the
+  // headline argument and its parts are named. Hidden Crew features stay unnamed.
+  { pattern: /Provider mesh|Control Tower/, reason: 'FA-11 — hidden features are not published' },
   { pattern: /McPrime/i, reason: 'S0-B — never a tenant’s name on the product’s site' },
   { pattern: /ZZ-HARNESS|rls-harness|Harness (Owner|Crew|Finance|Contractor)/i, reason: 'W-8 — harness names belong in captures, never in copy' },
 ]

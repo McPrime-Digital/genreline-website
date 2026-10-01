@@ -66,7 +66,7 @@ const NOT_YET = [
 export default function Security() {
   return (
     <>
-      <PageHero
+      <PageHero motif="vault"
         title="Security, stated precisely."
         lead="Every control that exists, described as it works — and, at the end, what has not been done yet. A young vendor’s strongest trust signal is the list of its gaps."
         size="md"

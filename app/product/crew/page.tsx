@@ -8,7 +8,7 @@ export const metadata = pageMeta('/product/crew')
 export default function Crew() {
   return (
     <>
-      <PageHero
+      <PageHero motif="clapper"
         kicker="The Crew space"
         title="Where the studio works."
         lead="The Crew space is where the studio works: who is on the job, what they are doing, what they may see, and the schedule that comes out of the script."

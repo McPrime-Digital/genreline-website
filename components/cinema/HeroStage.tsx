@@ -33,18 +33,18 @@ export function HeroStage() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-medium text-muted-foreground">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 px-3 py-1 backdrop-blur">
             <span className="rec size-2 rounded-full bg-destructive" aria-hidden />
-            The production operating system
+            The production operating system for film
           </span>
           <span className="hidden font-display text-foreground/70 sm:inline">SC 01 · TK 1</span>
           <Timecode className="hidden font-display text-foreground/70 sm:inline" />
         </div>
 
         <h1 className="mt-8 max-w-[14ch] font-display text-[46px] font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:text-[72px] lg:text-[92px]">
-          Run the production.{' '}
-          <span className="text-gold-sheen">Keep the record.</span>
+          From the first page{' '}
+          <span className="text-gold-sheen">to the final frame.</span>
         </h1>
         <p className="mt-7 max-w-[56ch] text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-8">
-          Your crew, your clients, the cuts, the approvals, the contracts and the money — one system for a film or media studio, with a record that still holds up after the wrap.
+          Genreline is the production operating system for film and media studios. Your crew, your clients, and the Suite where the work is written, boarded, generated, cut, scored, finished and remastered — one system, one record, from the script to the signed release.
         </p>
         <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-4">
           <Button asChild variant="primary" size="lg" data-primary-cta className="h-12 px-6 text-[15px] shadow-[0_10px_40px_-10px_hsl(var(--primary)/0.7)]">
@@ -54,7 +54,11 @@ export function HeroStage() {
             Tour the three spaces
           </a>
         </div>
-        <p className="mt-5 text-[13px] text-muted-foreground">Inside in under a minute. Your clients are invited by you, never by us.</p>
+        <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4">
+          {[['3', 'spaces — Crew, Client, the Suite'], ['10', 'stages of making in the Suite'], ['1', 'record, from script to release']].map(([n, l]) => (
+            <div key={l} className="flex items-baseline gap-3"><dt className="font-display text-4xl font-bold tabular-nums text-foreground">{n}</dt><dd className="max-w-[16ch] text-[13px] leading-5 text-muted-foreground">{l}</dd></div>
+          ))}
+        </dl>
       </div>
 
       {/* three screens in depth */}

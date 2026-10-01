@@ -7,7 +7,7 @@ export const metadata = pageMeta('/product/meetings')
 export default function Meetings() {
   return (
     <>
-      <PageHero
+      <PageHero motif="waveform"
         kicker="Meetings and review sessions"
         title="Review together. Keep every note."
         lead="Audio and video meetings in the place the work lives, a review session that plays the cut in sync for the whole room, and a calendar where the dates that matter arrive by themselves."

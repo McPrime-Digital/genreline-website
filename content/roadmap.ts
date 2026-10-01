@@ -255,13 +255,31 @@ export const ROADMAP: readonly RoadmapRow[] = [
   },
   {
     "id": "SWR-12",
-    "title": "Generation pipelines and automations",
+    "title": "Workflows — generation pipelines and automations you compose",
     "space": "suite",
     "status": "Planned"
   },
   {
+    "id": "NEW-01",
+    "title": "Moodboards — references, looks and palettes, pinned to the production",
+    "space": "suite",
+    "status": "Planned"
+  },
+  {
+    "id": "NEW-02",
+    "title": "Hybrid production — live action and generated shots in one cut, with rights on both",
+    "space": "generation",
+    "status": "Being built"
+  },
+  {
     "id": "STG-01",
-    "title": "Image and video generation — takes, versions, cost per result",
+    "title": "The Stage — image and video generation, takes, versions, cost per result",
+    "space": "generation",
+    "status": "Being built"
+  },
+  {
+    "id": "STG-02",
+    "title": "Every major model through one gate — routed by what the shot needs",
     "space": "generation",
     "status": "Being built"
   },
@@ -273,25 +291,25 @@ export const ROADMAP: readonly RoadmapRow[] = [
   },
   {
     "id": "STG-07",
-    "title": "Character, location, wardrobe and style consistency across generations",
+    "title": "Continuity — character, location, wardrobe and style held across every shot",
     "space": "generation",
     "status": "Planned"
   },
   {
     "id": "STG-08",
-    "title": "Side-by-side model comparison",
+    "title": "Model Arena — the same prompt through several models, side by side",
     "space": "generation",
     "status": "Planned"
   },
   {
     "id": "STG-09",
-    "title": "Reusable generation presets per studio",
+    "title": "Studio Kits — your studio’s looks, characters and presets, reusable",
     "space": "generation",
     "status": "Planned"
   },
   {
     "id": "STG-10",
-    "title": "Upscale and restore existing footage",
+    "title": "Remaster — upscale and restore existing footage",
     "space": "generation",
     "status": "Planned"
   },
@@ -321,7 +339,7 @@ export const ROADMAP: readonly RoadmapRow[] = [
   },
   {
     "id": "SND-01",
-    "title": "Sound generation — music, effects, dialogue",
+    "title": "Sound — music, effects and dialogue generation",
     "space": "sound",
     "status": "Planned"
   },
@@ -339,7 +357,7 @@ export const ROADMAP: readonly RoadmapRow[] = [
   },
   {
     "id": "PST-01",
-    "title": "An assembly surface — not an editor replacement",
+    "title": "Edit — an assembly surface for the cut",
     "space": "post",
     "status": "Planned"
   },
@@ -363,7 +381,7 @@ export const ROADMAP: readonly RoadmapRow[] = [
   },
   {
     "id": "S3D-01",
-    "title": "Full 3D virtual sets",
+    "title": "Studio — full 3D virtual sets",
     "space": "sets",
     "status": "Planned"
   },
@@ -387,7 +405,7 @@ export const ROADMAP: readonly RoadmapRow[] = [
   },
   {
     "id": "AGT-03",
-    "title": "Executive director and producer agents",
+    "title": "Agents — executive producer and director agents",
     "space": "sets",
     "status": "Planned"
   },

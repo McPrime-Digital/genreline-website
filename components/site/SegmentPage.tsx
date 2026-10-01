@@ -10,7 +10,7 @@ export function SegmentPage({ id, children }: { id: Segment['id']; children?: Re
   const s = SEGMENTS.find((x) => x.id === id)!
   return (
     <>
-      <PageHero kicker={`${s.name} — ${s.short.charAt(0).toLowerCase()}${s.short.slice(1)}`} title={s.headline} lead={s.who} media={s.media}>
+      <PageHero motif={({ 'production-companies': 'clapper', agencies: 'brand', 'in-house': 'slate', enterprise: 'vault' } as const)[id]} kicker={`${s.name} — ${s.short.charAt(0).toLowerCase()}${s.short.slice(1)}`} title={s.headline} lead={s.who} media={s.media}>
         <div className="flex flex-wrap gap-2">
           {s.examples.map((e) => <span key={e} className="rounded-full border border-border bg-card/50 px-3 py-1.5 text-[13px] text-foreground backdrop-blur">{e}</span>)}
         </div>

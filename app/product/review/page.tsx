@@ -10,7 +10,7 @@ export const metadata = pageMeta('/product/review')
 export default function Review() {
   return (
     <>
-      <PageHero
+      <PageHero motif="timecode"
         kicker="Review and approval"
         title="Every sign‑off, provable."
         lead="Stages, review windows and reminders, frame-accurate notes, and a certificate that holds up years later — with silence recorded as silence, never as a sign-off."

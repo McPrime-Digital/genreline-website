@@ -5,6 +5,10 @@ import { BrandDemo } from '@/components/interactive/BrandDemo'
 import { HomeJsonLd } from '@/components/site/JsonLd'
 import { HeroStage } from '@/components/cinema/HeroStage'
 import { SpacesSection } from '@/components/cinema/SpacesSection'
+import { SuiteSection } from '@/components/cinema/SuiteSection'
+import { ToolStack } from '@/components/cinema/ToolStack'
+import { CapabilitySection } from '@/components/cinema/CapabilitySection'
+import { Motif } from '@/components/cinema/Motif'
 import { WhoItsFor } from '@/components/cinema/WhoItsFor'
 import { CollaboratorMap } from '@/components/cinema/CollaboratorMap'
 import { ProductionReel, type ReelFrame } from '@/components/cinema/ProductionReel'
@@ -71,11 +75,38 @@ export default function Home() {
       <HomeJsonLd />
       <HeroStage />
 
+      {/* THE SUITE — the first argument */}
+      <section id="suite" className="relative isolate overflow-hidden py-24 sm:py-32">
+        <Motif name="nebula" />
+        <div className="container-wide">
+          <Heading kicker="The Suite" title="Write it. Board it. Generate it. Cut it. Finish it. Remaster it." lead="The whole making of a film, in one suite: script and storyboards, moodboards and workflows, the Stage where every major image and video model works inside your production, hybrid live-action and generated shots, sound, edit, finishing, remastering, translation and 3D sets — with a budget on every generation and a record of every asset." />
+          <div className="mt-14"><SuiteSection /></div>
+          <Link href="/product/suite" className="mt-10 inline-flex h-12 items-center rounded-lg border border-glow/50 bg-glow/10 px-6 text-[15px] font-medium text-foreground backdrop-blur hover:bg-glow/20">Explore the whole Suite</Link>
+        </div>
+      </section>
+
       {/* The three spaces */}
       <section id="spaces" className="relative py-24 sm:py-32">
         <div className="container-wide">
           <Heading kicker="Three spaces, one record" title="Everything a studio does, in the space it belongs." lead="Crew is where you work. Client is where your clients meet the work. The Suite is where the work is made. Underneath all three is one record of who did what, and when." />
           <div className="mt-14"><SpacesSection /></div>
+        </div>
+      </section>
+
+      {/* THE TOOLS IT REPLACES — the second argument */}
+      <section id="tools" className="relative isolate overflow-hidden py-24 sm:py-32">
+        <Motif name="stripboard" />
+        <div className="container-wide">
+          <Heading kicker="What it replaces" title="A studio runs on dozens of tools. Genreline is one." lead="Chat, tasks, scheduling, call sheets, review, screening, transfer, signatures, invoices, screenwriting, storyboards, moodboards, image and video generation, upscaling, dubbing, sound, finishing — each a separate login, a separate bill and a gap where the record falls through." />
+          <div className="mt-14"><ToolStack /></div>
+        </div>
+      </section>
+
+      {/* Every capability */}
+      <section id="capabilities" className="py-24 sm:py-32">
+        <div className="container-wide">
+          <Heading kicker="Capabilities" title="Everything in Genreline — live and being built." lead="Nothing hidden. Every capability across the three spaces, the platform and the network, with its honest status." />
+          <div className="mt-14"><CapabilitySection initial={36} /></div>
         </div>
       </section>
 
