@@ -23,3 +23,12 @@ export const DESCRIPTION =
 
 /** FND-04: one US region. S-W §5.2's region statement. */
 export const REGION_STATEMENT = 'Hosted in the United States'
+
+/**
+ * The legal entity (S0-B §7, S-W §13). NULL until the owner names it — and
+ * while it is null there is no copyright line anywhere on the site.
+ */
+export const LEGAL_ENTITY: string | null = null
+
+/** S-W §13 owner input. Null: the About page carries no "who" section. */
+export const FOUNDER: { name: string; role: string; bio: string } | null = null

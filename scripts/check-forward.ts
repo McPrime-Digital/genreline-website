@@ -59,7 +59,7 @@ async function main() {
     const res = await fetch(`${BASE}${c.path}`, { redirect: 'manual' })
     const loc = res.headers.get('location')
     let ok = false
-    let detail = `${res.status}${loc ? ` → ${loc}` : ''}`
+    const detail = `${res.status}${loc ? ` → ${loc}` : ''}`
     if (c.expect === 'forward') ok = res.status === 308 && loc === `${APP}${c.path}`
     else if (c.expect === 'own') ok = res.status === 200
     else ok = res.status === 404

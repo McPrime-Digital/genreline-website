@@ -14,6 +14,8 @@
   /* Focus is visible on every interactive element (WCAG 2.2 AA, S-W §8). */
   :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
   ::selection { background: hsl(var(--primary) / 0.28); }
+  /* Anchored sections clear the sticky header (vercel web-interface-guidelines). */
+  [id] { scroll-margin-top: 88px; }
 }
 
 /* The ambient canvas behind the page — a shade of the app's app-canvas, kept
@@ -60,25 +62,6 @@
 .pressable:active { transform: scale(0.98); }
 @media (prefers-reduced-motion: reduce) { .pressable:active { transform: none; } }
 
-/* Radix enter/exit on the house curves. Attribute-driven so a keyboard close
-   is as fast as a pointer close; held still under reduced motion. */
-@keyframes gw-in { from { opacity: 0; transform: translateY(-4px) scale(0.985); } to { opacity: 1; transform: none; } }
-@keyframes gw-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4px) scale(0.985); } }
-@keyframes gw-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes gw-fade-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes gw-rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes gw-rise-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(12px); } }
-.anim-in  { animation: gw-in var(--dur-pop) var(--ease-out); }
-.anim-out { animation: gw-out var(--dur-pop) var(--ease-out); }
-.anim-fade-in  { animation: gw-fade-in var(--dur-panel) var(--ease-out); }
-.anim-fade-out { animation: gw-fade-out var(--dur-pop) var(--ease-out); }
-.anim-rise-in  { animation: gw-rise-in var(--dur-panel) var(--ease-drawer); }
-.anim-rise-out { animation: gw-rise-out var(--dur-pop) var(--ease-drawer); }
-@media (prefers-reduced-motion: reduce) {
-  .anim-in, .anim-out, .anim-rise-in, .anim-rise-out { animation-name: gw-fade-in; animation-duration: 120ms; }
-  .anim-out, .anim-rise-out { animation-name: gw-fade-out; }
-}
-
 /* Crossfade with a touch of blur masks the two-object look of a swap (emil-design-eng). */
 .swap-enter { animation: gw-swap var(--dur-panel) var(--ease-out); }
 @keyframes gw-swap { from { opacity: 0; filter: blur(4px); } to { opacity: 1; filter: blur(0); } }
@@ -90,4 +73,31 @@
     repeating-linear-gradient(135deg, hsl(var(--border) / 0.5) 0 1px, transparent 1px 14px),
     hsl(var(--card));
   border: 1px dashed hsl(var(--border));
+}
+
+/* Radix enter/exit on the house curves — utilities, so data-state variants apply. */
+@keyframes gw-in { from { opacity: 0; transform: translateY(-4px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes gw-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4px) scale(0.985); } }
+@keyframes gw-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gw-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes gw-rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes gw-rise-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(12px); } }
+@keyframes gw-slide-in { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes gw-slide-out { from { transform: none; } to { transform: translateX(100%); } }
+@layer utilities {
+  .anim-in  { animation: gw-in var(--dur-pop) var(--ease-out); }
+  .anim-out { animation: gw-out var(--dur-pop) var(--ease-out); }
+  .anim-fade-in  { animation: gw-fade-in var(--dur-panel) var(--ease-out); }
+  .anim-fade-out { animation: gw-fade-out var(--dur-pop) var(--ease-out); }
+  .anim-rise-in  { animation: gw-rise-in var(--dur-panel) var(--ease-drawer); }
+  .anim-rise-out { animation: gw-rise-out var(--dur-pop) var(--ease-drawer); }
+  .anim-slide-in  { animation: gw-slide-in var(--dur-panel) var(--ease-drawer); }
+  .anim-slide-out { animation: gw-slide-out var(--dur-pop) var(--ease-drawer); }
+  .container-wide { margin-inline: auto; width: 100%; max-width: 1200px; padding-inline: 20px; }
+  .container-measure { margin-inline: auto; width: 100%; max-width: 880px; padding-inline: 20px; }
+  @media (min-width: 640px) { .container-wide, .container-measure { padding-inline: 32px; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .anim-in, .anim-rise-in, .anim-slide-in { animation: gw-fade-in 120ms linear; }
+  .anim-out, .anim-rise-out, .anim-slide-out { animation: gw-fade-out 120ms linear; }
 }

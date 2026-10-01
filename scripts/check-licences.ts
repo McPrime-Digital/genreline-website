@@ -11,10 +11,11 @@ import { execFileSync } from 'node:child_process'
 
 const ALLOW = new Set(['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', '0BSD', 'OFL-1.1', 'CC0-1.0', 'Unlicense', 'BlueOak-1.0.0', 'MPL-2.0', 'Python-2.0', 'CC-BY-4.0'])
 
-const tree = JSON.parse(execFileSync('npm', ['ls', '--omit=dev', '--all', '--json', '--long'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }))
+type Node = { version?: string; missing?: boolean; path?: string; license?: string; dependencies?: Record<string, Node> }
+const tree: Node = JSON.parse(execFileSync('npm', ['ls', '--omit=dev', '--all', '--json', '--long'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }))
 const seen = new Map<string, string>()
-function walk(node: any) {
-  for (const [name, dep] of Object.entries<any>(node.dependencies ?? {})) {
+function walk(node: Node) {
+  for (const [name, dep] of Object.entries(node.dependencies ?? {})) {
     // An uninstalled optional peer (npm ls lists it with no version and no
     // path) ships nothing and is not a licence in the tree.
     if (!dep.version || dep.missing) continue
