@@ -10,14 +10,14 @@ export const metadata = pageMeta('/product/production')
 
 /** The AI and hybrid production cycle — every stage, the tool that runs it,
  *  and where it lives. Statuses come from content/features.ts. */
-const CYCLE: { n: string; title: string; body: string; icon: IconName; featureId: string; href: string }[] = [
+const CYCLE: { n: string; title: string; body: string; icon: IconName; featureId: string; href: string; also?: { featureId: string; text: string } }[] = [
   { n: '01', title: 'Script', body: 'Written and co-edited live in Script Design.', icon: 'PenTool', featureId: 'SWR-01', href: '/product/suite#write' },
   { n: '02', title: 'Breakdown', body: 'Scenes, characters, locations and looks read from the script — lines the assistant suggested are marked.', icon: 'ListTree', featureId: 'CRW-07', href: '/product/crew' },
-  { n: '03', title: 'Boards and moodboards', body: 'Storyboards shot by shot, references and palettes pinned to scenes.', icon: 'LayoutGrid', featureId: 'SWR-09', href: '/product/suite#visualise' },
+  { n: '03', title: 'Boards and moodboards', body: 'Storyboards shot by shot, a prompt on every frame.', icon: 'LayoutGrid', featureId: 'SWR-09', href: '/product/suite#visualise', also: { featureId: 'NEW-01', text: 'Moodboards — references and palettes pinned to scenes' } },
   { n: '04', title: 'Generate', body: 'The Stage: image and video from every major model, through one gate with a budget.', icon: 'WandSparkles', featureId: 'STG-01', href: '/product/suite#stage' },
   { n: '05', title: 'Continuity', body: 'Characters, locations, wardrobe and style held from shot to shot.', icon: 'Fingerprint', featureId: 'STG-07', href: '/product/suite#stage' },
   { n: '06', title: 'Hybrid', body: 'Filmed and generated shots in one cut, a signed release behind every face.', icon: 'Combine', featureId: 'NEW-02', href: '/product/suite#hybrid' },
-  { n: '07', title: 'Assemble', body: 'Build the cut from takes and generations; versions stack.', icon: 'Scissors', featureId: 'APR-08', href: '/product/files' },
+  { n: '07', title: 'Assemble', body: 'Build the cut from takes and generations; every version stacks and stays reviewable.', icon: 'Scissors', featureId: 'PST-01', href: '/product/suite#post' },
   { n: '08', title: 'Review', body: 'Frame-accurate notes, drawings on the frame, sessions in sync.', icon: 'ScanEye', featureId: 'APR-14', href: '/product/review' },
   { n: '09', title: 'Approve', body: 'On the record, with a printable certificate.', icon: 'BadgeCheck', featureId: 'APR-02', href: '/product/review' },
   { n: '10', title: 'Rights and disclosure', body: 'Releases write the rights; the client sees what must be disclosed.', icon: 'Stamp', featureId: 'DOC-10', href: '/product/contracts' },
@@ -52,6 +52,13 @@ export default function Production() {
                       {label === 'Coming' && <span data-feature-label="coming" data-feature-id={c.featureId} className="rounded-md bg-status-blue/15 px-1.5 py-0.5 text-[11px] font-medium text-status-blue">Coming</span>}
                     </p>
                     <p className="mt-1.5 text-[14px] leading-6 text-muted-foreground">{c.body}</p>
+                    {/* A stage that holds a built tool and one being built says so for each. */}
+                    {c.also && (
+                      <p className="mt-2 flex items-start gap-2 text-[14px] leading-6 text-muted-foreground">
+                        <span data-feature-id={c.also.featureId}>{c.also.text}</span>
+                        {siteLabel(c.also.featureId) === 'Coming' && <span data-feature-label="coming" data-feature-id={c.also.featureId} className="mt-0.5 shrink-0 rounded-md bg-status-blue/15 px-1.5 py-0.5 text-[11px] font-medium text-status-blue">Coming</span>}
+                      </p>
+                    )}
                   </div>
                 </Link>
               </Reveal>

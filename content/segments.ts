@@ -40,7 +40,7 @@ export const SEGMENTS: readonly Segment[] = [
       { role: 'Talent', sees: 'One release to sign, through a single-use link', featureId: 'DOC-09' },
     ],
     wins: [
-      { title: 'Script to generated shot in one chain', body: 'Scenes and elements read from the screenplay, boards built from them, and every generation filed to the production it belongs to.', featureId: 'CRW-07' },
+      { title: 'Script to board in one chain', body: 'Scenes and elements read from the screenplay, and storyboards built from them — nothing retyped between tools.', featureId: 'CRW-07' },
       { title: 'Sign-offs that hold up', body: 'Every cut approved on the record — who, when, what they watched and what they said — with a printable certificate.', featureId: 'APR-02' },
       { title: 'Releases that write the rights', body: 'A performer signs an AI-likeness release on a phone; the asset’s rights — including whether the likeness may be generated — are written by the signature.', featureId: 'DOC-10' },
     ],
