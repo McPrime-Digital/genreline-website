@@ -5,7 +5,6 @@
  */
 import Link from 'next/link'
 import { ProductMark } from '@/components/ProductMark'
-import { ThemeToggle } from '@/components/site/ThemeToggle'
 import { FOOTER } from '@/content/nav'
 import { APP, LEGAL_ENTITY, REGION_STATEMENT } from '@/lib/site'
 
@@ -51,7 +50,6 @@ export function SiteFooter() {
             <Link href="/roadmap" className="hover:text-foreground">Roadmap</Link>
             {LEGAL_ENTITY && <span>© {new Date().getFullYear()} {LEGAL_ENTITY}</span>}
           </div>
-          <ThemeToggle />
         </div>
       </div>
       <p aria-hidden translate="no" className="pointer-events-none select-none text-center font-display text-[22vw] font-bold leading-[0.8] tracking-[-0.06em] text-foreground/[0.05]">

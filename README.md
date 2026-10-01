@@ -40,10 +40,30 @@ Build first, then run each against `npm run start` on :3001.
 npm run check:labels       # over the built HTML: labels, forbidden claims, external links
 npm run check:forward      # W-11: every app path 308s with its query string; owned paths don't
 npm run check:links        # every internal link and #anchor resolves; every app link answers 200
-npm run check:a11y         # axe, every page, both themes, menu open, phone drawer open
+npm run check:a11y         # axe, every page, every theme (set, not implied), menu open, phone drawer open
 npm run check:lighthouse   # mobile; build with LIGHTHOUSE_AS_PRODUCTION=1 so robots allows indexing
 npm run check:licences     # the production dependency tree, transitively
 ```
+
+## Themes — Light, Dark, Matte
+
+The switch is in the header (System / Light / Dark / Matte). Light and Dark are the app's
+own tokens. **Matte is generated** from the owner's reference photograph,
+`design/reference/matte-surface.jpg` ("grainny matte dark copy", 2026-10-01):
+
+```bash
+npx tsx scripts/derive-matte.ts   # → styles/matte.css, public/textures/matte-grain*.webp, content/matte.generated.ts
+```
+
+The canvas colour is the photograph's mean pixel and the grain is the photograph's own
+pixels (lighting falloff removed, tiled seamlessly), rendered with `overlay` at a gain that
+reproduces it level for level — measured on the render: mean 37.1 against 37.5, σ 5.0
+against 5.04. Cards, borders and text are derived from the dark theme's structure on that
+achromatic material and checked against WCAG. Never edit the generated files; replace the
+photograph and re-run. The textures load only when Matte is on.
+
+Favicons come from the white-gold tile: `npx tsx scripts/make-favicons.ts
+public/brand/genreline-white-gold-1024.png app`.
 
 ## Product captures (W-8)
 

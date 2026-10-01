@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Schibsted_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { MATTE } from '@/content/matte.generated'
 import { LiveSwitch } from '@/components/cinema/LiveSwitch'
 import { SiteHeader, type HeaderNav } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <div id="top-sentinel" aria-hidden className="absolute left-0 top-0 h-px w-px" />
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={MATTE.ready ? ['light', 'dark', 'matte'] : ['light', 'dark']} disableTransitionOnChange>
           <SiteHeader nav={nav} />
           <main id="main" tabIndex={-1} className="outline-none">{children}</main>
           <SiteFooter />

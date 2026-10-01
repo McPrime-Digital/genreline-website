@@ -18,6 +18,7 @@ import { Kbd } from '@/components/ui/kbd'
 import { ProductMark } from '@/components/ProductMark'
 import { MobileNav } from '@/components/site/MobileNav'
 import { MegaMenu } from '@/components/site/MegaMenu'
+import { ThemeToggle } from '@/components/site/ThemeToggle'
 import { cx as cn } from '@/lib/cx'
 import { APP } from '@/lib/site'
 import type { NavColumn, NavLink, NavLinkWithBadge } from '@/content/nav'
@@ -88,10 +89,10 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
 
   return (
     <header className="sticky top-0 z-40">
-      <div className="relative bg-background/80 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-background">
+      <div className="header-surface relative bg-background/80 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-background">
         <div className="container-wide flex h-16 items-center gap-4">
           <Link href="/" aria-label="Genreline home" className="-ml-1 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <ProductMark size={30} />
+            <ProductMark size={30} nameClassName="max-[359px]:hidden" />
           </Link>
 
           <MegaMenu nav={nav} />
@@ -105,6 +106,7 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
             <Button variant="ghost" size="icon" onClick={openSearch} aria-label="Search the site" className="md:hidden">
               <Search aria-hidden />
             </Button>
+            <ThemeToggle compact />
             <a href={APP.login} className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:inline-block">
               Sign in
             </a>

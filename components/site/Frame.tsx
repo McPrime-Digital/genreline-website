@@ -66,7 +66,7 @@ export function PageHero({
           </div>
         </div>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
+      <div className="scrim-b pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
     </section>
   )
 }

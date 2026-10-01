@@ -255,7 +255,7 @@ export default function Home() {
             <span className="grid size-11 place-items-center rounded-xl border border-border bg-background text-primary"><Icon name="Globe" className="size-5" /></span>
             <h2 className="mt-5 font-display text-3xl font-bold text-foreground">The filmmaker network.</h2>
             <p className="mt-4 text-[16px] leading-7 text-muted-foreground">Theater, Community, streaming and a marketplace for likenesses, avatars and voices — for filmmakers, studios and working actors.</p>
-            <ul className="mt-6 grid grid-cols-2 gap-3">
+            <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {([['TOP-02', 'Theater', 'Tv'], ['TOP-03', 'Community', 'UsersRound'], ['TOP-05', 'Streaming', 'MonitorPlay'], ['TOP-01', 'Marketplace', 'Store']] as [string, string, IconName][]).map(([id, name, ic]) => (
                 <Feature key={id} id={id} as="li" className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5">
                   <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-foreground"><Icon name={ic} className="size-4 text-primary" />{name}</span>

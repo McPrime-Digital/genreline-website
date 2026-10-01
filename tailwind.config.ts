@@ -11,7 +11,8 @@ import type { Config } from 'tailwindcss'
  * landing page the site inherits already set 40/56. Nothing else is added.
  */
 const config: Config = {
-  darkMode: ['class'],
+  // Matte is a dark mode: every `dark:` utility applies under it too.
+  darkMode: ['variant', '&:is(.dark *, .matte *)'],
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './content/**/*.{ts,tsx}'],
   theme: {
     extend: {
