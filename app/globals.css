@@ -1,7 +1,5 @@
 @import '../styles/tokens.css';
 @import '../styles/cinema.css';
-/* GENERATED from the owner's matte photograph — scripts/derive-matte.ts. */
-@import '../styles/matte.css';
 
 @tailwind base;
 @tailwind components;
@@ -29,7 +27,7 @@
     radial-gradient(900px 520px at -8% 40%, hsl(var(--primary) / 0.05), transparent 62%),
     hsl(var(--background));
 }
-:is(.dark, .matte) .site-canvas {
+.dark .site-canvas {
   background:
     radial-gradient(1100px 520px at 88% -12%, hsl(var(--glow) / 0.1), transparent 62%),
     radial-gradient(900px 520px at -8% 40%, hsl(var(--primary) / 0.05), transparent 62%),
@@ -47,7 +45,7 @@
     0 24px 60px -36px hsl(var(--glow) / 0.5),
     inset 0 1px 0 hsl(0 0% 100% / 0.6);
 }
-:is(.dark, .matte) .capture-frame {
+.dark .capture-frame {
   border-color: hsl(var(--glow) / 0.22);
   box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.12), 0 24px 60px -36px hsl(var(--glow) / 0.55), inset 0 1px 0 hsl(0 0% 100% / 0.06);
 }
@@ -55,8 +53,8 @@
 /* Theme-paired images: one of the pair shows, by theme class. */
 .theme-light { display: block; }
 .theme-dark { display: none; }
-:is(.dark, .matte) .theme-light { display: none; }
-:is(.dark, .matte) .theme-dark { display: block; }
+.dark .theme-light { display: none; }
+.dark .theme-dark { display: block; }
 
 /* Press feedback lives on the press, and it is instant (apple-design §1). */
 @media (hover: hover) and (pointer: fine) {

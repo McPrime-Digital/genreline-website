@@ -45,22 +45,11 @@ npm run check:lighthouse   # mobile; build with LIGHTHOUSE_AS_PRODUCTION=1 so ro
 npm run check:licences     # the production dependency tree, transitively
 ```
 
-## Themes — Light, Dark, Matte
+## Themes — Light and Dark
 
-The switch is in the header (System / Light / Dark / Matte). Light and Dark are the app's
-own tokens. **Matte is generated** from the owner's reference photograph,
-`design/reference/matte-surface.jpg` ("grainny matte dark copy", 2026-10-01):
-
-```bash
-npx tsx scripts/derive-matte.ts   # → styles/matte.css, public/textures/matte-grain*.webp, content/matte.generated.ts
-```
-
-The canvas colour is the photograph's mean pixel and the grain is the photograph's own
-pixels (lighting falloff removed, tiled seamlessly), rendered with `overlay` at a gain that
-reproduces it level for level — measured on the render: mean 37.1 against 37.5, σ 5.0
-against 5.04. Cards, borders and text are derived from the dark theme's structure on that
-achromatic material and checked against WCAG. Never edit the generated files; replace the
-photograph and re-run. The textures load only when Matte is on.
+The switch is in the header (System / Light / Dark); both themes are the app's own tokens
+(`styles/tokens.css`). A third, Matte, was generated from a reference photograph and withdrawn
+by the owner the same day (2026-10-01); a browser that saved it is mapped to Dark.
 
 Favicons come from the white-gold tile: `npx tsx scripts/make-favicons.ts
 public/brand/genreline-white-gold-1024.png app`.

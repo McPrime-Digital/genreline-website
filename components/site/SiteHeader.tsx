@@ -89,7 +89,7 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
 
   return (
     <header className="sticky top-0 z-40">
-      <div className="header-surface relative bg-background/80 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-background">
+      <div className="relative bg-background/80 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-background">
         <div className="container-wide flex h-16 items-center gap-4">
           <Link href="/" aria-label="Genreline home" className="-ml-1 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <ProductMark size={30} nameClassName="max-[359px]:hidden" />

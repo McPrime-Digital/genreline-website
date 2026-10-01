@@ -3,28 +3,23 @@
 import * as React from 'react'
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes'
 import type { ComponentProps } from 'react'
-import { MATTE } from '@/content/matte.generated'
 
-/** The browser chrome follows the page. The viewport metadata carries one
- *  colour per prefers-color-scheme; Matte is a choice, not a preference, so
- *  while it is on, both theme-color tags take the material's colour and are
- *  restored when it is turned off. */
-function ThemeColorSync() {
-  const { resolvedTheme } = useTheme()
+/** Matte was offered for one afternoon (2026-10-01) and withdrawn by the owner.
+ *  A browser that saved it renders Dark (the layout maps the stored value to
+ *  the dark class before paint) and is moved to Dark here, so the switch
+ *  shows a checked option again. */
+function RetireMatte() {
+  const { theme, setTheme } = useTheme()
   React.useEffect(() => {
-    if (resolvedTheme !== 'matte') return
-    const tags = Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'))
-    const before = tags.map((t) => t.content)
-    tags.forEach((t) => { t.content = MATTE.surface })
-    return () => tags.forEach((t, i) => { t.content = before[i] })
-  }, [resolvedTheme])
+    if (theme === 'matte') setTheme('dark')
+  }, [theme, setTheme])
   return null
 }
 
 export function ThemeProvider({ children, ...props }: ComponentProps<typeof NextThemesProvider>) {
   return (
     <NextThemesProvider {...props}>
-      {MATTE.ready && <ThemeColorSync />}
+      <RetireMatte />
       {children}
     </NextThemesProvider>
   )

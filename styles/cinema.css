@@ -17,7 +17,7 @@
   opacity: 0.06;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-:is(.dark, .matte) .grain::after { opacity: 0.09; }
+.dark .grain::after { opacity: 0.09; }
 @keyframes grain {
   0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
   60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
@@ -37,8 +37,8 @@
   width: 60vmax; height: 60vmax; left: -28vmax; top: 10vmax;
   background: radial-gradient(circle, hsl(var(--primary) / 0.28), transparent 60%);
 }
-:root:not(.dark):not(.matte) .aurora::before { background: radial-gradient(circle, hsl(var(--glow) / 0.18), transparent 60%); }
-:root:not(.dark):not(.matte) .aurora::after { background: radial-gradient(circle, hsl(var(--primary) / 0.16), transparent 60%); }
+:root:not(.dark) .aurora::before { background: radial-gradient(circle, hsl(var(--glow) / 0.18), transparent 60%); }
+:root:not(.dark) .aurora::after { background: radial-gradient(circle, hsl(var(--primary) / 0.16), transparent 60%); }
 @keyframes drift-a { to { transform: translate(-8vmax, 6vmax) scale(1.08); } }
 @keyframes drift-b { to { transform: translate(6vmax, -4vmax) scale(0.94); } }
 
@@ -113,7 +113,7 @@
 
 /* Film strip — sprocket holes above and below a row of frames. */
 .filmstrip { position: relative; padding: 22px 0; background: hsl(228 90% 5%); }
-:root:not(.dark):not(.matte) .filmstrip { background: hsl(216 22% 12%); }
+:root:not(.dark) .filmstrip { background: hsl(216 22% 12%); }
 .filmstrip::before, .filmstrip::after {
   content: ''; position: absolute; left: 0; right: 0; height: 10px;
   background-image: radial-gradient(circle at 50% 50%, hsl(0 0% 100% / 0.85) 0 3px, transparent 3.5px);
@@ -161,7 +161,7 @@
    last so they override the first pass above. */
 .aurora::before, .aurora::after { display: none !important; }
 .aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.05), transparent 40%); }
-:root:not(.dark):not(.matte) .aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.035), transparent 40%); }
+:root:not(.dark) .aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.035), transparent 40%); }
 .flare { display: none !important; }
 .text-gold-sheen { background: none; -webkit-background-clip: initial; background-clip: initial; color: hsl(var(--primary)); animation: none !important; }
 /* Floating screens stay (owner, 2026-10-01: "floating motion isn't too bad"). */

@@ -48,9 +48,9 @@ function Wall() {
         })}
       </div>
       {/* the scrim: the screens recede, the headline reads */}
-      <div className="scrim-x absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--background))_0%,hsl(var(--background)/0.96)_34%,hsl(var(--background)/0.55)_58%,hsl(var(--background)/0.25)_80%,hsl(var(--background)/0.45)_100%)]" />
-      <div className="scrim-b absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background" />
-      <div className="scrim-t absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--background))_0%,hsl(var(--background)/0.96)_34%,hsl(var(--background)/0.55)_58%,hsl(var(--background)/0.25)_80%,hsl(var(--background)/0.45)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent" />
     </div>
   )
 }

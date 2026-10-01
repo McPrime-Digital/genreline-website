@@ -20,8 +20,6 @@ export const X = (p: P) => base(p, <><path d="M18 6 6 18" /><path d="m6 6 12 12"
 export const Monitor = (p: P) => base(p, <><rect width="20" height="14" x="2" y="3" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></>)
 export const Sun = (p: P) => base(p, <><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></>)
 export const Moon = (p: P) => base(p, <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />)
-/** Matte: a disc of grain. Drawn here (lucide has no grain glyph), in lucide's stroke and dot idiom. */
-export const Grain = (p: P) => base(p, <><circle cx="12" cy="12" r="9" /><path d="M9 8.5h.01M13.5 7.5h.01M16 11h.01M11.5 12h.01M8 13.5h.01M14 15.5h.01M10.5 16.5h.01" /></>)
 export const Check = (p: P) => base(p, <path d="M20 6 9 17l-5-5" />)
 export const Minus = (p: P) => base(p, <path d="M5 12h14" />)
 export const Play = (p: P) => base(p, <path d="M6 3 20 12 6 21Z" />)

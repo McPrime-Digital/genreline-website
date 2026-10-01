@@ -13,7 +13,7 @@ export function HeroReel({ src, poster, showSlot }: { src: string | null; poster
     return (
       <div className="absolute inset-0 -z-10">
         <video className="h-full w-full object-cover opacity-50 dark:opacity-40" src={src} poster={poster ?? undefined} muted loop playsInline autoPlay={!reduce} preload="metadata" aria-hidden />
-        <div className="scrim-reel absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
       </div>
     )
   }

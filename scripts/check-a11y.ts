@@ -7,12 +7,11 @@
  * THE THEME IS SET, NOT IMPLIED. The site's default theme is Dark whatever
  * the system prefers, so a pass that only set the browser's colour scheme to
  * light was auditing Dark twice (found 2026-10-01). Each pass now stores the
- * theme the way a visitor's choice is stored. Matte runs when it exists.
+ * theme the way a visitor's choice is stored, and asserts it applied.
  */
 import { chromium } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { PAGES } from '../content/pages'
-import { MATTE } from '../content/matte.generated'
 
 const BASE = process.env.BASE ?? 'http://localhost:3001'
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -33,8 +32,7 @@ async function main() {
       console.log(`${bad ? 'FAIL' : 'note'}  ${label}  ${v.impact}  ${v.id}: ${v.help} (${v.nodes.length}) — ${v.nodes[0]?.target.join(' ')}`)
     }
   }
-  const themes = MATTE.ready ? (['light', 'dark', 'matte'] as const) : (['light', 'dark'] as const)
-  for (const theme of themes) {
+  for (const theme of ['light', 'dark'] as const) {
     const scheme = theme === 'light' ? 'light' : 'dark'
     const choose = (t: string) => localStorage.setItem('theme', t)
     const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width: 1280, height: 900 } })

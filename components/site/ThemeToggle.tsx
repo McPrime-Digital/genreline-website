@@ -2,30 +2,24 @@
 
 /**
  * The theme switch, in the header (owner, 2026-10-01: "move the system dark
- * light mode up"). System / Light / Dark / Matte as native radios, so the
- * keyboard model is the browser's own. `compact` is the header's icon row
- * (each icon carries its name for screen readers and a hover title); the
- * full form adds the words.
- *
- * Matte is offered only when scripts/derive-matte.ts has produced it from the
- * owner's reference photograph — a "Matte" that was really Dark under another
- * name is the one thing the owner asked not to ship.
+ * light mode up"). System / Light / Dark as native radios, so the keyboard
+ * model is the browser's own. `compact` is the header's icon row (each icon
+ * carries its name for screen readers and a hover title); the full form adds
+ * the words.
  *
  * Renders its checked state only after mount: the server cannot know the
  * visitor's choice, and guessing would mismatch hydration.
  */
 import * as React from 'react'
 import { useTheme } from 'next-themes'
-import { Grain, Monitor, Moon, Sun } from '@/components/icons'
+import { Monitor, Moon, Sun } from '@/components/icons'
 import { cx as cn } from '@/lib/cx'
-import { MATTE } from '@/content/matte.generated'
 
 const subscribe = () => () => {}
 const OPTIONS = [
   { value: 'system', label: 'System', Icon: Monitor },
   { value: 'light', label: 'Light', Icon: Sun },
   { value: 'dark', label: 'Dark', Icon: Moon },
-  ...(MATTE.ready ? [{ value: 'matte', label: 'Matte', Icon: Grain }] : []),
 ]
 
 export function ThemeToggle({ compact = false, className }: { compact?: boolean; className?: string }) {
