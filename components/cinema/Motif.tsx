@@ -1,7 +1,9 @@
 /**
  * Each page's own identity — a film-world motif behind its hero, drawn in
  * SVG/CSS on the app's tokens. Decorative: aria-hidden, pointer-transparent,
- * faded into the canvas.
+ * faded into the canvas. Glyphs that are pure decoration (frame numbers, the
+ * slate's scene number) are drawn as CSS-generated content, not text nodes —
+ * they are part of the picture, not words a reader is meant to read.
  */
 export type MotifName = 'contactsheet' | 'stripboard' | 'timecode' | 'sprockets' | 'seal' | 'ledger' | 'waveform' | 'clapper' | 'brand' | 'nebula' | 'vault' | 'constellation' | 'slate'
 
@@ -15,7 +17,7 @@ export function Motif({ name }: { name: MotifName }) {
           <div className="absolute right-[-2%] top-10 grid w-[64%] grid-cols-5 gap-3 -rotate-3 opacity-80">
             {Array.from({ length: 20 }).map((_, i) => (
               <div key={i} className="relative aspect-video rounded-[3px] border border-foreground/15 bg-foreground/[0.025]">
-                <span className="absolute bottom-1 left-1.5 font-display text-[9px] tabular-nums text-foreground/35">{String(i + 1).padStart(3, '0')}{i % 4 === 1 ? ' ★' : ''}</span>
+                <span data-glyph={`${String(i + 1).padStart(3, '0')}${i % 4 === 1 ? ' ★' : ''}`} className="absolute bottom-1 left-1.5 font-display text-[9px] tabular-nums text-foreground/35 before:content-[attr(data-glyph)]" />
                 {i % 4 === 1 && <span className="absolute inset-0 rounded-[3px] border border-primary/50" />}
               </div>
             ))}
@@ -49,7 +51,7 @@ export function Motif({ name }: { name: MotifName }) {
       return (
         <div aria-hidden className={fade}>
           {['right-[22%]', 'right-[6%]'].map((p) => (
-            <div key={p} className={`absolute ${p} top-0 h-full w-14 -rotate-6 bg-[hsl(228_80%_6%/.6)]`}>
+            <div key={p} className={`absolute ${p} top-0 h-full w-14 -rotate-6 bg-[hsl(var(--ink-deep)/.6)]`}>
               <div className="absolute inset-y-0 left-1 w-2.5 [background:radial-gradient(circle,hsl(0_0%_100%/.35)_0_3px,transparent_3.5px)_0_0/10px_18px]" />
               <div className="absolute inset-y-0 right-1 w-2.5 [background:radial-gradient(circle,hsl(0_0%_100%/.35)_0_3px,transparent_3.5px)_0_0/10px_18px]" />
             </div>
@@ -81,8 +83,8 @@ export function Motif({ name }: { name: MotifName }) {
     case 'clapper':
       return (
         <div aria-hidden className={fade}>
-          <div className="absolute right-[6%] top-14 h-[300px] w-[460px] -rotate-6 rounded-xl border border-foreground/15 bg-[hsl(228_80%_6%/.5)]">
-            <div className="h-14 rounded-t-xl [background:repeating-linear-gradient(135deg,hsl(0_0%_100%/.75)_0_22px,hsl(228_80%_8%)_22px_44px)] opacity-60" />
+          <div className="absolute right-[6%] top-14 h-[300px] w-[460px] -rotate-6 rounded-xl border border-foreground/15 bg-[hsl(var(--ink-deep)/.5)]">
+            <div className="h-14 rounded-t-xl [background:repeating-linear-gradient(135deg,hsl(0_0%_100%/.75)_0_22px,hsl(var(--ink-panel))_22px_44px)] opacity-60" />
             <div className="grid grid-cols-3 gap-px p-4 font-display text-[12px] text-foreground/50">
               {['PROD', 'SCENE', 'TAKE', 'NORTHLIGHT', '01', '04', 'DIRECTOR', 'CAMERA', 'DATE'].map((t) => <span key={t} className="border-b border-foreground/15 py-3">{t}</span>)}
             </div>
@@ -129,7 +131,7 @@ export function Motif({ name }: { name: MotifName }) {
     default:
       return (
         <div aria-hidden className={fade}>
-          <p className="absolute right-[4%] top-24 font-display text-[16vw] font-bold leading-none tracking-[-0.06em] text-foreground/[0.04]">SC 01</p>
+          <p data-glyph="SC 01" className="absolute right-[4%] top-24 font-display text-[16vw] font-bold leading-none tracking-[-0.06em] text-foreground/[0.04] before:content-[attr(data-glyph)]" />
         </div>
       )
   }

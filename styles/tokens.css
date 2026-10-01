@@ -13,6 +13,16 @@
    decision. When the app's tokens change, this file is re-copied from them —
    it is never edited to taste. The two things added for the website are
    marked WEBSITE-ONLY and justified in place.
+
+   OWNER OVERRIDE, 2026-10-01 — DARK IS “INK”. “The blue dark mode isn't black
+   or dark enough … a very dark black-out blue … a unique black or dark matte.”
+   The website's Dark no longer copies the app's navy: it is Ink, a matte black
+   with a blue-indigo soul (OKLCH 0.160 0.042 282, #0B0A1F), chosen by
+   measurement to sit at least ΔE 0.03 from the stock darks (Tailwind's slates
+   and greys, GitHub, X Dim, Spotify) and from the old navy. Surfaces lift in
+   lightness on the same hue; hairlines are a muted ink, not violet; nothing
+   glows, nothing is glossy, there is no grain. The app keeps its navy until
+   the owner carries Ink over — a re-copy must not revert this block.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -60,32 +70,37 @@
     --status-violet: 265 55% 62%;
     --status-green: 98 45% 38%;
     --status-gray: 210 8% 45%;
+
+    /* WEBSITE-ONLY: the dark of film objects (strips, reel frames, motif panels),
+       Ink's hue in both themes. */
+    --ink-deep: 242 62.8% 4.3%;       /* #050412 */
+    --ink-panel: 241 45.8% 8.3%;      /* #0C0B1F */
   }
 
-  /* ── Dark theme — deep navy ── */
+  /* ── Dark theme — Ink, a matte black-out blue (owner override above) ── */
   .dark {
     color-scheme: dark;
-    --background: 228 90% 9%;         /* #020A2B deep navy canvas */
+    --background: 242 50% 8%;         /* #0B0A1F Ink — the canvas */
     --foreground: 226 39% 92%;        /* #E8EBF5 off-white */
-    --card: 225 70% 19%;              /* #0C1E55 lifted card / panel */
+    --card: 239 32.2% 11.9%;          /* #141528 a matte panel, one step up */
     --card-foreground: 226 39% 92%;
-    --popover: 225 70% 19%;
+    --popover: 239 32.2% 11.9%;
     --popover-foreground: 226 39% 92%;
     --primary: 42 55% 55%;            /* #C8A24A gold */
     --primary-foreground: 226 60% 8%;
-    --secondary: 225 68% 25%;         /* #142A6B */
+    --secondary: 238 25.9% 15.6%;     /* #1E1E32 fills and hovers */
     --secondary-foreground: 226 39% 92%;
-    --muted: 225 55% 22%;
+    --muted: 239 27.6% 13.6%;         /* #191A2C */
     --muted-foreground: 226 29% 69%;  /* #9AA5C8 */
-    --accent: 225 68% 25%;
+    --accent: 238 25.9% 15.6%;
     --accent-foreground: 226 39% 92%;
     --destructive: 348 62% 59%;
     --destructive-foreground: 226 39% 96%;
-    --border: 226 45% 30%;
-    --input: 226 45% 30%;
+    --border: 237 20.3% 18.7%;        /* #262739 */
+    --input: 237 20.3% 18.7%;
     --ring: 42 55% 55%;
     --text-faint: 227 23% 49%;        /* #606C99 */
-    --glow: 262 78% 72%;
+    --glow: 237 23.5% 59.4%;          /* #7F81B0 a muted ink hairline — matte emits no violet light */
 
     --status-blue: 205 65% 62%;
     --status-amber: 30 80% 60%;
@@ -135,13 +150,13 @@
     0 2px 8px -4px hsl(216 22% 12% / 0.06),
     inset 0 1px 0 hsl(0 0% 100% / 0.9);
 }
+/* Ink is matte: a flat panel, a hairline, a shadow that falls dark. */
 .dark .glass-panel {
-  background: linear-gradient(180deg, hsl(225 70% 19% / 0.72), hsl(225 72% 14% / 0.6));
-  border-color: hsl(var(--glow) / 0.3);
-  box-shadow:
-    0 0 0 0.5px hsl(var(--glow) / 0.14),
-    0 18px 40px -26px hsl(var(--glow) / 0.45),
-    inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.03), 0 18px 40px -28px hsl(0 0% 0% / 0.7);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 /* A quiet inset surface inside a glass panel. */
 .glass-inset {
@@ -150,9 +165,9 @@
   box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.55);
 }
 .dark .glass-inset {
-  background: hsl(0 0% 100% / 0.04);
-  border-color: hsl(var(--glow) / 0.2);
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  background: hsl(0 0% 100% / 0.025);
+  border-color: hsl(var(--border));
+  box-shadow: none;
 }
 /* The main content panel. */
 .main-panel {
@@ -164,8 +179,8 @@
     inset 0 1px 0 hsl(0 0% 100% / 0.7);
 }
 .dark .main-panel {
-  border-color: hsl(var(--glow) / 0.2);
-  box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.1), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  border-color: hsl(var(--border));
+  box-shadow: none;
 }
 /* Glow hairlines — a section seam inside glass. */
 .glow-divider-x { height: 1px; background: linear-gradient(90deg, transparent, hsl(var(--glow) / 0.35), transparent); }

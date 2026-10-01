@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#F7F9FB' },
-    { media: '(prefers-color-scheme: dark)', color: '#020A2B' },
+    { media: '(prefers-color-scheme: dark)', color: '#0B0A1F' },
   ],
   colorScheme: 'light dark',
 }
@@ -48,7 +48,7 @@ const nav: HeaderNav = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${schibsted.variable} site-canvas grain min-h-dvh font-body antialiased`}>
+      <body className={`${geist.variable} ${schibsted.variable} site-canvas min-h-dvh font-body antialiased`}>
         <a href="#main" className="sr-only z-[100] rounded-lg bg-popover px-4 py-2 text-sm font-medium text-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:ring-2 focus:ring-ring">
           Skip to content
         </a>

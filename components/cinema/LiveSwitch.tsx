@@ -1,6 +1,6 @@
 'use client'
 /** Ambient motion starts a moment after the page has loaded — the arrival is
- *  calm, the first paint is not competing with grain and light, and the page
+ *  calm, the first paint is not competing with motion, and the page
  *  settles before anything begins to breathe. */
 import * as React from 'react'
 

@@ -7,21 +7,7 @@
    Built on the app's tokens (styles/tokens.css) — no new colours.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Film grain — an SVG turbulence tile, fixed over the page, never intercepting input. */
-.grain::after {
-  content: '';
-  position: fixed;
-  inset: -50%;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.06;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.dark .grain::after { opacity: 0.09; }
-@keyframes grain {
-  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
-  60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
-}
+/* (Film grain was removed on 2026-10-01 — the owner: “the grain … not nice at all”.) */
 
 /* The aurora — studio light washing the canvas: violet from the top right,
    gold from the left, slowly breathing. */
@@ -96,7 +82,7 @@
   position: relative; overflow: hidden; border-radius: 22px;
   border: 1px solid hsl(var(--glow) / 0.28);
   background: hsl(var(--card));
-  box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.2), 0 40px 120px -40px hsl(var(--glow) / 0.55), 0 30px 60px -30px hsl(228 90% 3% / 0.6);
+  box-shadow: 0 0 0 0.5px hsl(var(--glow) / 0.2), 0 40px 120px -40px hsl(var(--glow) / 0.55), 0 30px 60px -30px hsl(0 0% 0% / 0.6);
 }
 .screen::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -112,7 +98,7 @@
 @keyframes marquee { to { transform: translateX(-50%); } }
 
 /* Film strip — sprocket holes above and below a row of frames. */
-.filmstrip { position: relative; padding: 22px 0; background: hsl(228 90% 5%); }
+.filmstrip { position: relative; padding: 22px 0; background: hsl(var(--ink-deep)); }
 :root:not(.dark) .filmstrip { background: hsl(216 22% 12%); }
 .filmstrip::before, .filmstrip::after {
   content: ''; position: absolute; left: 0; right: 0; height: 10px;
@@ -142,18 +128,17 @@
 @keyframes autoprogress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .grain::after, .aurora::before, .aurora::after, .flare, .float-a, .float-b, .float-c, .marquee-track, .rec, .text-gold-sheen, .autoprogress { animation: none !important; }
+  .aurora::before, .aurora::after, .flare, .float-a, .float-b, .float-c, .marquee-track, .rec, .text-gold-sheen, .autoprogress { animation: none !important; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .tilt { transition: none; transform: none !important; }
   .through-line { stroke-dashoffset: 0; transition: none; }
 }
 
-:root[data-live='true'] .grain::after { animation: grain 1.2s steps(6) infinite; }
 :root[data-live='true'] .aurora::before { animation: drift-a 22s ease-in-out infinite alternate; }
 :root[data-live='true'] .aurora::after { animation: drift-b 26s ease-in-out infinite alternate; }
 :root[data-live='true'] .flare { animation: flare 9s ease-in-out infinite; }
 :root[data-live='true'] .text-gold-sheen { animation: sheen 7s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { :root[data-live='true'] .grain::after, :root[data-live='true'] .aurora::before, :root[data-live='true'] .aurora::after, :root[data-live='true'] .flare, :root[data-live='true'] .text-gold-sheen, :root[data-live='true'] .float-a, :root[data-live='true'] .float-b, :root[data-live='true'] .float-c, :root[data-live='true'] .rec, :root[data-live='true'] .marquee-track { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root[data-live='true'] .aurora::before, :root[data-live='true'] .aurora::after, :root[data-live='true'] .flare, :root[data-live='true'] .text-gold-sheen, :root[data-live='true'] .float-a, :root[data-live='true'] .float-b, :root[data-live='true'] .float-c, :root[data-live='true'] .rec, :root[data-live='true'] .marquee-track { animation: none !important; } }
 
 /* ═══ ENTERPRISE PASS (owner, 2026-10-01: "reduce the gradient thing… it must
    feel enterprise"). The decorative light is withdrawn; the product's own
@@ -162,14 +147,18 @@
 .aurora::before, .aurora::after { display: none !important; }
 .aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.05), transparent 40%); }
 :root:not(.dark) .aurora { background: linear-gradient(to bottom, hsl(var(--glow) / 0.035), transparent 40%); }
+.dark .aurora { background: none; } /* Ink is matte */
 .flare { display: none !important; }
 .text-gold-sheen { background: none; -webkit-background-clip: initial; background-clip: initial; color: hsl(var(--primary)); animation: none !important; }
 /* Floating screens stay (owner, 2026-10-01: "floating motion isn't too bad"). */
-.grain::after { opacity: 0.025 !important; animation: none !important; }
 .spotlight::before { background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--foreground) / 0.04), transparent 60%); }
 .spot-border::after { background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), hsl(var(--primary) / 0.55), transparent 70%); }
-.screen { box-shadow: 0 0 0 0.5px hsl(var(--foreground) / 0.06), 0 30px 80px -40px hsl(228 90% 3% / 0.8); border-color: hsl(var(--foreground) / 0.12); }
+.screen { box-shadow: 0 0 0 0.5px hsl(var(--foreground) / 0.06), 0 30px 80px -40px hsl(0 0% 0% / 0.8); border-color: hsl(var(--foreground) / 0.12); }
 .screen::after { background: linear-gradient(115deg, hsl(0 0% 100% / 0.06), transparent 30%); }
+/* Ink is matte: a screen on the dark canvas carries a hairline and a dark
+   shadow — no violet halo, no glossy sweep. */
+.dark .screen { border-color: hsl(var(--border)); box-shadow: 0 30px 80px -40px hsl(0 0% 0% / 0.85); }
+.dark .screen::after { background: none; }
 /* (A flat-canvas override stood here from the enterprise pass. It never
    applied — globals.css declares .site-canvas after this import, so its two
    faint washes are what has rendered all along, and remain.) */

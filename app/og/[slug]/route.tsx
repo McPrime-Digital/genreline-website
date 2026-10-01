@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const src = `data:image/png;base64,${mark.toString('base64')}`
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 72, background: '#020A2B', color: '#E8EBF5' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 72, background: '#0B0A1F', color: '#E8EBF5' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src} width={70} height={56} alt="" />

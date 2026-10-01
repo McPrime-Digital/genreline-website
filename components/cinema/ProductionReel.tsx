@@ -9,7 +9,7 @@ export type ReelFrame = { tc: string; title: string; body: string; media?: strin
 function Frame({ f }: { f: ReelFrame }) {
   const m = f.media && hasMedia(f.media) ? f.media : null
   return (
-    <div data-feature-id={f.featureId} className="mx-2 w-[300px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[hsl(228_80%_8%)] sm:w-[340px]">
+    <div data-feature-id={f.featureId} className="mx-2 w-[300px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[hsl(var(--ink-panel))] sm:w-[340px]">
       <div className="relative aspect-[16/10] overflow-hidden bg-[hsl(228_60%_12%)]">
         {m ? <Media id={m} frame={false} sizes="340px" className="!rounded-none opacity-90" /> : (
           <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.35),transparent_60%),radial-gradient(circle_at_80%_80%,hsl(var(--glow)/0.3),transparent_55%)] font-display text-3xl font-bold text-white/80">{f.title}</div>
