@@ -9,7 +9,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Tabs } from 'radix-ui'
-import { cn } from '@/lib/utils'
+import { cx as cn } from '@/lib/cx'
 
 export type StackJob = { job: string; surface: string; body: string; href: string }
 
@@ -41,7 +41,7 @@ export function StackRow({ jobs }: { jobs: readonly StackJob[] }) {
       {jobs.map((j) => (
         <Tabs.Content key={j.job} value={j.job} className="outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <div className="swap-enter squircle-lg border border-border bg-card/50 p-6 sm:p-8">
-            <p className="text-[13px] text-faint">In Genreline</p>
+            <p className="text-[13px] text-muted-foreground">In Genreline</p>
             <p className="mt-2 font-display text-2xl font-semibold leading-snug text-foreground">{j.surface}</p>
             <p className="mt-3 max-w-[56ch] text-[15px] leading-7 text-muted-foreground">{j.body}</p>
             <Link href={j.href} className="mt-5 inline-block text-sm font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-primary">

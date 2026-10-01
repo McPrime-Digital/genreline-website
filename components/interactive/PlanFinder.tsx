@@ -9,8 +9,8 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
-import { Check, Minus } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Check, Minus } from '@/components/icons'
+import { cx as cn } from '@/lib/cx'
 import type { Plan } from '@/content/pricing'
 
 const fmt = (n: number | null, unit = '') => (n === null ? 'No limit' : `${n.toLocaleString('en-US')}${unit}`)

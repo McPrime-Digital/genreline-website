@@ -12,7 +12,7 @@
  * derivation: a pale gold, a navy, a neon yellow and a pure red.
  */
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cx as cn } from '@/lib/cx'
 
 const PRESETS = [
   { hex: '#E9D8A6', name: 'Pale gold' },
@@ -75,7 +75,7 @@ export function BrandDemo() {
             className="h-10 w-32 rounded-lg border border-input bg-background px-3 font-body text-sm tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 aria-[invalid=true]:border-destructive"
           />
         </div>
-        <p id="brand-hex-hint" className={cn('mt-2 text-[12px]', valid(draft) ? 'text-faint' : 'text-destructive')}>
+        <p id="brand-hex-hint" className={cn('mt-2 text-[12px]', valid(draft) ? 'text-muted-foreground' : 'text-destructive')}>
           {valid(draft) ? 'Six hex digits, like #1F6F5B.' : 'Enter six hex digits after the #, like #1F6F5B.'}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">

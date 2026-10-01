@@ -4,7 +4,7 @@
  *  loads on request; S-B: nothing decorative moves on its own). */
 import * as React from 'react'
 import Image from 'next/image'
-import { Play } from 'lucide-react'
+import { Play } from '@/components/icons'
 
 export function PlayOnRequest({ src, poster, width, height, label }: { src: string; poster?: string; width: number; height: number; label: string }) {
   const [playing, setPlaying] = React.useState(false)

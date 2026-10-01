@@ -175,3 +175,9 @@
 @media (prefers-reduced-transparency: reduce) {
   .glass-panel { background: hsl(var(--popover)); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+/* WEBSITE NOTE (measured 2026-10-01, WCAG 2.1 relative luminance):
+   --text-faint is 4.3:1 on the light canvas and 3.8:1 on the dark one — below
+   AA's 4.5:1 for small text. The site uses it for icons and placeholders only;
+   every piece of TEXT uses --muted-foreground. Reported to the app, which
+   uses --text-faint for text (S-B "section labels … in the faint colour"). */

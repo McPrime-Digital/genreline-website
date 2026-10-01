@@ -8,7 +8,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Dialog, VisuallyHidden } from 'radix-ui'
-import { CornerDownLeft, Search } from 'lucide-react'
+import { CornerDownLeft, Search } from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
 import { Kbd } from '@/components/ui/kbd'
 import { fuzzyScore } from '@/lib/fuzzy'
@@ -93,7 +93,7 @@ export default function SearchPalette({ open, onOpenChange }: { open: boolean; o
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-foreground">{item.title}</span>
-                  <span className="block text-[12px] text-faint">{item.group === 'Pages' ? item.href : `On ${item.href}`}</span>
+                  <span className="block text-[12px] text-muted-foreground">{item.group === 'Pages' ? item.href : `On ${item.href}`}</span>
                 </span>
                 {item.badge && <Badge tone={item.badge === 'Coming' ? 'blue' : 'green'} dot>{item.badge}</Badge>}
                 {i === active && <CornerDownLeft aria-hidden className="size-3.5 text-faint" />}

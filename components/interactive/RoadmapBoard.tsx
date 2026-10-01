@@ -7,10 +7,10 @@
  * unfiltered list and nothing mismatches on hydration.
  */
 import * as React from 'react'
-import { Search } from 'lucide-react'
+import { Search } from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
 import { fuzzyScore } from '@/lib/fuzzy'
-import { cn } from '@/lib/utils'
+import { cx as cn } from '@/lib/cx'
 import type { RoadmapRow } from '@/content/roadmap'
 
 const EVENT = 'roadmap:url'
@@ -53,9 +53,9 @@ export function RoadmapBoard({ rows, spaces }: { rows: readonly RoadmapRow[]; sp
     <div>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div role="group" aria-label="Status" className="flex flex-wrap gap-2">
-          <button type="button" aria-pressed={!status} onClick={() => setParam('status', null)} className={chip(!status)}>All <span className="tabular-nums text-faint">{counts.all}</span></button>
-          <button type="button" aria-pressed={status === 'Being built'} onClick={() => setParam('status', 'Being built')} className={chip(status === 'Being built')}>Being built <span className="tabular-nums text-faint">{counts.built}</span></button>
-          <button type="button" aria-pressed={status === 'Planned'} onClick={() => setParam('status', 'Planned')} className={chip(status === 'Planned')}>Planned <span className="tabular-nums text-faint">{counts.planned}</span></button>
+          <button type="button" aria-pressed={!status} onClick={() => setParam('status', null)} className={chip(!status)}>All <span className="tabular-nums text-muted-foreground">{counts.all}</span></button>
+          <button type="button" aria-pressed={status === 'Being built'} onClick={() => setParam('status', 'Being built')} className={chip(status === 'Being built')}>Being built <span className="tabular-nums text-muted-foreground">{counts.built}</span></button>
+          <button type="button" aria-pressed={status === 'Planned'} onClick={() => setParam('status', 'Planned')} className={chip(status === 'Planned')}>Planned <span className="tabular-nums text-muted-foreground">{counts.planned}</span></button>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor="rm-area">Area</label>

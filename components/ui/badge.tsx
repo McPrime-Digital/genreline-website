@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
+import { cx as cn } from '@/lib/cx'
 
 /** The app's status vocabulary: a tone is a MEANING, so two pages cannot
  *  colour the same state differently. Green = done/available, blue = in

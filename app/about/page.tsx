@@ -34,7 +34,7 @@ export default function About() {
             <Media id="about-founder" frame={false} sizes="200px" />
             <div>
               <p className="font-display text-xl font-semibold text-foreground">{FOUNDER.name}</p>
-              <p className="text-[14px] text-faint">{FOUNDER.role}</p>
+              <p className="text-[14px] text-muted-foreground">{FOUNDER.role}</p>
               <p className="mt-3 text-[16px] leading-7 text-muted-foreground">{FOUNDER.bio}</p>
             </div>
           </div>

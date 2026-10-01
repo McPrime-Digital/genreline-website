@@ -11,7 +11,7 @@ import './globals.css'
 
 // The two faces, self-hosted and preloaded by next/font at build (S-W §8).
 const geist = Geist({ subsets: ['latin'], variable: '--font-body', display: 'swap' })
-const schibsted = Schibsted_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap' })
+const schibsted = Schibsted_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap', preload: false })
 
 const isProduction = process.env.VERCEL_ENV === 'production'
 

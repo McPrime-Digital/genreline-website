@@ -16,7 +16,7 @@ export default function Changelog() {
         <ol className="space-y-14">
           {CHANGELOG.map((e) => (
             <li key={e.date + e.title} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-8">
-              <time dateTime={e.date} className="text-[13px] tabular-nums text-faint sm:pt-1.5">{date.format(new Date(e.date))}</time>
+              <time dateTime={e.date} className="text-[13px] tabular-nums text-muted-foreground sm:pt-1.5">{date.format(new Date(e.date))}</time>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-display text-xl font-semibold text-foreground">{e.title}</h2>

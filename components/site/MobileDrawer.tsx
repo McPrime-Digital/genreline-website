@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * The mobile drawer (S-W §5.1): full screen, the header's structure as
+ * The mobile drawer (S-W §5.1), loaded on first intent by MobileNav.tsx: full screen, the header's structure as
  * accordions, the two CTAs pinned to the bottom above the safe area.
  *
  * It enters from the right and leaves to the right (spatial consistency), and
@@ -14,7 +14,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Accordion, Dialog, VisuallyHidden } from 'radix-ui'
-import { ChevronDown, Menu, X } from 'lucide-react'
+import { ChevronDown, X } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductMark } from '@/components/ProductMark'
@@ -51,8 +51,7 @@ function Section({ value, title, children }: { value: string; title: string; chi
   )
 }
 
-export function MobileNav({ nav }: { nav: HeaderNav }) {
-  const [open, setOpen] = React.useState(false)
+export default function MobileDrawer({ nav, open, setOpen }: { nav: HeaderNav; open: boolean; setOpen: (o: boolean) => void }) {
   const pathname = usePathname()
   const panel = React.useRef<HTMLDivElement>(null)
   const drag = React.useRef<{ x: number; y: number; t: number; id: number; type: string; active: boolean; locked: boolean; dx: number } | null>(null)
@@ -122,11 +121,6 @@ export function MobileNav({ nav }: { nav: HeaderNav }) {
         setOpen(o)
       }}
     >
-      <Dialog.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Open menu" className="lg:hidden">
-          <Menu aria-hidden />
-        </Button>
-      </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Content
           ref={panel}
@@ -159,7 +153,7 @@ export function MobileNav({ nav }: { nav: HeaderNav }) {
               <Section value="product" title="Product">
                 {nav.product.map((col) => (
                   <div key={col.heading} className="pb-2">
-                    <p className="px-3 pt-2 text-[11px] font-semibold text-faint">{col.heading}</p>
+                    <p className="px-3 pt-2 text-[11px] font-semibold text-muted-foreground">{col.heading}</p>
                     {col.links.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}
                   </div>
                 ))}

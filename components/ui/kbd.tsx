@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cx as cn } from '@/lib/cx'
 
 export function Kbd({ className, ...props }: React.ComponentProps<'kbd'>) {
   return (

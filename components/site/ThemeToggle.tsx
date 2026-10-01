@@ -5,8 +5,8 @@
  *  cannot know the visitor's choice, and guessing would mismatch hydration. */
 import * as React from 'react'
 import { useTheme } from 'next-themes'
-import { Monitor, Moon, Sun } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Monitor, Moon, Sun } from '@/components/icons'
+import { cx as cn } from '@/lib/cx'
 
 const subscribe = () => () => {}
 const OPTIONS = [
@@ -26,9 +26,9 @@ export function ThemeToggle() {
         <label
           key={value}
           className={cn(
-            'relative inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-muted-foreground transition-colors duration-[--dur-pop]',
-            'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring hover:text-foreground',
-            current === value && 'bg-secondary text-foreground',
+            'relative inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[12px] font-medium transition-colors duration-[--dur-pop]',
+            'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+            current === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
           )}
         >
           <input type="radio" name="theme" value={value} checked={current === value} onChange={() => setTheme(value)} className="sr-only" />

@@ -13,7 +13,7 @@
  * components/shared/ApprovalCertificate.tsx).
  */
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cx as cn } from '@/lib/cx'
 
 type Step = { when: string; title: string; detail: string }
 
@@ -61,9 +61,9 @@ export function RecordDemo() {
             <label
               key={value}
               className={cn(
-                'inline-flex h-9 cursor-pointer items-center rounded-md px-3.5 text-[13px] font-medium text-muted-foreground transition-colors duration-[--dur-pop]',
-                'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring hover:text-foreground',
-                path === value && 'bg-background text-foreground shadow-[0_1px_2px_hsl(var(--foreground)/0.08)]',
+                'inline-flex h-9 cursor-pointer items-center rounded-md px-3.5 text-[13px] font-medium transition-colors duration-[--dur-pop]',
+                'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+                path === value ? 'bg-background text-foreground shadow-[0_1px_2px_hsl(var(--foreground)/0.08)]' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <input type="radio" name="record-path" value={value} checked={path === value} onChange={() => choose(value)} className="sr-only" />
@@ -91,7 +91,7 @@ export function RecordDemo() {
                     <span className={cn('size-2.5 rounded-full border-2 transition-colors duration-[--dur-pop]', state === 'future' ? 'border-border bg-transparent' : i === steps.length - 1 && path === 'silence' && state === 'current' ? 'border-status-violet bg-status-violet' : 'border-primary bg-primary')} />
                   </span>
                   <span className="min-w-0">
-                    <span className={cn('block text-[12px] tabular-nums', state === 'future' ? 'text-faint' : 'text-muted-foreground')}>{s.when}</span>
+                    <span className={cn('block text-[12px] tabular-nums', state === 'future' ? 'text-muted-foreground' : 'text-muted-foreground')}>{s.when}</span>
                     <span className={cn('block text-[15px] font-semibold', state === 'future' ? 'text-muted-foreground' : 'text-foreground')}>{s.title}</span>
                     {state === 'current' && <span className="swap-enter mt-1 block text-[14px] leading-6 text-muted-foreground">{s.detail}</span>}
                   </span>
@@ -117,7 +117,7 @@ export function RecordDemo() {
           >
             {done ? 'Start again' : 'Next step'}
           </button>
-          <span className="ml-auto text-[12px] tabular-nums text-faint">{Math.min(step, steps.length - 1) + 1} of {steps.length}</span>
+          <span className="ml-auto text-[12px] tabular-nums text-muted-foreground">{Math.min(step, steps.length - 1) + 1} of {steps.length}</span>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export function RecordDemo() {
         {/* The calendar card, set the way the client's calendar sets it. */}
         <div className="squircle-lg border border-border bg-card p-6 sm:p-8">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-            <span className={cn('rounded-md px-2 py-1 text-xs font-semibold tabular-nums', lapsed ? 'bg-status-violet/15 text-status-violet' : 'bg-primary/10 text-primary')}>Thu 5:00 PM</span>
+            <span className={cn('rounded-md border px-2 py-1 text-xs font-semibold tabular-nums text-foreground', lapsed ? 'border-status-violet/50 bg-status-violet/10' : 'border-primary/50 bg-primary/10')}>Thu 5:00 PM</span>
             <span className="text-[13px] text-muted-foreground">Rough cut v3 · {path === 'responds' && done ? 'signed off' : lapsed ? 'review window closed' : 'awaiting the client'}</span>
           </div>
           <p key={current.sentence} aria-live="polite" className="swap-enter mt-4 max-w-[42ch] font-display text-[22px] font-semibold leading-snug text-foreground sm:text-[24px]">
@@ -136,7 +136,7 @@ export function RecordDemo() {
         {/* The certificate — appears when the record has something to certify. */}
         {done && (
           <figure className="swap-enter squircle-lg border border-border bg-background p-6 sm:p-8">
-            <figcaption className="text-[12px] font-semibold text-faint">{path === 'silence' ? 'On the certificate, word for word' : 'On the record'}</figcaption>
+            <figcaption className="text-[12px] font-semibold text-muted-foreground">{path === 'silence' ? 'On the certificate, word for word' : 'On the record'}</figcaption>
             <blockquote className="mt-3 border-l-2 border-primary pl-4 text-[16px] leading-7 text-foreground">
               {path === 'silence' ? CERTIFICATE : 'Signed off by the named approver, with the time and the notes that came with it.'}
             </blockquote>
