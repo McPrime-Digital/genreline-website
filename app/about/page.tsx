@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CtaBand, PageHero, Section } from '@/components/site/Frame'
 import { Media } from '@/components/site/Media'
 import { FOUNDER } from '@/lib/site'
+import { ManifestoVisual } from '@/components/cinema/HeroVisuals'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/about')
@@ -13,6 +14,7 @@ export default function About() {
         title="Why Genreline exists."
         lead="A production runs on a dozen tools, and the record of what happened falls through the gaps between them."
         size="md"
+        visual={<ManifestoVisual />}
       />
       <Section width="measure" className="pt-0">
         <div className="space-y-5 text-lg leading-relaxed text-muted-foreground">

@@ -16,11 +16,12 @@ export default function Production() {
   return (
     <>
       <PageHero
-        title="From the script to the shoot day."
+        kicker="Production"
+        title="From the first page of the script to the shoot day."
         lead="Scenes come from the screenplay the writer is in. Breakdown, stripboard and shoot days follow, and a call sheet goes out sealed and numbered in your studio’s voice."
         media="crew-production"
       />
-      <Section id="replaces" title="What it replaces">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['Retyping scenes from a PDF', 'A scheduling program', 'A stripboard in a spreadsheet', 'Call sheet templates', 'A calendar kept by hand']} />
       </Section>
       <Section id="the-chain" title="One chain, five steps">

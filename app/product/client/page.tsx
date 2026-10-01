@@ -1,5 +1,6 @@
 import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
+import { PeopleGrid } from '@/components/site/PeopleGrid'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/product/client')
@@ -8,11 +9,12 @@ export default function Client() {
   return (
     <>
       <PageHero
-        title="Run client work in your studio’s brand."
+        kicker="The Client space and portal"
+        title="Where clients meet the work — in your brand."
         lead="Companies, projects, the conversation, the cuts, the approvals, the contracts and the invoices — and a portal your clients sign into that wears your name, not ours."
         media={['portal-dashboard', 'portal-messages', 'client-overview']}
       />
-      <Section id="replaces" title="What it replaces">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['Email threads with clients', 'File-sharing links', 'A review tool', 'An e-signature tool', 'An invoicing tool', 'A client portal from somebody else’s brand']} />
       </Section>
       <Section id="capabilities" className="pt-0">
@@ -85,6 +87,18 @@ export default function Client() {
           body={<p>Numbered invoices with your bank transfer details on every one, or a Stripe payment link you add. The client sees them in the portal.</p>}
           features={['MON-01', { id: 'MON-02', text: 'Bank transfer details on every invoice, or a Stripe payment link' }]}
           media="portal-invoices"
+        />
+      </Section>
+      <Section id="people" kicker="Who works here" title="Everyone in it, with exactly what they need">
+        <PeopleGrid
+          people={[
+            { role: 'The client’s owner', sees: 'Their company’s whole portal, and the power to invite their own team', featureId: 'CLI-04' },
+            { role: 'Reviewers and approvers', sees: 'The cuts and approvals addressed to them, scoped to their projects if the owner says so', featureId: 'IDN-09' },
+            { role: 'Client legal and finance', sees: 'Contracts, the clearance panel, and invoices', featureId: 'IDN-10' },
+            { role: 'Guests', sees: 'One cut through a screening link, watermarked with their name — no account', featureId: 'CLI-08' },
+            { role: 'Signers', sees: 'One document, through a single-use link', featureId: 'DOC-09' },
+            { role: 'New teammates', sees: 'History only from the date the owner sets', featureId: 'IDN-09' },
+          ]}
         />
       </Section>
       <Section id="connects" title="How it connects">

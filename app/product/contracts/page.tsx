@@ -8,11 +8,12 @@ export default function Contracts() {
   return (
     <>
       <PageHero
-        title="Contracts that hold up."
+        kicker="Contracts and signing"
+        title="Contracts that hold up — and prove themselves."
         lead="Templates, fields placed on the PDF, consent before signature, a cryptographic seal, and a certificate of completion sealed inside the file — so the file proves itself to anybody who holds it."
         media="client-contracts"
       />
-      <Section id="replaces" title="What it replaces">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['An e-signature tool', 'Release forms on paper', 'A rights spreadsheet', 'A folder of signed PDFs nobody can find']} />
       </Section>
       <Section id="capabilities" className="pt-0">

@@ -18,6 +18,7 @@ import { preload } from 'react-dom'
 import { slot, type MediaSlot } from '@/content/media'
 import { PlayOnRequest } from '@/components/site/PlayOnRequest'
 import { cn } from '@/lib/utils'
+import { INDEXABLE } from '@/lib/site'
 
 const pub = (p: string) => existsSync(join(process.cwd(), 'public', p))
 
@@ -65,18 +66,20 @@ export function mediaFiles(s: MediaSlot) {
 }
 
 function Placeholder({ s, className }: { s: MediaSlot; className?: string }) {
-  const what = s.kind === 'capture'
-    ? <>Product capture <code className="text-foreground">{s.id}</code> — run <code className="text-foreground">npm run capture</code> ({s.route})</>
-    : <>Upload <code className="text-foreground">public/media/{s.id}.{s.format}</code> at {s.width}×{s.height}: {s.brief}</>
+  // A designed frame, not a hatch: the lit stage, viewfinder corners and the
+  // slot's subject. What to upload is said only on previews.
   return (
-    <div
-      role="img"
-      aria-label={s.alt}
-      data-media-placeholder={s.id}
-      className={cn('media-placeholder flex items-end p-4 text-left', className)}
-      style={{ aspectRatio: `${s.width} / ${s.height}` }}
-    >
-      <p className="max-w-[46ch] rounded-md bg-background/85 px-2.5 py-1.5 text-[12px] leading-5 text-muted-foreground backdrop-blur">{what}</p>
+    <div role="img" aria-label={s.alt} data-media-placeholder={s.id} className={cn('relative isolate overflow-hidden', className)} style={{ aspectRatio: `${s.width} / ${s.height}` }}>
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_30%_20%,hsl(var(--primary)/0.35),transparent_55%),radial-gradient(ellipse_at_80%_90%,hsl(var(--glow)/0.35),transparent_55%),hsl(var(--card))]" />
+      <div className="flare top-1/2 -z-10" />
+      {['left-3 top-3 border-l-2 border-t-2', 'right-3 top-3 border-r-2 border-t-2', 'bottom-3 left-3 border-b-2 border-l-2', 'bottom-3 right-3 border-b-2 border-r-2'].map((c) => <span key={c} aria-hidden className={`absolute size-5 border-foreground/40 ${c}`} />)}
+      <div className="absolute inset-0 grid place-items-center p-6 text-center">
+        <div>
+          <span aria-hidden className="mx-auto mb-3 flex items-center justify-center gap-1.5"><span className="rec size-2 rounded-full bg-destructive" /><span className="font-display text-[12px] font-semibold tracking-wide text-foreground/70">REC</span></span>
+          <p className="max-w-[30ch] font-display text-lg font-semibold text-foreground/90">{s.alt}</p>
+          {!INDEXABLE && s.kind === 'upload' && <p className="mx-auto mt-3 max-w-[40ch] text-[11px] leading-4 text-muted-foreground">Upload public/media/{s.id}.{s.format} · {s.width}×{s.height}</p>}
+        </div>
+      </div>
     </div>
   )
 }

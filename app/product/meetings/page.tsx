@@ -8,11 +8,12 @@ export default function Meetings() {
   return (
     <>
       <PageHero
-        title="Meet, review together, keep the notes."
+        kicker="Meetings and review sessions"
+        title="Review together. Keep every note."
         lead="Audio and video meetings in the place the work lives, a review session that plays the cut in sync for the whole room, and a calendar where the dates that matter arrive by themselves."
         media="client-meetings"
       />
-      <Section id="replaces" title="What it replaces">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['A video-call link pasted into a chat', 'Screen-sharing a cut', 'A booking page', 'Notes typed up after the call']} />
       </Section>
       <Section id="capabilities" className="pt-0">

@@ -4,7 +4,7 @@ import { Media, hasMedia } from '@/components/site/Media'
 import { BrandDemo } from '@/components/interactive/BrandDemo'
 import { HomeJsonLd } from '@/components/site/JsonLd'
 import { HeroStage } from '@/components/cinema/HeroStage'
-import { SpacesShowcase, type SpacePanel } from '@/components/cinema/SpacesShowcase'
+import { SpacesSection } from '@/components/cinema/SpacesSection'
 import { WhoItsFor } from '@/components/cinema/WhoItsFor'
 import { CollaboratorMap } from '@/components/cinema/CollaboratorMap'
 import { ProductionReel, type ReelFrame } from '@/components/cinema/ProductionReel'
@@ -14,7 +14,7 @@ import { Tilt } from '@/components/cinema/Tilt'
 import { Spotlight } from '@/components/cinema/Spotlight'
 import { Button } from '@/components/ui/button'
 import { Check } from '@/components/icons'
-import { feature, siteLabel } from '@/content/features'
+import { feature } from '@/content/features'
 import { COLLABORATORS, SEGMENTS } from '@/content/segments'
 import { APP } from '@/lib/site'
 import { pageMeta } from '@/lib/meta'
@@ -22,53 +22,6 @@ import { pageMeta } from '@/lib/meta'
 export const metadata = pageMeta('/')
 
 const shot = (id: string, sizes = '(min-width: 1024px) 680px, 100vw') => (hasMedia(id) ? <Media id={id} frame={false} sizes={sizes} /> : null)
-const shots = (list: [string, string][]) => list.filter(([id]) => hasMedia(id)).map(([id, label]) => ({ key: id, label, node: shot(id)! }))
-const feat = (featureId: string, text: string) => ({ featureId, text, badge: (siteLabel(featureId) ?? 'Available') as 'Available' | 'Coming' })
-
-const SPACES: SpacePanel[] = [
-  {
-    id: 'crew', name: 'Crew', tagline: 'Where the studio works.', href: '/product/crew',
-    body: 'Who is on the job, what they are doing and what they may see — and the schedule that comes straight out of the script.',
-    features: [
-      feat('CRW-02', 'A directory that is a production database — skills, rates, union, kit, availability'),
-      feat('CRW-04', 'Tasks with assignees from both rosters, subtasks, relations and watchers'),
-      feat('MSG-02', 'Internal rooms, threads and a call button in every room'),
-      feat('CRW-07', 'Script to scenes to breakdown to stripboard to shoot days'),
-      feat('CRW-06', 'Call sheets — sealed, numbered, sent in your voice'),
-      feat('IDN-04', 'Roles, project roles, seats, grants and denials with expiry'),
-    ],
-    people: ['Producers', 'Coordinators', 'Editors', 'Freelancers, scoped to their jobs', 'Finance'],
-    shots: shots([['crew-tasks', 'Tasks'], ['crew-production', 'Breakdown and stripboard'], ['crew-chat', 'Crew rooms'], ['crew-directory', 'Directory'], ['crew-calendar', 'Calendar']]),
-  },
-  {
-    id: 'client', name: 'Client', tagline: 'Where clients meet the work — in your brand.', href: '/product/client',
-    body: 'Every client company gets its own room, vault and portal. They review frame by frame, sign, book and pay — and never see a vendor’s name but yours.',
-    features: [
-      feat('MSG-01', 'One room per client company, with project tags and threads'),
-      feat('APR-14', 'Frame-accurate review, notes on the timecode, drawings on the frame'),
-      feat('APR-02', 'Approval records with a printable certificate'),
-      feat('DOC-10', 'Contracts and releases that write the rights they prove'),
-      feat('CLI-08', 'Screening links for people with no account'),
-      feat('CLI-05', 'Your colour and logo on the portal, email and sealed PDFs'),
-    ],
-    people: ['Client owners', 'Reviewers and approvers', 'Client legal and finance', 'Guests on a screening link', 'Signers'],
-    shots: shots([['client-messages', 'The client room'], ['portal-review', 'Review in the portal'], ['client-review-record', 'The approval record'], ['portal-contracts', 'Contracts'], ['home-portal-brand-a', 'The portal, in your brand']]),
-  },
-  {
-    id: 'suite', name: 'The Suite', tagline: 'Where the work is made.', href: '/product/suite',
-    body: 'A screenplay editor the production reads from, storyboards, and a library of every asset the studio holds. Image and video generation is being built here, inside the production.',
-    features: [
-      feat('SWR-01', 'A screenplay editor — industry format, locked scenes, tracked changes'),
-      feat('SWR-06', 'Live co-editing with visible cursors'),
-      feat('SWR-09', 'Storyboards — shots, types, prompts, ordering'),
-      feat('FIL-07', 'A studio-wide library with facets and per-production footprint'),
-      feat('STG-01', 'Image and video generation, with a budget and a record'),
-      feat('SWR-04', 'Final Draft (FDX) import and export'),
-    ],
-    people: ['Writers, co-editing live', 'Directors', 'Storyboard artists', 'Producers'],
-    shots: shots([['suite-library', 'The library']]),
-  },
-]
 
 const REEL: ReelFrame[] = [
   { tc: '00:00:01:00', title: 'Script', body: 'Written and co-edited in the screenplay editor.', featureId: 'SWR-01' },
@@ -122,7 +75,7 @@ export default function Home() {
       <section id="spaces" className="relative py-24 sm:py-32">
         <div className="container-wide">
           <Heading kicker="Three spaces, one record" title="Everything a studio does, in the space it belongs." lead="Crew is where you work. Client is where your clients meet the work. The Suite is where the work is made. Underneath all three is one record of who did what, and when." />
-          <div className="mt-14"><SpacesShowcase spaces={SPACES} /></div>
+          <div className="mt-14"><SpacesSection /></div>
         </div>
       </section>
 

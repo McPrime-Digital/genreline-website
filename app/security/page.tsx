@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Feature } from '@/components/FeatureLabel'
 import { PageHero } from '@/components/site/Frame'
+import { SecurityVisual } from '@/components/cinema/HeroVisuals'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/security')
@@ -69,6 +70,7 @@ export default function Security() {
         title="Security, stated precisely."
         lead="Every control that exists, described as it works — and, at the end, what has not been done yet. A young vendor’s strongest trust signal is the list of its gaps."
         size="md"
+        visual={<SecurityVisual />}
       />
       <div className="container-wide grid gap-12 pb-16 lg:grid-cols-[200px_minmax(0,1fr)]">
         <nav aria-label="On this page" className="hidden lg:block">

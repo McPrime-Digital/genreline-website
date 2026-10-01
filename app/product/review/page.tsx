@@ -1,6 +1,8 @@
 import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
 import { RecordDemo } from '@/components/interactive/RecordDemo'
+import { RecordLedger } from '@/components/cinema/RecordLedger'
+import { Reveal } from '@/components/cinema/Reveal'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/product/review')
@@ -9,14 +11,18 @@ export default function Review() {
   return (
     <>
       <PageHero
-        title="Approval is a record, not a status."
+        kicker="Review and approval"
+        title="Every sign‑off, provable."
         lead="Stages, review windows and reminders, frame-accurate notes, and a certificate that holds up years later — with silence recorded as silence, never as a sign-off."
         media="client-review-record"
       />
-      <Section id="the-record" title="What happens when nobody answers" lead="Step through an approval both ways. The words are the ones the record keeps.">
+      <Section id="ledger" kicker="The record" title="Who saw it, what they said, when they decided." lead="Every approval keeps one record: who it went to, how much of the cut they watched, the notes on each frame, and the decision — sealed into a certificate anyone can be handed.">
+        <div className="mx-auto max-w-3xl"><Reveal><RecordLedger /></Reveal></div>
+      </Section>
+      <Section id="the-record" kicker="Both outcomes" title="Step through it either way" lead="When the client signs off, and when the review window closes with no answer — the record names each for what it is.">
         <RecordDemo />
       </Section>
-      <Section id="replaces" title="What it replaces">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['A review tool', 'Approval by email', 'A spreadsheet of who signed off', 'Screenshots of a chat as evidence']} />
       </Section>
       <Section id="capabilities" className="pt-0">

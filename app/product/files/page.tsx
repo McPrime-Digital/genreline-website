@@ -8,11 +8,12 @@ export default function Files() {
   return (
     <>
       <PageHero
-        title="Files and screening."
+        kicker="Files and the screening room"
+        title="Every file, every version, every viewer."
         lead="A vault on both sides, uploads that pause and resume, versions that stack, and a screening room that records how far each guest actually watched."
         media={['client-files', 'portal-files', 'suite-library']}
       />
-      <Section id="replaces" title="What it replaces">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['A file-transfer service', 'Shared drive folders', 'Review links that record nothing', 'Version numbers in file names']} />
       </Section>
       <Section id="capabilities" className="pt-0">

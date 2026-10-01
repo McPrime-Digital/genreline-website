@@ -26,6 +26,7 @@ export function PageHero({
   mediaPriority = true,
   size = 'lg',
   kicker,
+  visual,
 }: {
   title: React.ReactNode
   lead?: React.ReactNode
@@ -34,19 +35,23 @@ export function PageHero({
   mediaPriority?: boolean
   size?: 'lg' | 'md'
   kicker?: string
+  visual?: React.ReactNode
 }) {
   const m = firstMedia(media)
   return (
     <section className="relative isolate -mt-16 overflow-hidden pb-16 pt-16">
       <div className="aurora -z-10" />
       <div className="viewfinder -z-10" />
-      <div className="container-wide pt-14 sm:pt-20">
+      <div className={cn('container-wide pt-14 sm:pt-20', visual && 'grid items-center gap-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]')}>
+        <div>
         {kicker ? <p className="font-display text-[13px] font-semibold text-primary">{kicker}</p> : <Rule />}
         <h1 className={cn('mt-6 max-w-[18ch] font-display font-bold text-foreground', size === 'lg' ? 'text-[44px] leading-[1.02] tracking-[-0.03em] sm:text-[64px] lg:text-[76px]' : 'text-[40px] leading-[1.05] tracking-[-0.03em] sm:text-[56px]')}>
           {title}
         </h1>
         {lead && <p className="mt-6 max-w-[60ch] text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-8">{lead}</p>}
         {children && <div className="mt-8">{children}</div>}
+        </div>
+        {visual && <div className="stage-3d">{visual}</div>}
       </div>
       {m && (
         <div className="container-wide stage-3d mt-14">
@@ -69,8 +74,10 @@ export function Section({
   children,
   className,
   width = 'wide',
+  kicker,
 }: {
   id?: string
+  kicker?: string
   title?: React.ReactNode
   lead?: React.ReactNode
   children?: React.ReactNode
@@ -79,8 +86,9 @@ export function Section({
 }) {
   const headingId = id ? `${id}-title` : undefined
   return (
-    <section id={id} aria-labelledby={title ? headingId : undefined} className={cn('py-16 sm:py-24', className)}>
+    <section id={id} aria-labelledby={title ? headingId : undefined} className={cn('py-20 sm:py-28', className)}>
       <div className={width === 'wide' ? 'container-wide' : 'container-measure'}>
+        {kicker && <p className="mb-3 font-display text-[13px] font-semibold text-primary">{kicker}</p>}
         {title && (
           <h2 id={headingId} className="max-w-[24ch] font-display text-4xl font-bold tracking-[-0.025em] text-foreground sm:text-5xl">
             {title}
@@ -96,11 +104,16 @@ export function Section({
 /** "What it replaces" — the jobs a page takes over, as a quiet row. */
 export function Replaces({ items }: { items: readonly string[] }) {
   return (
-    <ul className="flex flex-wrap gap-2">
-      {items.map((t) => (
-        <li key={t} className="rounded-lg border border-border bg-card/50 px-3 py-1.5 text-[13px] text-muted-foreground">{t}</li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+      <ul className="flex flex-wrap gap-2 lg:max-w-[70%]">
+        {items.map((t) => (
+          <li key={t} className="rounded-full border border-border bg-card/30 px-3.5 py-1.5 text-[14px] text-muted-foreground line-through decoration-destructive/60 decoration-2">{t}</li>
+        ))}
+      </ul>
+      <p className="flex items-center gap-3 font-display text-xl font-bold text-foreground">
+        <span aria-hidden className="h-px w-10 bg-primary" /> One place, one record.
+      </p>
+    </div>
   )
 }
 

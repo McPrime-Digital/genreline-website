@@ -3,6 +3,7 @@ import { Media } from '@/components/site/Media'
 import { PageHero, Section } from '@/components/site/Frame'
 import { InquiryForm } from '@/components/interactive/InquiryForm'
 import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
+import { NetworkVisual } from '@/components/cinema/HeroVisuals'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/network')
@@ -21,6 +22,7 @@ export default function Network() {
         title="The filmmaker network."
         lead="Theater, Community, streaming and a marketplace — for filmmakers, studios and working actors. It lives outside every studio, and it is being built. Early access is open."
         size="md"
+        visual={<NetworkVisual />}
       />
       <Section className="pt-0">
         <div className="space-y-16">

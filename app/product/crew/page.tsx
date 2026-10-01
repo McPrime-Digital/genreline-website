@@ -1,5 +1,6 @@
 import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
+import { PeopleGrid } from '@/components/site/PeopleGrid'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/product/crew')
@@ -8,11 +9,12 @@ export default function Crew() {
   return (
     <>
       <PageHero
-        title="Run the team and the production."
+        kicker="The Crew space"
+        title="Where the studio works."
         lead="The Crew space is where the studio works: who is on the job, what they are doing, what they may see, and the schedule that comes out of the script."
         media="crew-tasks"
       />
-      <Section id="replaces" title="What it replaces" width="wide">
+      <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
         <Replaces items={['A chat app for the crew', 'A task tracker', 'A crew list in a spreadsheet', 'Call sheet templates', 'Scheduling software', 'A spreadsheet of who may see what']} />
       </Section>
       <Section id="capabilities" className="pt-0">
@@ -57,6 +59,18 @@ export default function Crew() {
           title="A budget for every person"
           body={<p>Set an AI spend limit per person or per seat class, by day, week or month. The person it governs can see it — a refused call is explained, never mysterious.</p>}
           features={['MON-06', 'MON-05']}
+        />
+      </Section>
+      <Section id="people" kicker="Who works here" title="Everyone in it, with exactly what they need">
+        <PeopleGrid
+          people={[
+            { role: 'Producers and coordinators', sees: 'Every production their role covers — staffing, schedule, tasks and approvals', featureId: 'IDN-01' },
+            { role: 'Editors, colourists, assistants', sees: 'Their tasks, rooms and the productions they are on', featureId: 'IDN-02' },
+            { role: 'Freelancers', sees: 'Nothing until assigned — then only those productions, until the assignment expires', featureId: 'IDN-03' },
+            { role: 'Finance', sees: 'Invoices and spend, because their role includes money', featureId: 'IDN-01' },
+            { role: 'Outside collaborators', sees: 'One room and its meetings — the VFX artist on one job', featureId: 'MSG-20' },
+            { role: 'Every change', sees: 'Written to the permission ledger — who granted what, when, until when', featureId: 'IDN-06' },
+          ]}
         />
       </Section>
       <Section id="connects" title="How it connects">

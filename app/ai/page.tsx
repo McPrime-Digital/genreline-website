@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Feature, FeatureLabel, FeatureList } from '@/components/FeatureLabel'
 import { CtaBand, PageHero, Section } from '@/components/site/Frame'
+import { GateVisual } from '@/components/cinema/HeroVisuals'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/ai')
@@ -22,6 +23,7 @@ export default function Ai() {
         title="AI with a budget and a record."
         lead="Image and video generation is being built inside the production: many models through one gate, a ceiling on every call, a budget for every person, and provenance on every asset."
         size="md"
+        visual={<GateVisual />}
       >
         <FeatureLabel id="STG-01" />
       </PageHero>

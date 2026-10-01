@@ -59,13 +59,13 @@ export function FeatureList({
   showBadges?: boolean
 }) {
   return (
-    <ul className={cn('space-y-2.5', className)}>
+    <ul className={cn('space-y-2', className)}>
       {items.map((it) => {
         const id = typeof it === 'string' ? it : it.id
         const text = typeof it === 'string' ? undefined : it.text
         const f = feature(id)
         return (
-          <Feature key={id} id={id} as="li" className="flex items-start justify-between gap-4 text-[15px] leading-6 text-foreground">
+          <Feature key={id} id={id} as="li" className="flex items-start justify-between gap-4 rounded-xl border border-border bg-card/40 px-4 py-3 text-[15px] leading-6 text-foreground backdrop-blur">
             <span className="min-w-0">
               {text ?? f.title}
               {f.caveat && <span className="text-muted-foreground"> — {f.caveat}</span>}

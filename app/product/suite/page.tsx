@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { FeatureLabel, FeatureList } from '@/components/FeatureLabel'
 import { CapabilityBlock, CtaBand, PageHero, Section } from '@/components/site/Frame'
+import { PeopleGrid } from '@/components/site/PeopleGrid'
 import { pageMeta } from '@/lib/meta'
 
 export const metadata = pageMeta('/product/suite')
@@ -15,7 +16,8 @@ export default function Suite() {
   return (
     <>
       <PageHero
-        title="Write it, board it, keep it."
+        kicker="The Suite"
+        title="Where the work is made."
         lead="The Suite is where the work is made: a screenplay editor the production reads from, storyboards, and a library of every asset the studio holds. Image and video generation is being built here, inside the production."
         media={['suite-library', 'crew-production']}
       />
@@ -68,6 +70,15 @@ export default function Suite() {
           <p className="text-[15px] text-muted-foreground">Generation runs through one gate: a budget, a ceiling and provenance on every asset. <Link href="/ai" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">How it will work</Link></p>
         </div>
         <p className="mt-6 text-[15px] text-muted-foreground">Everything else being built, in every space, is on the <Link href="/roadmap" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">roadmap</Link>.</p>
+      </Section>
+      <Section id="people" kicker="Who works here" title="Everyone in it, with exactly what they need">
+        <PeopleGrid
+          people={[
+            { role: 'Writers', sees: 'The screenplay, co-edited live with visible cursors', featureId: 'SWR-06' },
+            { role: 'Directors and storyboard artists', sees: 'The boards, shot by shot', featureId: 'SWR-09' },
+            { role: 'Producers', sees: 'The library, with each production’s footprint', featureId: 'FIL-07' },
+          ]}
+        />
       </Section>
       <CtaBand />
     </>
