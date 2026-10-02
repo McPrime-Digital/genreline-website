@@ -77,7 +77,7 @@ export function HeroStage() {
         </div>
         {/* A title card, not a headline (owner, 2026-10-01: "all in caps with a
             FILM OS flair"): expanded capitals, the widescreen of type. */}
-        <h1 className="film-title mt-8 text-[clamp(28px,7.2vw,80px)] text-foreground">
+        <h1 className="film-title mt-8 text-[clamp(26px,5.8vw,64px)] text-foreground">
           <span className="block">Every space of production.</span>
           <span className="block text-primary">One operating system.</span>
         </h1>
