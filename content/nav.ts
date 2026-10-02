@@ -98,7 +98,7 @@ export const FOOTER: NavColumn[] = [
       { label: 'Responsible disclosure', href: '/security/disclosure' },
       { label: 'AI and provenance', href: '/ai' },
       { label: 'Sign in', href: APP.login },
-      { label: 'Open Studio OS', href: APP.signup },
+      { label: 'Open Studio OS account', href: APP.signup },
     ],
   },
   { heading: 'Company', links: [{ label: 'About', href: '/about' }, { label: 'Contact', href: '/contact' }] },

@@ -4,10 +4,13 @@
  * The header (S-W §5.1). Sticky glass; the menus as a disclosure navigation
  * (MegaMenu.tsx); the theme switch; and the two calls to action as liquid
  * pills in capitals (owner, 2026-10-01: "sign in and open studio os must be
- * caps and have a proper pill or small card liquid form"). There is no search
- * in the header (owner, the same day: "remove the search at the top").
+ * caps and have a proper pill or small card liquid form"; 2026-10-02: the label
+ * is OPEN STUDIO OS ACCOUNT, and both pills "must react when mouse hover" — the
+ * hover lives on the pill classes in globals.css, so every pill on the site
+ * answers the same way). There is no search in the header (owner, 2026-10-01:
+ * "remove the search at the top").
  *
- * ONE GOLD PER VIEW (S-B). OPEN STUDIO OS is the gold pill only when no other
+ * ONE GOLD PER VIEW (S-B). OPEN STUDIO OS ACCOUNT is the gold pill only when no other
  * primary call to action is on screen; every primary CTA on a page carries
  * `data-primary-cta`, and an IntersectionObserver counts the ones in view.
  */
@@ -79,7 +82,7 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
               Sign in
             </a>
             <a href={APP.signup} className={cn(primaryInView ? 'liquid-pill' : 'liquid-pill-gold', 'hidden outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex')}>
-              Open Studio OS
+              Open Studio OS account
             </a>
             <MobileNav nav={nav} />
           </div>

@@ -276,7 +276,7 @@ export default function Home() {
             <h2 className="max-w-[18ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.03em] text-foreground sm:text-7xl">Every space of production. One operating system.</h2>
             <p className="mt-6 max-w-[52ch] text-lg text-muted-foreground">Open a studio, invite your team, add your first client — and make the film in the Suite.</p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+              <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS account</a>
               <a href="/contact?topic=sales" className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Talk to sales</a>
             </div>
           </Reveal>

@@ -203,7 +203,7 @@ export default function MobileDrawer({ nav, open, setOpen }: { nav: HeaderNav; o
           </nav>
           <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <a href={APP.login} className="liquid-pill liquid-pill-lg w-full outline-none focus-visible:ring-2 focus-visible:ring-ring">Sign in</a>
-            <a href={APP.signup} className="liquid-pill-gold liquid-pill-lg w-full outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+            <a href={APP.signup} className="liquid-pill-gold liquid-pill-lg w-full outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS account</a>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

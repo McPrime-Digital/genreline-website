@@ -21,7 +21,7 @@ export function SiteFooter() {
             <p className="mt-5 max-w-[34ch] font-display text-3xl font-bold leading-tight text-foreground">Run the production. Keep the record.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a href={APP.signup} className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+            <a href={APP.signup} className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS account</a>
             <Link href="/contact?topic=sales" className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Talk to us</Link>
           </div>
         </div>

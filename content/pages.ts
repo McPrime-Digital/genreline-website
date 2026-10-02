@@ -9,7 +9,7 @@ export type Section = 'home' | 'crew' | 'client' | 'portal' | 'suite' | 'capabil
 export type SitePage = { path: string; title: string; description: string; section: Section; search?: string }
 
 export const PAGES: readonly SitePage[] = [
-  { path: '/', title: 'Every space of production. One operating system.', description: 'Genreline is the operating system for AI and hybrid film production — the Crew space, the Client space and portal, and the Suite where the work is written, boarded, generated, edited and finished.', section: 'home', search: 'home overview' },
+  { path: '/', title: 'AI & Hybrid Film Production Infrastructure', description: 'Genreline is the operating system for AI and hybrid film production — the Crew space, the Client space and portal, and the Suite where the work is written, boarded, generated, edited and finished.', section: 'home', search: 'home overview' },
   { path: '/product', title: 'Product', description: 'Three spaces — Crew, Client, the Suite — and the platform beneath them.', section: 'capability' },
   { path: '/product/crew', title: 'The Crew space', description: 'Running the team and the production: directory, tasks, internal rooms, script breakdown and permissions.', section: 'crew' },
   { path: '/product/client', title: 'The Client space and portal', description: 'Client work in your studio’s brand: companies, projects, the message hub, invoices, the vault, review and approval, contracts, meetings, the screening room.', section: 'client' },

@@ -3,6 +3,7 @@ import { Geist, Schibsted_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { LiveSwitch } from '@/components/cinema/LiveSwitch'
+import { PillLight } from '@/components/site/PillLight'
 import { SiteHeader, type HeaderNav } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { NETWORK_EARLY_ACCESS, NETWORK_MENU, PRODUCT_MENU, SOLUTIONS_MENU, type NavColumn, type NavLink } from '@/content/nav'
@@ -19,7 +20,7 @@ const indexable = INDEXABLE || process.env.LIGHTHOUSE_AS_PRODUCTION === '1'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
-  title: { default: `${PRODUCT_NAME} — the operating system for film and media studios`, template: `%s — ${PRODUCT_NAME}` },
+  title: { default: `${PRODUCT_NAME} — AI & Hybrid Film Production Infrastructure`, template: `%s — ${PRODUCT_NAME}` },
   description: DESCRIPTION,
   applicationName: PRODUCT_NAME,
   openGraph: { siteName: PRODUCT_NAME, type: 'website', locale: 'en_US' },
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main id="main" tabIndex={-1} className="outline-none">{children}</main>
           <SiteFooter />
           <LiveSwitch />
+          <PillLight />
         </ThemeProvider>
         {/* Cookieless (Vercel's docs: "does not use cookies"; visitors are a
             daily-reset request hash) — W-9 confirmed at Item 0. Rendered only

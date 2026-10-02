@@ -14,10 +14,20 @@ import { APP, INDEXABLE } from '@/lib/site'
 
 const exists = (p: string) => existsSync(join(process.cwd(), 'public', p))
 
-// The title card's face: Archivo at weight 800 and its widest setting, cut to
-// the glyphs a title uses (fonts/README.md) — under 6 KB, and loaded here, on
-// the one page that sets it, rather than in the layout on every page.
-const title = localFont({ src: '../../fonts/archivo-title.woff2', variable: '--font-title', weight: '800', display: 'swap' })
+// The title card's face: Cinzel (owner, 2026-10-02: "a better serif with FILM
+// OS designs inside the writing") — inscriptional Roman capitals, the letter
+// the film poster has used for a century. 800 sets the title, 700 the slate
+// line above it. Each weight is cut to the capitals, digits and punctuation a
+// title uses (fonts/README.md) — under 6 KB — and loaded here, on the one page
+// that sets it, rather than in the layout on every page.
+const title = localFont({
+  src: [
+    { path: '../../fonts/cinzel-title-700.woff2', weight: '700' },
+    { path: '../../fonts/cinzel-title-800.woff2', weight: '800' },
+  ],
+  variable: '--font-title',
+  display: 'swap',
+})
 
 const ROWS = [
   ['client-messages', 'crew-tasks', 'portal-review', 'client-review-record', 'suite-library', 'crew-production', 'home-portal-brand-a'],
@@ -68,24 +78,38 @@ export function HeroStage() {
       {reel ? <HeroReel src={reel} poster={poster} showSlot={false} /> : <Wall />}
       {!reel && <HeroReel src={null} poster={null} showSlot={!INDEXABLE} />}
       <div className="container-wide relative pb-20 pt-20 sm:pt-28">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-medium text-muted-foreground">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] backdrop-blur">
-            <span className="rec size-1.5 rounded-full bg-destructive" aria-hidden />
-            The operating system for AI and hybrid film production
+        {/* THE SLATE LINE (owner, 2026-10-02: "in the middle on the same line,
+            and a better design"). A camera's top bar: REC at one end, the
+            running timecode at the other, the line itself centred between two
+            gold rules. It never wraps: below lg the ends step aside, and the
+            words are sized to the width they have (globals.css). */}
+        <div className="slate-line">
+          <span className="slate-side">
+            <span aria-hidden className="slate-end hidden lg:inline-flex">
+              <span className="rec size-1.5 rounded-full bg-destructive" />
+              Rec
+            </span>
+            <span aria-hidden className="slate-rule" />
           </span>
-          <Timecode className="hidden font-display text-foreground/60 sm:inline" />
+          <p className="slate-text">The operating system for AI & hybrid film production</p>
+          <span className="slate-side">
+            <span aria-hidden className="slate-rule slate-rule-end" />
+            <Timecode className="slate-end hidden lg:inline" />
+          </span>
         </div>
         {/* A title card, not a headline (owner, 2026-10-01: "all in caps with a
-            FILM OS flair"): expanded capitals, the widescreen of type. */}
-        <h1 className="film-title mt-8 text-[clamp(26px,5.8vw,64px)] text-foreground">
-          <span className="block">Every space of production.</span>
-          <span className="block text-primary">One operating system.</span>
+            FILM OS flair"). The letters are cut from film stock: a metal fill,
+            two frame lines and a row of perforations running inside every
+            glyph (globals.css, THE FILM IN THE LETTERS). */}
+        <h1 className="film-title mt-10 text-[clamp(28px,5.4vw,64px)]">
+          <span className="film-line film-line-silver block">Every space of production<span className="film-stop">.</span></span>
+          <span className="film-line film-line-gold block">One operating system<span className="film-stop">.</span></span>
         </h1>
         <p className="mt-7 max-w-[62ch] text-lg leading-relaxed text-muted-foreground sm:text-[19px] sm:leading-8">
           Genreline runs AI and hybrid film production end to end — the Crew space where your team works, the Client space and a portal in your brand where clients review, approve, sign and pay, and the Suite where the work is written, boarded, generated, edited and finished. Contracts, rights, money and security run underneath all of it, on one record.
         </p>
         <div className="mt-9 flex flex-wrap items-center gap-3">
-          <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+          <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS account</a>
           <a href="/contact?topic=sales" className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Talk to sales</a>
         </div>
 
