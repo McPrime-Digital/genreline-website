@@ -21,8 +21,8 @@ export function SiteFooter() {
             <p className="mt-5 max-w-[34ch] font-display text-3xl font-bold leading-tight text-foreground">Run the production. Keep the record.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a href={APP.signup} className="inline-flex h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">Open your studio</a>
-            <Link href="/contact?topic=sales" className="inline-flex h-11 items-center rounded-lg border border-border bg-background/40 px-5 text-sm font-medium text-foreground backdrop-blur hover:bg-secondary/60">Talk to us</Link>
+            <a href={APP.signup} className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+            <Link href="/contact?topic=sales" className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Talk to us</Link>
           </div>
         </div>
         <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-10 py-14 sm:grid-cols-3 lg:grid-cols-5">

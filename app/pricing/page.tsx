@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Accordion } from 'radix-ui'
-import { Button } from '@/components/ui/button'
 import { PageHero, Section } from '@/components/site/Frame'
 import { PlanFinder } from '@/components/interactive/PlanFinder'
 import { PLANS, USAGE_CREDITS } from '@/content/pricing'
@@ -26,7 +25,7 @@ export default function Pricing() {
         size="md"
       >
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <Button asChild variant="primary" size="lg" data-primary-cta><a href={APP.signup}>Open your studio</a></Button>
+          <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
           <Link href="/contact?topic=sales" className="text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">Talk to us</Link>
         </div>
       </PageHero>

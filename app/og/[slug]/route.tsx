@@ -21,14 +21,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const page = PAGES.find((p) => p.path === pathForSlug(slug))
   const title = !page || page.path === '/' ? TAGLINE : page.title
   const description = page?.description ?? ''
-  const mark = await readFile(join(process.cwd(), 'public', 'brand', 'genreline-mark-gold-256.png'))
+  // The card is dark (Ink), so it carries the white/gold tile (owner, 2026-10-01).
+  const mark = await readFile(join(process.cwd(), 'public', 'brand', 'genreline-white-gold-256.png'))
   const src = `data:image/png;base64,${mark.toString('base64')}`
   return new ImageResponse(
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 72, background: '#0B0A1F', color: '#E8EBF5' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} width={70} height={56} alt="" />
+          <img src={src} width={64} height={64} alt="" />
           <div style={{ fontSize: 34, fontWeight: 700 }}>{PRODUCT_NAME}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>

@@ -5,12 +5,13 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { LiveSwitch } from '@/components/cinema/LiveSwitch'
 import { SiteHeader, type HeaderNav } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
-import { NETWORK_EARLY_ACCESS, NETWORK_MENU, PRODUCT_MENU, SOLUTIONS_MENU } from '@/content/nav'
+import { NETWORK_EARLY_ACCESS, NETWORK_MENU, PRODUCT_MENU, SOLUTIONS_MENU, type NavColumn, type NavLink } from '@/content/nav'
+import { Icon } from '@/components/Icon'
 import { siteLabel } from '@/content/features'
 import { PRODUCT_NAME, DESCRIPTION, SITE_ORIGIN, INDEXABLE } from '@/lib/site'
 import './globals.css'
 
-// The two faces, self-hosted and preloaded by next/font at build (S-W §8).
+// The faces, self-hosted and preloaded by next/font at build (S-W §8).
 const geist = Geist({ subsets: ['latin'], variable: '--font-body', display: 'swap' })
 const schibsted = Schibsted_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap', preload: false })
 
@@ -36,13 +37,16 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 }
 
-// The badge on each network item is resolved HERE, on the server, from the
-// label source — content/features.ts never ships to the browser.
+// Resolved HERE, on the server: each network item's badge, from the label
+// source (content/features.ts never ships to the browser), and every item's
+// icon, rendered to markup so the menu carries no icon JavaScript.
+const withIcon = <T extends NavLink>(l: T): T => ({ ...l, iconNode: l.icon ? <Icon name={l.icon} className="size-4" /> : undefined })
+const columns = (cols: NavColumn[]) => cols.map((c) => ({ ...c, links: c.links.map(withIcon) }))
 const nav: HeaderNav = {
-  product: PRODUCT_MENU,
-  solutions: SOLUTIONS_MENU,
-  network: NETWORK_MENU.map((l) => ({ ...l, badge: l.featureId ? siteLabel(l.featureId) : null })),
-  earlyAccess: NETWORK_EARLY_ACCESS,
+  product: columns(PRODUCT_MENU),
+  solutions: columns(SOLUTIONS_MENU),
+  network: NETWORK_MENU.map((l) => withIcon({ ...l, badge: l.featureId ? siteLabel(l.featureId) : null })),
+  earlyAccess: withIcon(NETWORK_EARLY_ACCESS),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

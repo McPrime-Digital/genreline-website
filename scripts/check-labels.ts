@@ -121,18 +121,6 @@ for (const file of files) {
   }
 }
 
-// The search palette's index is visible text too: same forbidden list, same off-site rule.
-{
-  const route = '/search-index.json'
-  const items = JSON.parse(readFileSync(join(ROOT, 'search-index.json.body'), 'utf8')) as { title: string }[]
-  const text = items.map((i) => i.title).join(' · ')
-  for (const f of FORBIDDEN) {
-    const hit = text.match(f.pattern)
-    if (hit) fail(route, `forbidden "${hit[0]}" — ${f.reason}`)
-  }
-  checked++
-}
-
 const missing = PAGES.filter((p) => !files.some((f) => routeOf(f) === p.path))
 for (const p of missing) fail(p.path, 'page in S-W §4 has no built HTML')
 

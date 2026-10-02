@@ -1,20 +1,19 @@
 'use client'
 
 /**
- * The header (S-W §5.1). Sticky glass; the mega-menu as a disclosure
- * navigation (MegaMenu.tsx); Search on ⌘K; Sign in; Open your studio.
+ * The header (S-W §5.1). Sticky glass; the menus as a disclosure navigation
+ * (MegaMenu.tsx); the theme switch; and the two calls to action as liquid
+ * pills in capitals (owner, 2026-10-01: "sign in and open studio os must be
+ * caps and have a proper pill or small card liquid form"). There is no search
+ * in the header (owner, the same day: "remove the search at the top").
  *
- * ONE GOLD PER VIEW (S-B). The header's "Open your studio" is gold only when
- * no other primary call to action is on screen. Every primary CTA on a page
- * carries `data-primary-cta`; an IntersectionObserver (not a scroll listener)
- * counts the ones in view.
+ * ONE GOLD PER VIEW (S-B). OPEN STUDIO OS is the gold pill only when no other
+ * primary call to action is on screen; every primary CTA on a page carries
+ * `data-primary-cta`, and an IntersectionObserver counts the ones in view.
  */
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Search } from '@/components/icons'
-import { Button } from '@/components/ui/button'
-import { Kbd } from '@/components/ui/kbd'
 import { ProductMark } from '@/components/ProductMark'
 import { MobileNav } from '@/components/site/MobileNav'
 import { MegaMenu } from '@/components/site/MegaMenu'
@@ -23,11 +22,9 @@ import { cx as cn } from '@/lib/cx'
 import { APP } from '@/lib/site'
 import type { NavColumn, NavLink, NavLinkWithBadge } from '@/content/nav'
 
-const SearchPalette = React.lazy(() => import('@/components/site/SearchPalette'))
-
 export type HeaderNav = {
   product: NavColumn[]
-  solutions: NavLink[]
+  solutions: NavColumn[]
   network: NavLinkWithBadge[]
   earlyAccess: NavLink
 }
@@ -35,11 +32,9 @@ export type HeaderNav = {
 export function SiteHeader({ nav }: { nav: HeaderNav }) {
   const pathname = usePathname()
   const [scrolled, setScrolled] = React.useState(false)
-  // SSR assumes a primary CTA is in view (the header CTA stays quiet) — the
+  // SSR assumes a primary CTA is in view (the header pill stays glass) — the
   // safe side of "one gold per view".
   const [primaryInView, setPrimaryInView] = React.useState(true)
-  const [searchOpen, setSearchOpen] = React.useState(false)
-  const [searchLoaded, setSearchLoaded] = React.useState(false)
 
   React.useEffect(() => {
     const sentinel = document.getElementById('top-sentinel')
@@ -68,25 +63,6 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
     }
   }, [pathname])
 
-  // ⌘K / Ctrl-K opens search from anywhere — a keyboard action, so it opens
-  // with no animation (the app's palette makes the same decision).
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        setSearchLoaded(true)
-        setSearchOpen((o) => !o)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  const openSearch = () => {
-    setSearchLoaded(true)
-    setSearchOpen(true)
-  }
-
   return (
     <header className="sticky top-0 z-40">
       <div className="relative bg-background/80 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-background">
@@ -97,32 +73,19 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
 
           <MegaMenu nav={nav} />
 
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <Button variant="ghost" size="md" onClick={openSearch} aria-label="Search the site" className="hidden md:inline-flex">
-              <Search aria-hidden />
-              <span className="text-[13px]">Search</span>
-              <Kbd className="ml-1">⌘&nbsp;K</Kbd>
-            </Button>
-            <Button variant="ghost" size="icon" onClick={openSearch} aria-label="Search the site" className="md:hidden">
-              <Search aria-hidden />
-            </Button>
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle compact />
-            <a href={APP.login} className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:inline-block">
+            <a href={APP.login} className="liquid-pill hidden outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex">
               Sign in
             </a>
-            <Button asChild variant={primaryInView ? 'outline' : 'primary'} size="md" className="hidden sm:inline-flex">
-              <a href={APP.signup}>Open your studio</a>
-            </Button>
+            <a href={APP.signup} className={cn(primaryInView ? 'liquid-pill' : 'liquid-pill-gold', 'hidden outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex')}>
+              Open Studio OS
+            </a>
             <MobileNav nav={nav} />
           </div>
         </div>
         <div aria-hidden className={cn('glow-divider-x absolute inset-x-0 bottom-0 transition-opacity duration-[--dur-panel]', scrolled ? 'opacity-100' : 'opacity-0')} />
       </div>
-      {searchLoaded && (
-        <React.Suspense fallback={null}>
-          <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
-        </React.Suspense>
-      )}
     </header>
   )
 }

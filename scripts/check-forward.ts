@@ -50,7 +50,6 @@ const CASES: Case[] = [
   { path: '/brand/genreline-mark-gold.png', expect: 'own' },
   { path: '/.well-known/security.txt', expect: 'own' },
   { path: '/og/home', expect: 'own' },
-  { path: '/search-index.json', expect: 'own' },
   { path: '/.well-known/apple-app-site-association', expect: 'forward' },
   { path: '/api/inquiry', expect: 'notfound' },
   // unknown under an owned prefix → the website's 404, not a forward

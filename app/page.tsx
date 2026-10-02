@@ -17,7 +17,6 @@ import { Tilt } from '@/components/cinema/Tilt'
 import { Spotlight } from '@/components/cinema/Spotlight'
 import { Motif } from '@/components/cinema/Motif'
 import { Icon, type IconName } from '@/components/Icon'
-import { Button } from '@/components/ui/button'
 import { feature, siteLabel } from '@/content/features'
 import { COLLABORATORS, SEGMENTS } from '@/content/segments'
 import { APP } from '@/lib/site'
@@ -277,8 +276,8 @@ export default function Home() {
             <h2 className="max-w-[18ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.03em] text-foreground sm:text-7xl">Every space of production. One operating system.</h2>
             <p className="mt-6 max-w-[52ch] text-lg text-muted-foreground">Open a studio, invite your team, add your first client — and make the film in the Suite.</p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Button asChild variant="primary" size="lg" data-primary-cta className="h-12 px-7 text-[15px]"><a href={APP.signup}>Open your studio</a></Button>
-              <a href="/contact?topic=sales" className="inline-flex h-12 items-center rounded-lg border border-border bg-background px-6 text-[15px] font-medium text-foreground hover:bg-secondary/60">Talk to sales</a>
+              <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+              <a href="/contact?topic=sales" className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Talk to sales</a>
             </div>
           </Reveal>
         </div>

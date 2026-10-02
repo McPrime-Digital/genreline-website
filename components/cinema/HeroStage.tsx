@@ -4,8 +4,8 @@
  * and portal. No decorative light: the screens are the image.
  */
 import { existsSync } from 'node:fs'
+import localFont from 'next/font/local'
 import { join } from 'node:path'
-import { Button } from '@/components/ui/button'
 import { Media, hasMedia } from '@/components/site/Media'
 import { Icon, type IconName } from '@/components/Icon'
 import { Timecode } from '@/components/cinema/Timecode'
@@ -13,6 +13,11 @@ import { HeroReel } from '@/components/cinema/HeroReel'
 import { APP, INDEXABLE } from '@/lib/site'
 
 const exists = (p: string) => existsSync(join(process.cwd(), 'public', p))
+
+// The title card's face: Archivo at weight 800 and its widest setting, cut to
+// the glyphs a title uses (fonts/README.md) — under 6 KB, and loaded here, on
+// the one page that sets it, rather than in the layout on every page.
+const title = localFont({ src: '../../fonts/archivo-title.woff2', variable: '--font-title', weight: '800', display: 'swap' })
 
 const ROWS = [
   ['client-messages', 'crew-tasks', 'portal-review', 'client-review-record', 'suite-library', 'crew-production', 'home-portal-brand-a'],
@@ -59,26 +64,29 @@ export function HeroStage() {
   const reel = exists('media/hero-reel.mp4') ? '/media/hero-reel.mp4' : null
   const poster = exists('media/hero-reel.poster.webp') ? '/media/hero-reel.poster.webp' : null
   return (
-    <section className="relative isolate -mt-16 overflow-hidden pt-16">
+    <section className={`${title.variable} relative isolate -mt-16 overflow-hidden pt-16`}>
       {reel ? <HeroReel src={reel} poster={poster} showSlot={false} /> : <Wall />}
       {!reel && <HeroReel src={null} poster={null} showSlot={!INDEXABLE} />}
       <div className="container-wide relative pb-20 pt-20 sm:pt-28">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-medium text-muted-foreground">
-          <span className="inline-flex items-center gap-2 rounded-md border border-border bg-background/70 px-2.5 py-1 backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] backdrop-blur">
             <span className="rec size-1.5 rounded-full bg-destructive" aria-hidden />
             The operating system for AI and hybrid film production
           </span>
           <Timecode className="hidden font-display text-foreground/60 sm:inline" />
         </div>
-        <h1 className="mt-8 max-w-[16ch] font-display text-[44px] font-bold leading-[1] tracking-[-0.035em] text-foreground sm:text-[68px] lg:text-[84px]">
-          Every space of production. <span className="text-primary">One operating system.</span>
+        {/* A title card, not a headline (owner, 2026-10-01: "all in caps with a
+            FILM OS flair"): expanded capitals, the widescreen of type. */}
+        <h1 className="film-title mt-8 text-[clamp(28px,7.2vw,80px)] text-foreground">
+          <span className="block">Every space of production.</span>
+          <span className="block text-primary">One operating system.</span>
         </h1>
         <p className="mt-7 max-w-[62ch] text-lg leading-relaxed text-muted-foreground sm:text-[19px] sm:leading-8">
           Genreline runs AI and hybrid film production end to end — the Crew space where your team works, the Client space and a portal in your brand where clients review, approve, sign and pay, and the Suite where the work is written, boarded, generated, edited and finished. Contracts, rights, money and security run underneath all of it, on one record.
         </p>
         <div className="mt-9 flex flex-wrap items-center gap-3">
-          <Button asChild variant="primary" size="lg" data-primary-cta className="h-12 px-6 text-[15px]"><a href={APP.signup}>Open your studio</a></Button>
-          <a href="/contact?topic=sales" className="inline-flex h-12 items-center rounded-lg border border-border bg-background/70 px-5 text-[15px] font-medium text-foreground backdrop-blur hover:bg-secondary/60">Talk to sales</a>
+          <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
+          <a href="/contact?topic=sales" className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Talk to sales</a>
         </div>
 
         <nav aria-label="The spaces and portals" className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">

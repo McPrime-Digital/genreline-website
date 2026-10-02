@@ -25,15 +25,29 @@ const VELOCITY_CLOSE = 0.11 // px/ms
 const START_TOUCH = 10
 const START_POINTER = 2
 
-function Row({ href, label, description, badge, onNavigate, featureId }: { href: string; label: string; description?: string; badge?: 'Available' | 'Coming' | null; featureId?: string; onNavigate: () => void }) {
+/** The header's cards, at phone size: icon, title, undertext. */
+function Row({ href, label, description, badge, onNavigate, featureId, iconNode }: { href: string; label: string; description?: string; badge?: 'Available' | 'Coming' | null; featureId?: string; iconNode?: React.ReactNode; onNavigate: () => void }) {
   return (
-    <Link href={href} onClick={onNavigate} className="block rounded-xl px-3 py-3 outline-none transition-colors active:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring">
-      <span className="flex items-center gap-2 text-[15px] font-medium text-foreground">
-        {label}
-        {badge && <Badge tone="blue" dot data-feature-label={badge.toLowerCase()} data-feature-id={featureId}>{badge}</Badge>}
+    <Link href={href} onClick={onNavigate} className="flex items-start gap-3 rounded-xl border border-border/70 bg-card/40 p-3 outline-none transition-colors active:bg-card/80 focus-visible:ring-2 focus-visible:ring-ring">
+      {iconNode && <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-background text-primary">{iconNode}</span>}
+      <span className="min-w-0">
+        <span className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-foreground">
+          {label}
+          {badge && <Badge tone="blue" dot data-feature-label={badge.toLowerCase()} data-feature-id={featureId}>{badge}</Badge>}
+        </span>
+        {description && <span className="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{description}</span>}
       </span>
-      {description && <span className="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{description}</span>}
     </Link>
+  )
+}
+
+/** A sub-head, as in the header's panels. */
+function SubHead({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-2 mt-1 flex items-center gap-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--gold-ink))]">
+      <span className="shrink-0">{children}</span>
+      <span aria-hidden className="h-px flex-1 bg-border" />
+    </p>
   )
 }
 
@@ -152,18 +166,24 @@ export default function MobileDrawer({ nav, open, setOpen }: { nav: HeaderNav; o
             <Accordion.Root type="single" collapsible>
               <Section value="product" title="Product">
                 {nav.product.map((col) => (
-                  <div key={col.heading} className="pb-2">
-                    <p className="px-3 pt-2 text-[11px] font-semibold text-muted-foreground">{col.heading}</p>
-                    {col.links.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}
+                  <div key={col.heading} className="pb-3">
+                    <SubHead>{col.heading}</SubHead>
+                    <div className="grid gap-2">{col.links.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}</div>
                   </div>
                 ))}
               </Section>
               <Section value="solutions" title="Solutions">
-                {nav.solutions.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}
+                {nav.solutions.map((col) => (
+                  <div key={col.heading} className="pb-3">
+                    <SubHead>{col.heading}</SubHead>
+                    <div className="grid gap-2">{col.links.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}</div>
+                  </div>
+                ))}
               </Section>
               <Section value="network" title="Network">
-                {nav.network.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}
-                <Row {...nav.earlyAccess} onNavigate={close} />
+                <SubHead>The filmmaker network · being built</SubHead>
+                <div className="grid gap-2">{nav.network.map((l) => <Row key={l.href} {...l} onNavigate={close} />)}</div>
+                <div className="pt-3"><SubHead>Early access</SubHead><Row {...nav.earlyAccess} onNavigate={close} /></div>
               </Section>
             </Accordion.Root>
             <ul className="py-2">
@@ -182,8 +202,8 @@ export default function MobileDrawer({ nav, open, setOpen }: { nav: HeaderNav; o
             </ul>
           </nav>
           <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <Button asChild variant="outline" size="lg"><a href={APP.login}>Sign in</a></Button>
-            <Button asChild variant="primary" size="lg"><a href={APP.signup}>Open your studio</a></Button>
+            <a href={APP.login} className="liquid-pill liquid-pill-lg w-full outline-none focus-visible:ring-2 focus-visible:ring-ring">Sign in</a>
+            <a href={APP.signup} className="liquid-pill-gold liquid-pill-lg w-full outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS</a>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

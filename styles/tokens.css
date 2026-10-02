@@ -71,6 +71,11 @@
     --status-green: 98 45% 38%;
     --status-gray: 210 8% 45%;
 
+    /* WEBSITE-ONLY: gold for SMALL text (menu sub-heads). The brand gold is
+       3.3:1 on white — fine for a button fill, short of AA for 10px caps — so
+       light mode sets small gold text a step deeper (6.5:1). */
+    --gold-ink: 36 72% 30%;
+
     /* WEBSITE-ONLY: the dark of film objects (strips, reel frames, motif panels),
        Ink's hue in both themes. */
     --ink-deep: 242 62.8% 4.3%;       /* #050412 */
@@ -101,6 +106,7 @@
     --ring: 42 55% 55%;
     --text-faint: 227 23% 49%;        /* #606C99 */
     --glow: 237 23.5% 59.4%;          /* #7F81B0 a muted ink hairline — matte emits no violet light */
+    --gold-ink: 42 55% 55%;           /* the brand gold already reads on Ink (8.3:1) */
 
     --status-blue: 205 65% 62%;
     --status-amber: 30 80% 60%;

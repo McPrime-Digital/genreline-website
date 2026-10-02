@@ -46,6 +46,59 @@
   box-shadow: 0 24px 60px -36px hsl(0 0% 0% / 0.8), inset 0 1px 0 hsl(0 0% 100% / 0.03);
 }
 
+/* In the components layer, so a utility (hidden, md:inline-flex) on the same
+   element still wins — unlayered, these rules beat `hidden` and the header's
+   pill showed on phones. */
+@layer components {
+/* THE TITLE CARD — the hero's headline (owner, 2026-10-01: "all in caps
+   with a FILM OS flair"). Archivo at its widest: expanded capitals read as
+   widescreen, the way a film's title card does. */
+.film-title {
+  font-family: var(--font-title), var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800; /* the face is a static instance at its widest — no font-stretch to ask for */
+  text-transform: uppercase;
+  letter-spacing: -0.012em;
+  line-height: 0.96;
+}
+
+/* LIQUID PILLS — the calls to action (owner, 2026-10-01: "caps … a proper
+   pill or small card liquid form"). Glass: translucent, blurred, a hairline
+   and a top specular edge. Gold: the brand fill under the same edge. Always
+   uppercase and tracked, so a call to action reads as a control, not a link. */
+.liquid-pill, .liquid-pill-gold {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  height: 2.25rem; padding: 0 1.05rem; border-radius: 9999px; white-space: nowrap;
+  font-size: 11.5px; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+  transition: border-color var(--dur-pop), background-color var(--dur-pop), filter var(--dur-pop), transform var(--dur-press) var(--ease-out);
+}
+.liquid-pill {
+  color: hsl(var(--foreground));
+  background: linear-gradient(180deg, hsl(0 0% 100% / 0.78), hsl(0 0% 100% / 0.52));
+  border: 1px solid hsl(var(--foreground) / 0.12);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.95), inset 0 -1px 0 hsl(var(--foreground) / 0.05), 0 6px 16px -10px hsl(var(--foreground) / 0.35);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  backdrop-filter: blur(14px) saturate(1.6);
+}
+.dark .liquid-pill {
+  background: linear-gradient(180deg, hsl(0 0% 100% / 0.1), hsl(0 0% 100% / 0.035));
+  border-color: hsl(0 0% 100% / 0.15);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.18), inset 0 -1px 0 hsl(0 0% 0% / 0.3), 0 8px 20px -12px hsl(0 0% 0% / 0.85);
+}
+.liquid-pill:hover { border-color: hsl(var(--primary) / 0.55); }
+.liquid-pill-gold {
+  color: hsl(var(--primary-foreground));
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--primary) / 0.86));
+  border: 1px solid hsl(var(--primary));
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.45), inset 0 -1px 0 hsl(0 0% 0% / 0.18), 0 10px 24px -12px hsl(var(--primary) / 0.75);
+}
+.liquid-pill-gold:hover { filter: brightness(1.06); }
+.liquid-pill:active, .liquid-pill-gold:active { transform: scale(0.97); }
+.liquid-pill-lg { height: 3rem; padding: 0 1.6rem; font-size: 12.5px; }
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-pill, .dark .liquid-pill { -webkit-backdrop-filter: none; backdrop-filter: none; background: hsl(var(--card)); }
+}
+}
+
 /* Theme-paired images: one of the pair shows, by theme class. */
 .theme-light { display: block; }
 .theme-dark { display: none; }
