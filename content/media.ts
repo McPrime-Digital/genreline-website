@@ -3,7 +3,8 @@
  *
  * `capture` slots are real product screens, taken from the harness tenant by
  * scripts/capture.ts at device pixel ratio 2 in BOTH themes (S-W W-8, §8) —
- * light at public/captures/<id>.light.webp, dark at <id>.dark.webp.
+ * light at public/captures/<id>.light.<hash>.webp, dark at <id>.dark.<hash>.webp
+ * (content-hashed; public/captures/dimensions.json names the current file).
  * `upload` slots are footage or photography only the owner can supply. A slot
  * whose file is missing renders a labelled placeholder that says exactly what
  * to upload and at what size — never a stock image, never an invented screen.

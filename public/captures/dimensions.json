@@ -1,258 +1,322 @@
 {
   "client-brand-kit.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-brand-kit.dark.7e0bb141a6.webp"
   },
   "client-brand-kit.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-brand-kit.light.90472d271d.webp"
   },
   "client-companies.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-companies.dark.8f22b1e44c.webp"
   },
   "client-companies.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-companies.light.4ab23d8fed.webp"
   },
   "client-contracts.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-contracts.dark.596b6d696d.webp"
   },
   "client-contracts.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-contracts.light.fbb3932c18.webp"
   },
   "client-guest-links.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-guest-links.dark.75d1efd954.webp"
   },
   "client-guest-links.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-guest-links.light.472691549d.webp"
   },
   "client-invoices.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-invoices.dark.efe076a6c8.webp"
   },
   "client-invoices.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-invoices.light.6f62832d16.webp"
   },
   "client-meetings.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-meetings.dark.5005a75ff6.webp"
   },
   "client-meetings.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-meetings.light.57b510b99a.webp"
   },
   "client-messages.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-messages.dark.68fcd3ad5a.webp"
   },
   "client-messages.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-messages.light.3a562a3e83.webp"
   },
   "client-overview.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-overview.dark.ed230db98e.webp"
   },
   "client-overview.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-overview.light.b61e42c800.webp"
   },
   "client-projects.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-projects.dark.8c7830feb9.webp"
   },
   "client-projects.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-projects.light.7a2366a968.webp"
   },
   "client-review-record.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-review-record.dark.fcd6170599.webp"
   },
   "client-review-record.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-review-record.light.a523b1b1e8.webp"
   },
   "client-review.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-review.dark.c4640ce9e4.webp"
   },
   "client-review.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "client-review.light.1410e28e32.webp"
   },
   "crew-calendar.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-calendar.dark.4703848f49.webp"
   },
   "crew-calendar.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-calendar.light.c30804a45a.webp"
   },
   "crew-chat.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-chat.dark.37a6d2c2c8.webp"
   },
   "crew-chat.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-chat.light.5f9ff89139.webp"
   },
   "crew-directory.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-directory.dark.9b9c55d008.webp"
   },
   "crew-directory.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-directory.light.f78810b9ac.webp"
   },
   "crew-integrations.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-integrations.dark.42fd509230.webp"
   },
   "crew-integrations.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-integrations.light.542e0e0a6c.webp"
   },
   "crew-production.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-production.dark.445741c6b2.webp"
   },
   "crew-production.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-production.light.cf9f1e178f.webp"
   },
   "crew-security.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-security.dark.7d5c8ed481.webp"
   },
   "crew-security.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-security.light.9bd405a50a.webp"
   },
   "crew-sso.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-sso.dark.2c5ce4850e.webp"
   },
   "crew-sso.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-sso.light.def899e45a.webp"
   },
   "crew-tasks.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-tasks.dark.efcfec00f6.webp"
   },
   "crew-tasks.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "crew-tasks.light.d053cc9345.webp"
   },
   "home-hero-room.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "home-hero-room.dark.68fcd3ad5a.webp"
   },
   "home-hero-room.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "home-hero-room.light.3a562a3e83.webp"
   },
   "home-portal-brand-a.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "home-portal-brand-a.dark.6587e28b27.webp"
   },
   "home-portal-brand-a.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "home-portal-brand-a.light.ddd26277bb.webp"
   },
   "home-portal-brand-b.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "home-portal-brand-b.dark.993909ae10.webp"
   },
   "home-portal-brand-b.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "home-portal-brand-b.light.53a0d02a6b.webp"
   },
   "portal-approvals.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-approvals.dark.7ed8e8fa5c.webp"
   },
   "portal-approvals.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-approvals.light.39c3883bf4.webp"
   },
   "portal-certificate.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-certificate.dark.ceefce755d.webp"
   },
   "portal-certificate.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-certificate.light.038a1ffc9a.webp"
   },
   "portal-contracts.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-contracts.dark.fcb004f689.webp"
   },
   "portal-contracts.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-contracts.light.a9dfebc516.webp"
   },
   "portal-files.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-files.dark.93a0a3b963.webp"
   },
   "portal-files.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-files.light.255aa7a389.webp"
   },
   "portal-invoices.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-invoices.dark.3d6f4da0b6.webp"
   },
   "portal-invoices.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-invoices.light.fdbf51e139.webp"
   },
   "portal-meetings.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-meetings.dark.35d094d1e9.webp"
   },
   "portal-meetings.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-meetings.light.2fe1ba7d6d.webp"
   },
   "portal-messages.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-messages.dark.a626677a34.webp"
   },
   "portal-messages.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-messages.light.089961bc33.webp"
   },
   "portal-review.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-review.dark.dc4def27a3.webp"
   },
   "portal-review.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-review.light.23c942b7b1.webp"
   },
   "portal-team.dark": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-team.dark.1180817c82.webp"
   },
   "portal-team.light": {
     "w": 2880,
-    "h": 1800
+    "h": 1800,
+    "file": "portal-team.light.79c1ddf532.webp"
   },
   "suite-library.dark": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "suite-library.dark.1d51f2d90f.webp"
   },
   "suite-library.light": {
     "w": 2248,
-    "h": 1616
+    "h": 1616,
+    "file": "suite-library.light.18e5e0cea2.webp"
   }
 }

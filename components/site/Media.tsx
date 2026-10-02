@@ -22,8 +22,9 @@ import { INDEXABLE } from '@/lib/site'
 
 const pub = (p: string) => existsSync(join(process.cwd(), 'public', p))
 
-/** Real pixel sizes written by scripts/optimize-captures.ts. */
-const DIMS: Record<string, { w: number; h: number }> = (() => {
+/** Each capture's file (content-hashed) and real pixel size, written by
+ *  scripts/optimize-captures.ts, keyed by `<id>.<theme>`. */
+const DIMS: Record<string, { w: number; h: number; file?: string }> = (() => {
   const f = join(process.cwd(), 'public', 'captures', 'dimensions.json')
   return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}
 })()
@@ -56,9 +57,12 @@ export function hasMedia(id: string): boolean {
 
 export function mediaFiles(s: MediaSlot) {
   if (s.kind === 'capture') {
-    const light = `/captures/${s.id}.light.webp`
-    const dark = `/captures/${s.id}.dark.webp`
-    return { light: pub(light) ? light : null, dark: pub(dark) ? dark : null }
+    const at = (theme: 'light' | 'dark') => {
+      const file = DIMS[`${s.id}.${theme}`]?.file
+      const src = file ? `/captures/${file}` : `/captures/${s.id}.${theme}.webp`
+      return pub(src) ? src : null
+    }
+    return { light: at('light'), dark: at('dark') }
   }
   const file = `/media/${s.id}.${s.format}`
   const poster = `/media/${s.id}.poster.webp`
@@ -113,7 +117,7 @@ export function Media({
     }
     const light = f.light ?? f.dark!
     const dark = f.dark ?? f.light!
-    const dim = (src: string) => DIMS[src.replace(/^\/captures\//, '').replace(/\.webp$/, '')] ?? { w: s.width * 2, h: s.height * 2 }
+    const dim = (src: string) => DIMS[src.replace(/^\/captures\//, '').replace(/(\.[0-9a-f]{10})?\.webp$/, '')] ?? { w: s.width * 2, h: s.height * 2 }
     const [dl, dd] = [dim(light), dim(dark)]
     if (priority) {
       // The hero is usually the largest paint. Preload ONLY the image for the
