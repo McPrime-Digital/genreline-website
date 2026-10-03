@@ -5,7 +5,9 @@
  * capability named here is Available in S-F-A, or stated as not yet built.
  */
 export type Segment = {
-  id: 'production-companies' | 'agencies' | 'in-house' | 'enterprise'
+  id: 'production-companies' | 'agencies' | 'in-house' | 'independents' | 'enterprise'
+  /** S-T ST-5b: the app's sign-up pre-answers "what best describes you" from this (`/signup?type=…`). Null for Enterprise — a scale, not a type. */
+  entry: 'production' | 'agency' | 'inhouse' | 'independent' | null
   name: string
   headline: string
   short: string
@@ -21,6 +23,7 @@ export type Segment = {
 export const SEGMENTS: readonly Segment[] = [
   {
     id: 'production-companies',
+    entry: 'production',
     headline: 'Run every job, from the first page to the final invoice.',
     name: 'Production companies',
     short: 'Commercial, film and TV, documentary and music-video houses',
@@ -48,6 +51,7 @@ export const SEGMENTS: readonly Segment[] = [
   },
   {
     id: 'agencies',
+    entry: 'agency',
     headline: 'Every brand, every round, in your agency’s name.',
     name: 'Creative agencies',
     short: 'Advertising, branded-content and social agencies, and their content studios',
@@ -73,6 +77,7 @@ export const SEGMENTS: readonly Segment[] = [
   },
   {
     id: 'in-house',
+    entry: 'inhouse',
     headline: 'The studio inside your company, run like a studio.',
     name: 'In-house teams',
     short: 'The video and creative team inside a company',
@@ -81,7 +86,7 @@ export const SEGMENTS: readonly Segment[] = [
     spaces: [
       { name: 'Crew', on: true, note: 'Your team, tasks, schedule and internal rooms' },
       { name: 'The Suite', on: true, note: 'Scripts, boards and the library' },
-      { name: 'Client', on: true, note: 'Optional — set up departments as the companies you serve' },
+      { name: 'Stakeholders', on: true, note: 'A portal per department — marketing, legal, the exec office — to review and approve. No invoices: your stakeholders are not billed' },
     ],
     invite: [
       { role: 'Your team', sees: 'The productions and tools their role covers', featureId: 'IDN-01' },
@@ -94,10 +99,37 @@ export const SEGMENTS: readonly Segment[] = [
       { title: 'One library for the whole company', body: 'Every asset, with facets and each production’s footprint.', featureId: 'FIL-07' },
     ],
     media: ['crew-tasks', 'suite-library', 'crew-sso'],
-    honest: 'Every studio sees all three spaces today. A configuration in which an internal team never sees the Client space is on the roadmap.',
+  },
+  {
+    id: 'independents',
+    entry: 'independent',
+    headline: 'Your own work, your own studio — and every studio that brings you in.',
+    name: 'Independents',
+    short: 'Independent filmmakers and creatives who produce their own work and are brought onto other studios’ productions',
+    who: 'A director, producer, editor, colorist or writer who makes their own films, shorts and commercials to build a portfolio — and is brought onto production companies’ and agencies’ productions as a collaborator. One account: your own studio for your work, and a seat in each studio that brings you in, switching between them.',
+    examples: ['Independent filmmakers', 'Freelance editors, colorists and VFX artists', 'Writer-directors developing their own projects', 'Producers running their own slate'],
+    spaces: [
+      { name: 'Crew', on: true, note: 'Your productions, your collaborators, your schedule' },
+      { name: 'Partners', on: true, note: 'Financiers, co-producers, sales agents, distributors and festivals, each with a portal in your name' },
+      { name: 'The Suite', on: true, note: 'Your scripts, boards and library' },
+    ],
+    invite: [
+      { role: 'Your collaborators', sees: 'The production they are on, for as long as it runs', featureId: 'IDN-03' },
+      { role: 'Partners', sees: 'Their portal — the cut, the approvals, the documents you share', featureId: 'IDN-09' },
+      { role: 'Festival programmers and buyers', sees: 'One cut through a screening link, watermarked with their name', featureId: 'CLI-08' },
+      { role: 'Talent and locations', sees: 'One release to sign, through a single-use link — it writes the rights it proves', featureId: 'DOC-09' },
+    ],
+    wins: [
+      { title: 'One account for all of it', body: 'Your own studio and every studio that brings you in, with one login, one second factor and one notification stream — switching between them, never mixing them.', featureId: 'IDN-19' },
+      { title: 'Releases that write the rights', body: 'A performer or a location owner signs on a phone; the asset’s rights — including whether a likeness may be generated — are written by the signature.', featureId: 'DOC-10' },
+      { title: 'A record from the first cut', body: 'Every approval on the record — who, when, what they watched — with a printable certificate, before there is a lawyer in the room.', featureId: 'APR-02' },
+    ],
+    media: ['crew-production', 'client-review-record', 'crew-calendar'],
+    honest: 'Being a collaborator in another studio is always free for the person. The collaborator model — what each invitation lets you see and do — is specified and not yet built; today you are brought in as a contractor scoped to a production.',
   },
   {
     id: 'enterprise',
+    entry: null,
     headline: 'Built for the security review.',
     name: 'Enterprise',
     short: 'Studios, networks, streamers and global brands with a security review',

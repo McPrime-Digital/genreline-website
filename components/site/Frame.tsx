@@ -170,7 +170,9 @@ export function SecurityNote({ children }: { children: React.ReactNode }) {
  *  the header's goes quiet while this one is on screen. */
 export function CtaBand({
   line = 'Open a studio, invite your team, add your first client. The record starts with the first approval.',
-}: { line?: string }) {
+  /** A segment page passes `?type=` so the app's setup pre-answers the first question (S-T ST-5b). */
+  signupHref = APP.signup,
+}: { line?: string; signupHref?: string }) {
   return (
     <section aria-label="Open Studio OS account" className="py-16 sm:py-24">
       <div className="container-wide">
@@ -178,7 +180,7 @@ export function CtaBand({
           <Rule />
           <p className="mt-6 max-w-[34ch] font-display text-2xl font-semibold leading-snug text-foreground sm:text-3xl">{line}</p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <a href={APP.signup} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS account</a>
+            <a href={signupHref} data-primary-cta className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">Open Studio OS account</a>
             <a href={APP.login} className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline">Already have one? Sign in</a>
           </div>
         </div>

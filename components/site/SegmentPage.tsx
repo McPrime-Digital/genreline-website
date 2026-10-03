@@ -5,12 +5,13 @@ import { Reveal } from '@/components/cinema/Reveal'
 import { Spotlight } from '@/components/cinema/Spotlight'
 import { Feature } from '@/components/FeatureLabel'
 import { SEGMENTS, type Segment } from '@/content/segments'
+import { APP } from '@/lib/site'
 
 export function SegmentPage({ id, children }: { id: Segment['id']; children?: React.ReactNode }) {
   const s = SEGMENTS.find((x) => x.id === id)!
   return (
     <>
-      <PageHero motif={({ 'production-companies': 'clapper', agencies: 'brand', 'in-house': 'slate', enterprise: 'vault' } as const)[id]} kicker={`${s.name} — ${s.short.charAt(0).toLowerCase()}${s.short.slice(1)}`} title={s.headline} lead={s.who} media={s.media}>
+      <PageHero motif={({ 'production-companies': 'clapper', agencies: 'brand', 'in-house': 'slate', independents: 'clapper', enterprise: 'vault' } as const)[id]} kicker={`${s.name} — ${s.short.charAt(0).toLowerCase()}${s.short.slice(1)}`} title={s.headline} lead={s.who} media={s.media}>
         <div className="flex flex-wrap gap-2">
           {s.examples.map((e) => <span key={e} className="rounded-full border border-border bg-card/50 px-3 py-1.5 text-[13px] text-foreground backdrop-blur">{e}</span>)}
         </div>
@@ -51,7 +52,9 @@ export function SegmentPage({ id, children }: { id: Segment['id']; children?: Re
         {s.honest && <p className="mt-8 rounded-2xl border border-dashed border-border px-5 py-4 text-[15px] leading-6 text-muted-foreground">{s.honest} <Link href="/roadmap" className="font-medium text-foreground underline underline-offset-4">The roadmap</Link></p>}
       </Section>
       {children}
-      <CtaBand />
+      {/* S-T ST-5b: the sign-up from a segment page pre-answers "what best
+          describes you" and changes only the sign-up headline. */}
+      <CtaBand signupHref={s.entry ? `${APP.signup}?type=${s.entry}` : undefined} />
     </>
   )
 }
