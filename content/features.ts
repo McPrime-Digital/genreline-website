@@ -117,6 +117,10 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'IDN-17', title: 'A studio’s own security rules — two-factor required, session limits', space: 'enterprise', status: 'built', timing: 'live', label: 'enterprise' }),
   F({ id: 'IDN-18', title: 'SCIM 2.0 provisioning', space: 'enterprise', status: 'built', timing: 'live', label: 'enterprise' }),
   F({ id: 'IDN-19', title: 'Membership in several organizations, with switching', space: 'identity', status: 'built', timing: 'live', label: 'available' }),
+  // S-T r4 (app repo, 2026-10-03) — 'internal' while S-T is a draft; becomes 'hidden' (→ the public roadmap) when the owner approves it.
+  F({ id: 'IDN-20', title: 'Collaborators — talent brought aboard, with access, participation and duration set by the invitation', space: 'identity', status: 'partial', timing: 'next', label: 'internal' }),
+  F({ id: 'IDN-21', title: 'A personal profile the person owns, shared per studio by their choice', space: 'identity', status: 'not-built', timing: 'next', label: 'internal' }),
+  F({ id: 'IDN-22', title: 'Credits on the personal profile, published only with each studio’s permission', space: 'identity', status: 'not-built', timing: 'v1.5', label: 'internal' }),
   // ── 4.3 Messaging
   F({ id: 'MSG-01', title: 'Company rooms, project tags and a General thread — the client portal is the other side of the room', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MSG-02', title: 'Crew rooms — internal chat', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
@@ -157,6 +161,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'CLI-09', title: 'Session watermarking on screening links', space: 'client', status: 'partial', timing: 'live', label: 'available', caveat: 'session watermarking only', remainder: 'Forensic watermarking' }),
   F({ id: 'CLI-10', title: 'Release on payment', space: 'client', status: 'not-built', timing: 'v1.5', label: 'hidden' }),
   F({ id: 'CLI-11', title: 'Clearance panel — disclosure obligations for synthetic performers, read to the client who bears them', space: 'client', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'CLI-12', title: 'Shared projects between two studios', space: 'client', status: 'not-built', timing: 'v2', label: 'internal' }),
   // ── 4.5 Review and approval
   F({ id: 'APR-01', title: 'Approval engine — stages, review windows, automatic advance on silence, the reminder ladder', space: 'review', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'APR-02', title: 'Printable certificate', space: 'review', status: 'built', timing: 'live', label: 'available' }),
@@ -191,6 +196,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'MTG-08', title: 'Meeting recording', space: 'meetings', status: 'partial', timing: 'live', label: 'available', caveat: 'recording only', remainder: 'Meeting transcripts' }),
   F({ id: 'MTG-09', title: 'A meeting summary posted to the room', space: 'meetings', status: 'not-built', timing: 'v1.5', label: 'hidden' }),
   F({ id: 'MTG-10', title: 'Background blur and noise suppression', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'MTG-11', title: 'Availability across studios as free/busy only', space: 'meetings', status: 'not-built', timing: 'next', label: 'internal' }),
   // ── 4.7 Documents and signing
   F({ id: 'DOC-01', title: 'Templates with merge fields that report what they could not fill', space: 'documents', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'DOC-02', title: 'Field placement on the PDF — all five field kinds', space: 'documents', status: 'built', timing: 'live', label: 'available' }),
@@ -247,6 +253,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'UX-01', title: 'Component layer, loading states on every route, a fixed type scale', space: 'experience', status: 'built', timing: 'live', label: 'internal' }),
   F({ id: 'UX-02', title: 'Command palette', space: 'experience', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'UX-03', title: 'Light and dark themes', space: 'experience', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'UX-04', title: '“My work” across studios, and the studio carried per tab', space: 'experience', status: 'not-built', timing: 'v1.5', label: 'internal' }),
   F({ id: 'PUB-01', title: 'Landing page, social card, robots, sitemap, manifest', space: 'experience', status: 'built', timing: 'live', label: 'none' }),
   F({ id: 'PUB-02', title: 'Terms and privacy, with the accepted version recorded', space: 'experience', status: 'built', timing: 'live', label: 'none' }),
   F({ id: 'PUB-03', title: 'First-run checklist and onboarding', space: 'experience', status: 'built', timing: 'live', label: 'available' }),
@@ -311,6 +318,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'TOP-03', title: 'Community, with live feeds', space: 'network', status: 'not-built', timing: 'v2', label: 'coming' }),
   F({ id: 'TOP-04', title: 'Following other filmmakers', space: 'network', status: 'not-built', timing: 'v2', label: 'coming' }),
   F({ id: 'TOP-05', title: 'Streaming — free or by subscription', space: 'network', status: 'not-built', timing: 'v3+', label: 'coming' }),
+  F({ id: 'TOP-06', title: 'Being found — an opt-in public profile and search for collaborators', space: 'network', status: 'not-built', timing: 'v2', label: 'internal' }),
   // ── 4.20 Enterprise readiness
   F({ id: 'ENT-01', title: 'Internal-only configuration enforced', space: 'enterprise', status: 'partial', timing: 'launch', label: 'enterprise', remainder: 'Internal-only configuration, enforced and asserted' }),
   F({ id: 'ENT-02', title: 'Single sign-on and SCIM', space: 'enterprise', status: 'built', timing: 'live', label: 'enterprise' }),
