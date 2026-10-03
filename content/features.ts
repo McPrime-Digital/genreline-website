@@ -251,6 +251,10 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'PUB-02', title: 'Terms and privacy, with the accepted version recorded', space: 'experience', status: 'built', timing: 'live', label: 'none' }),
   F({ id: 'PUB-03', title: 'First-run checklist and onboarding', space: 'experience', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'OPS-01', title: 'Operator probe suite, the 76-assertion security harness, end-to-end tests', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
+  // OPS-02…04: S-O, the operator console (app repo, docs/specs/S-O-operator-console.md, 2026-10-03). Internal — never a public claim.
+  F({ id: 'OPS-02', title: 'Operator console on its own address, with a staff list and an audit of every action', space: 'platform', status: 'not-built', timing: 'next', label: 'internal' }),
+  F({ id: 'OPS-03', title: 'Platform announcements to studios, never to their clients', space: 'platform', status: 'not-built', timing: 'next', label: 'internal' }),
+  F({ id: 'OPS-04', title: 'Consented support access and credit adjustments by the operator', space: 'platform', status: 'not-built', timing: 'next', label: 'internal' }),
   // ── 4.14 The Suite — writing and pre-production (functions, never working titles)
   F({ id: 'SWR-01', title: 'Script Design — the screenplay editor: industry format, pagination, locked scenes, tracked changes, comments, snapshots', space: 'suite', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'SWR-02', title: 'Document types — screenplay, treatment, bible, breakdown', space: 'suite', status: 'built', timing: 'live', label: 'available' }),
