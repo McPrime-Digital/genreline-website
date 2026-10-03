@@ -10,7 +10,7 @@ export const metadata = pageMeta('/pricing')
 
 const QUESTIONS = [
   { q: 'Why are there no prices yet?', a: 'Prices are being set. Until they are, each plan shows what it includes, and we will quote you directly. There is no checkout on this page, because there is nothing to buy through it yet.' },
-  { q: 'Can I start now?', a: 'Yes. You can open a studio today without a card. New studios start on the Agency plan.' },
+  { q: 'Can I start now?', a: 'Yes. You can open a studio today without a card. New studios start on the Pro plan — or Indie, if you tell us it is just you.' },
   { q: 'How is AI paid for?', a: USAGE_CREDITS.body },
   { q: 'What happens when we reach a limit?', a: 'Storage is enforced when a file is uploaded, and a studio that has not verified its address holds 1 GB until it does. Talk to us before you reach the others.' },
   { q: 'Do our clients’ teams count as seats?', a: 'The plans count your crew seats and your client companies, not the people on your clients’ teams.' },
