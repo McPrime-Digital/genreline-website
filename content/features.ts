@@ -74,7 +74,7 @@ const F = (f: Feature) => f
 
 export const FEATURES: readonly Feature[] = [
   // ── 4.1 Foundation and platform
-  F({ id: 'FND-01', title: 'Studio isolation — the database is the tenancy boundary, proven by 76 automated checks', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
+  F({ id: 'FND-01', title: 'Studio isolation — the database is the tenancy boundary, proven by 89 automated checks', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
   F({ id: 'FND-02', title: 'Access-token hook — organization claim, security claims, multi-organization selection', space: 'platform', status: 'built', timing: 'live', label: 'internal' }),
   F({ id: 'FND-03', title: 'Internal-only configuration — an internal studio never sees a client-space surface', space: 'enterprise', status: 'partial', timing: 'launch', label: 'enterprise', remainder: 'Enforce the internal-only configuration' }),
   F({ id: 'FND-04', title: 'One US region, stated plainly', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
@@ -118,8 +118,8 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'IDN-18', title: 'SCIM 2.0 provisioning', space: 'enterprise', status: 'built', timing: 'live', label: 'enterprise' }),
   F({ id: 'IDN-19', title: 'Membership in several organizations, with switching', space: 'identity', status: 'built', timing: 'live', label: 'available' }),
   // S-T r4 (app repo, 2026-10-03) — 'internal' while S-T is a draft; becomes 'hidden' (→ the public roadmap) when the owner approves it.
-  F({ id: 'IDN-20', title: 'Collaborators — talent brought aboard, with access, participation and duration set by the invitation', space: 'identity', status: 'partial', timing: 'next', label: 'internal' }),
-  F({ id: 'IDN-21', title: 'A personal profile the person owns, shared per studio by their choice', space: 'identity', status: 'not-built', timing: 'next', label: 'internal' }),
+  F({ id: 'IDN-20', title: 'Collaborators — talent brought aboard, with access, participation and duration set by the invitation', space: 'identity', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'IDN-21', title: 'A personal profile the person owns, shared per studio by their choice', space: 'identity', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'IDN-22', title: 'Credits on the personal profile, published only with each studio’s permission', space: 'identity', status: 'not-built', timing: 'v1.5', label: 'internal' }),
   // ── 4.3 Messaging
   F({ id: 'MSG-01', title: 'Company rooms, project tags and a General thread — the client portal is the other side of the room', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
@@ -141,7 +141,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'MSG-17', title: 'Wallpapers, emoji and stickers', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MSG-18', title: 'Project-tagged messages highlighted in the main hub', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MSG-19', title: 'A message as an approval gate', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'MSG-20', title: 'An outside collaborator seated in a room, and in its meetings', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'MSG-20', title: 'A collaborator seated in one room and its meetings — the Consultant preset', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MSG-21', title: 'Call buttons in every room header', space: 'messaging', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MSG-22', title: 'Meeting-intent detection in conversation', space: 'messaging', status: 'not-built', timing: 'v1.5', label: 'hidden' }),
   F({ id: 'MSG-23', title: 'Thread summaries and translation', space: 'messaging', status: 'partial', timing: 'v1.5', label: 'hidden' }),
@@ -196,7 +196,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'MTG-08', title: 'Meeting recording', space: 'meetings', status: 'partial', timing: 'live', label: 'available', caveat: 'recording only', remainder: 'Meeting transcripts' }),
   F({ id: 'MTG-09', title: 'A meeting summary posted to the room', space: 'meetings', status: 'not-built', timing: 'v1.5', label: 'hidden' }),
   F({ id: 'MTG-10', title: 'Background blur and noise suppression', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'MTG-11', title: 'Availability across studios as free/busy only', space: 'meetings', status: 'not-built', timing: 'next', label: 'internal' }),
+  F({ id: 'MTG-11', title: 'Availability across studios as free/busy only — with holds, first and second position', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
   // ── 4.7 Documents and signing
   F({ id: 'DOC-01', title: 'Templates with merge fields that report what they could not fill', space: 'documents', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'DOC-02', title: 'Field placement on the PDF — all five field kinds', space: 'documents', status: 'built', timing: 'live', label: 'available' }),

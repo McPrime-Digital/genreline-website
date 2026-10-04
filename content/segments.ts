@@ -36,9 +36,8 @@ export const SEGMENTS: readonly Segment[] = [
     ],
     invite: [
       { role: 'Your staff', sees: 'Every production, at the role you give them', featureId: 'IDN-01' },
-      { role: 'Freelancers', sees: 'Only the productions they are assigned to, until the assignment expires', featureId: 'IDN-03' },
+      { role: 'Collaborators', sees: 'Nothing until invited onto a production or a task — then exactly what the invitation says, for as long as it says', featureId: 'IDN-20' },
       { role: 'Each client’s team', sees: 'Their own company’s portal — rooms, cuts, approvals, contracts, invoices', featureId: 'IDN-09' },
-      { role: 'Outside collaborators', sees: 'One room — the VFX artist or colourist on one job, and nothing else', featureId: 'MSG-20' },
       { role: 'Guests', sees: 'One cut through a screening link, with no account', featureId: 'CLI-08' },
       { role: 'Talent', sees: 'One release to sign, through a single-use link', featureId: 'DOC-09' },
     ],
@@ -65,7 +64,7 @@ export const SEGMENTS: readonly Segment[] = [
     invite: [
       { role: 'Brand teams', sees: 'Their brand’s portal, with roles their owner sets — reviewer, approver, finance', featureId: 'CLI-04' },
       { role: 'Brand legal', sees: 'Contracts and the clearance panel that says what must be disclosed', featureId: 'CLI-11' },
-      { role: 'Freelance editors', sees: 'The productions they are assigned to', featureId: 'IDN-03' },
+      { role: 'Collaborators', sees: 'The productions and tasks they are invited onto — files, review, the room — for as long as the invitation says', featureId: 'IDN-20' },
       { role: 'Guests', sees: 'A screener, watermarked with their own name', featureId: 'CLI-09' },
     ],
     wins: [
@@ -91,7 +90,7 @@ export const SEGMENTS: readonly Segment[] = [
     invite: [
       { role: 'Your team', sees: 'The productions and tools their role covers', featureId: 'IDN-01' },
       { role: 'Departments you serve', sees: 'A portal per department — marketing, HR, the exec office — to review and approve', featureId: 'CLI-02' },
-      { role: 'Agencies and freelancers', sees: 'Only the productions they are brought in for', featureId: 'IDN-03' },
+      { role: 'Agencies and collaborators', sees: 'Only the productions they are brought in for, with exactly what the invitation opens', featureId: 'IDN-20' },
     ],
     wins: [
       { title: 'Sign-off from the people who matter', body: 'Internal approvals with stages and a certificate, so “legal approved it” is a record, not a memory.', featureId: 'CRW-05' },
@@ -114,7 +113,7 @@ export const SEGMENTS: readonly Segment[] = [
       { name: 'The Suite', on: true, note: 'Your scripts, boards and library' },
     ],
     invite: [
-      { role: 'Your collaborators', sees: 'The production they are on, for as long as it runs', featureId: 'IDN-03' },
+      { role: 'Your collaborators', sees: 'The production they are on, with what you opened to them, for as long as it runs', featureId: 'IDN-20' },
       { role: 'Partners', sees: 'Their portal — the cut, the approvals, the documents you share', featureId: 'IDN-09' },
       { role: 'Festival programmers and buyers', sees: 'One cut through a screening link, watermarked with their name', featureId: 'CLI-08' },
       { role: 'Talent and locations', sees: 'One release to sign, through a single-use link — it writes the rights it proves', featureId: 'DOC-09' },
@@ -158,9 +157,8 @@ export const SEGMENTS: readonly Segment[] = [
 /** The people on a production, and exactly what each one can reach. */
 export const COLLABORATORS = [
   { role: 'Staff', where: 'Crew', sees: 'Every production, at their company role', featureId: 'IDN-01' },
-  { role: 'Contractors', where: 'Crew', sees: 'Nothing until assigned — then only those productions, until it expires', featureId: 'IDN-03' },
+  { role: 'Collaborators', where: 'Their own view', sees: 'Nothing until invited onto a production or a task — then exactly what the invitation says, for as long as it says; their profile and availability are their own, across every studio', featureId: 'IDN-20' },
   { role: 'Client teams', where: 'Portal', sees: 'Their company’s rooms, cuts, approvals, contracts and invoices', featureId: 'IDN-09' },
-  { role: 'Outside collaborators', where: 'One room', sees: 'A single room and its meetings — nothing else in the studio', featureId: 'MSG-20' },
   { role: 'Guests', where: 'A screening link', sees: 'One cut, watermarked with their name, with no account', featureId: 'CLI-08' },
   { role: 'Signers', where: 'A signing link', sees: 'One document to sign, once', featureId: 'DOC-09' },
 ] as const

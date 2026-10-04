@@ -66,9 +66,9 @@ export default function Crew() {
           people={[
             { role: 'Producers and coordinators', sees: 'Every production their role covers — staffing, schedule, tasks and approvals', featureId: 'IDN-01' },
             { role: 'Editors, colourists, assistants', sees: 'Their tasks, rooms and the productions they are on', featureId: 'IDN-02' },
-            { role: 'Freelancers', sees: 'Nothing until assigned — then only those productions, until the assignment expires', featureId: 'IDN-03' },
+            { role: 'Collaborators', sees: 'Nothing until invited onto a production or a task — then exactly what the invitation says, for as long as it says', featureId: 'IDN-20' },
             { role: 'Finance', sees: 'Invoices and spend, because their role includes money', featureId: 'IDN-01' },
-            { role: 'Outside collaborators', sees: 'One room and its meetings — the VFX artist on one job', featureId: 'MSG-20' },
+            { role: 'Every person', sees: 'One profile and one availability across every studio they work with — shared field by field, by them', featureId: 'IDN-21' },
             { role: 'Every change', sees: 'Written to the permission ledger — who granted what, when, until when', featureId: 'IDN-06' },
           ]}
         />
