@@ -245,10 +245,14 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'LOG-02', title: 'Summaries of logs, chats and meetings', space: 'notes', status: 'not-built', timing: 'v1.5', label: 'hidden' }),
   F({ id: 'LOG-03', title: 'Ask about anything said in a chat or meeting, respecting permissions exactly', space: 'notes', status: 'not-built', timing: 'v2', label: 'hidden' }),
   // ── 4.12 Notifications and presence
-  F({ id: 'NTF-01', title: 'In-app notifications, preferences and away escalation — five categories across three channels', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'NTF-01', title: 'One inbox per person — every notice defined, at most three alerts about one thing a day, email only if still unseen', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'NTF-02', title: 'Web push', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'NTF-03', title: 'SMS, metered', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'NTF-04', title: 'Presence and heartbeat, app-wide', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'NTF-05', title: 'Approval requests that carry the asset’s AI disclosure and consent', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'NTF-06', title: 'Consent-withdrawn alerts — a declined or voided AI-likeness release reaches everyone working with the asset, and each confirms', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'NTF-07', title: 'Delivery receipts — who was told, by which channel, and whether they have seen it', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'NTF-08', title: 'Quiet hours, do-not-disturb and a digest, in your own time zone', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
   // ── 4.13 Product experience and public surface
   F({ id: 'UX-01', title: 'Component layer, loading states on every route, a fixed type scale', space: 'experience', status: 'built', timing: 'live', label: 'internal' }),
   F({ id: 'UX-02', title: 'Command palette', space: 'experience', status: 'built', timing: 'live', label: 'available' }),
