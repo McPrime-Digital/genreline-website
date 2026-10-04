@@ -85,7 +85,10 @@
   /* ── Dark theme — Ink, a matte black-out blue (owner override above) ── */
   .dark {
     color-scheme: dark;
-    --background: 242 50% 8%;         /* #0B0A1F Ink — the canvas */
+    /* The canvas is TOTAL BLACK (owner, 2026-10-04 — the same decision as the
+       app's shell): every raised surface below keeps its Ink value, so the site
+       reads as Ink panels on black. */
+    --background: 0 0% 0%;            /* #000000 — the canvas */
     --foreground: 226 39% 92%;        /* #E8EBF5 off-white */
     --card: 239 32.2% 11.9%;          /* #141528 a matte panel, one step up */
     --card-foreground: 226 39% 92%;
