@@ -54,6 +54,19 @@ export const PLANS: readonly Plan[] = [
   },
 ]
 
+/**
+ * THE TRIAL AND EXPLORE — S-T §10 (0123, 2026-10-03), as the product does it.
+ * Every statement here is a built behaviour: the trial starts at verification,
+ * caps only what leaves the studio, and ends in Explore, where everything made
+ * stays. Prices stay an owner input.
+ */
+export const TRIAL_AND_EXPLORE = {
+  heading: 'Start on Business, free, for fourteen days',
+  body: 'Every new studio gets fourteen days on the Business plan from the day its address is verified, with a $5 AI grant and no card. The only caps are on what leaves the studio — two counterparty companies, ten portal seats, five invitations, three contracts, ten guest links, 50 GB — never on what you make inside.',
+  explore: 'When the trial ends without a plan, the studio moves to Explore: free, permanent, nothing deleted. Everything you made stays readable and editable; uploads within 1 GB; the portal users you invited keep read-only access. Invitations, approval requests, contracts, guest links, invoices, call sheets and AI wait for a plan. Being a collaborator in other studios is never affected.',
+  domain: 'One trial per company email domain; a second studio on the same domain opens on Explore.',
+}
+
 export const USAGE_CREDITS = {
   heading: 'Usage credits',
   body: 'AI, SMS and metered work are paid from a credit balance the studio tops up. Every call is priced before it runs, a per-call ceiling asks before anything expensive, and a per-person budget is visible to the person it governs. The balance stops at zero; it never goes negative.',

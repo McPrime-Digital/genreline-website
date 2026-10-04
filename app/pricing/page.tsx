@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Accordion } from 'radix-ui'
 import { PageHero, Section } from '@/components/site/Frame'
 import { PlanFinder } from '@/components/interactive/PlanFinder'
-import { PLANS, USAGE_CREDITS } from '@/content/pricing'
+import { PLANS, USAGE_CREDITS, TRIAL_AND_EXPLORE } from '@/content/pricing'
 import { APP } from '@/lib/site'
 import { pageMeta } from '@/lib/meta'
 
@@ -11,6 +11,7 @@ export const metadata = pageMeta('/pricing')
 const QUESTIONS = [
   { q: 'Why are there no prices yet?', a: 'Prices are being set. Until they are, each plan shows what it includes, and we will quote you directly. There is no checkout on this page, because there is nothing to buy through it yet.' },
   { q: 'Can I start now?', a: 'Yes. You can open a studio today without a card. New studios start on the Pro plan — or Indie, if you tell us it is just you.' },
+  { q: 'Is there a free trial?', a: `${TRIAL_AND_EXPLORE.body} ${TRIAL_AND_EXPLORE.explore}` },
   { q: 'How is AI paid for?', a: USAGE_CREDITS.body },
   { q: 'What happens when we reach a limit?', a: 'Storage is enforced when a file is uploaded, and a studio that has not verified its address holds 1 GB until it does. Talk to us before you reach the others.' },
   { q: 'Do our clients’ teams count as seats?', a: 'The plans count your crew seats and your client companies, not the people on your clients’ teams.' },
@@ -31,6 +32,11 @@ export default function Pricing() {
       </PageHero>
       <Section id="plans" title="Which plan fits" className="pt-0">
         <PlanFinder plans={PLANS} />
+      </Section>
+      <Section id="trial" title={TRIAL_AND_EXPLORE.heading} width="measure">
+        <p className="text-lg leading-relaxed text-muted-foreground">{TRIAL_AND_EXPLORE.body}</p>
+        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{TRIAL_AND_EXPLORE.explore}</p>
+        <p className="mt-4 text-sm text-muted-foreground">{TRIAL_AND_EXPLORE.domain}</p>
       </Section>
       <Section id="credits" title={USAGE_CREDITS.heading} width="measure">
         <p className="text-lg leading-relaxed text-muted-foreground">{USAGE_CREDITS.body}</p>
