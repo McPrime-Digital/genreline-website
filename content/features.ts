@@ -74,7 +74,7 @@ const F = (f: Feature) => f
 
 export const FEATURES: readonly Feature[] = [
   // ── 4.1 Foundation and platform
-  F({ id: 'FND-01', title: 'Studio isolation — the database is the tenancy boundary, proven by 89 automated checks', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
+  F({ id: 'FND-01', title: 'Studio isolation — the database is the tenancy boundary, proven by 100 automated checks', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
   F({ id: 'FND-02', title: 'Access-token hook — organization claim, security claims, multi-organization selection', space: 'platform', status: 'built', timing: 'live', label: 'internal' }),
   F({ id: 'FND-03', title: 'Internal-only configuration — an internal studio never sees a client-space surface', space: 'enterprise', status: 'partial', timing: 'launch', label: 'enterprise', remainder: 'Enforce the internal-only configuration' }),
   F({ id: 'FND-04', title: 'One US region, stated plainly', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
