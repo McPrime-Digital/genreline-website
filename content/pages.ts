@@ -29,7 +29,7 @@ export const PAGES: readonly SitePage[] = [
   { path: '/security/disclosure', title: 'Responsible disclosure', description: 'How to report a vulnerability in Genreline.', section: 'platform' },
   { path: '/ai', title: 'AI and provenance', description: 'How generation will work: one gate, many models, a budget per person, a ceiling per call, provenance and rights per asset — and what Genreline does not claim.', section: 'suite' },
   { path: '/network', title: 'The filmmaker network', description: 'Theater, Community, streaming and a marketplace — for filmmakers, studios and working actors. Being built; early access is open.', section: 'network' },
-  { path: '/pricing', title: 'Pricing', description: 'Seats plus usage credits. Three plans; prices to come.', section: 'company' },
+  { path: '/pricing', title: 'Pricing', description: 'Per staff seat, in four ranges; freelancers by the month; everything metered beside its cost. Provisional until launch.', section: 'company' },
   { path: '/roadmap', title: 'Roadmap', description: 'Everything being built, with its honest status. Nothing is hidden.', section: 'roadmap' },
   { path: '/changelog', title: 'Changelog', description: 'What shipped, dated.', section: 'company' },
   { path: '/about', title: 'About', description: 'Who is building Genreline and why.', section: 'company' },
