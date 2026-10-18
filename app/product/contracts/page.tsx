@@ -1,6 +1,7 @@
 import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/product/contracts')
 
@@ -56,7 +57,7 @@ export default function Contracts() {
       </Section>
       <Section id="security" width="measure">
         <SecurityNote>
-          <p><Feature id="DOC-09">A signing link works once, and the token behind it is never stored — only its fingerprint.</Feature> <Feature id="FND-01">Studio isolation is enforced in the database and proven by 76 automated security checks.</Feature> Among those checks: a client owner cannot sign for a colleague.</p>
+          <p><Feature id="DOC-09">A signing link works once, and the token behind it is never stored — only its fingerprint.</Feature> <Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> Among those checks: a client owner cannot sign for a colleague.</p>
         </SecurityNote>
       </Section>
       <CtaBand />

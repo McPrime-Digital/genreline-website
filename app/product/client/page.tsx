@@ -2,6 +2,7 @@ import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
 import { PeopleGrid } from '@/components/site/PeopleGrid'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/product/client')
 
@@ -112,7 +113,7 @@ export default function Client() {
       </Section>
       <Section id="security" width="measure">
         <SecurityNote>
-          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by 76 automated security checks.</Feature> Among those checks: one client company cannot read another’s files, rights or approvals.</p>
+          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> Among those checks: one client company cannot read another’s files, rights or approvals.</p>
         </SecurityNote>
       </Section>
       <CtaBand />

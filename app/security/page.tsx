@@ -3,6 +3,7 @@ import { Feature } from '@/components/FeatureLabel'
 import { PageHero } from '@/components/site/Frame'
 import { SecurityVisual } from '@/components/cinema/HeroVisuals'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/security')
 
@@ -11,7 +12,7 @@ const SECTIONS: { id: string; title: string; lead: string; controls: Control[] }
   {
     id: 'isolation', title: 'Isolation', lead: 'The boundary between studios is held in the database.',
     controls: [
-      { id: 'FND-01', title: 'Enforced in the database', body: 'Studio isolation is enforced in the database and proven by 76 automated security checks, each with a positive control — so a check that proves nothing cannot pass.' },
+      { id: 'FND-01', title: 'Enforced in the database', body: `Studio isolation is enforced in the database and proven by ${HARNESS_ASSERTIONS} automated security checks, each with a positive control — so a check that proves nothing cannot pass.` },
       { id: 'FND-21', title: 'A cross-tenant write is refused', body: 'Rows are stamped with their studio from their parent record, and a write that would file a row under another studio is refused.' },
       { id: 'OPS-01', title: 'Probed, not assumed', body: 'Operator probes and end-to-end tests run against the live configuration — the settings no build can see.' },
     ],

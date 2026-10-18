@@ -1,6 +1,7 @@
 import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/product/money')
 
@@ -52,7 +53,7 @@ export default function Money() {
       </Section>
       <Section id="security" width="measure">
         <SecurityNote>
-          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by 76 automated security checks.</Feature> Among those checks: a crew member whose role does not include money reads no invoices.</p>
+          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> Among those checks: a crew member whose role does not include money reads no invoices.</p>
         </SecurityNote>
       </Section>
       <CtaBand />

@@ -4,6 +4,7 @@
  * in-house isn't clear… what enterprise and what do they see"). Every
  * capability named here is Available in S-F-A, or stated as not yet built.
  */
+import { HARNESS_ASSERTIONS } from './claims'
 export type Segment = {
   id: 'production-companies' | 'agencies' | 'in-house' | 'independents' | 'enterprise'
   /** S-T ST-5b: the app's sign-up pre-answers "what best describes you" from this (`/signup?type=…`). Null for Enterprise — a scale, not a type. */
@@ -147,7 +148,7 @@ export const SEGMENTS: readonly Segment[] = [
     wins: [
       { title: 'Identity, enforced', body: 'SAML or OIDC on a domain proved by DNS, enforcement, just-in-time provisioning and SCIM 2.0.', featureId: 'IDN-14' },
       { title: 'Your own rules', body: 'Required two-factor, a maximum session age and an idle timeout, set by you.', featureId: 'IDN-17' },
-      { title: 'Isolation you can verify', body: 'Studio isolation enforced in the database and proven by 76 automated security checks.', featureId: 'FND-01' },
+      { title: 'Isolation you can verify', body: `Studio isolation enforced in the database and proven by ${HARNESS_ASSERTIONS} automated security checks.`, featureId: 'FND-01' },
     ],
     media: ['crew-sso', 'crew-security', 'crew-integrations'],
     honest: 'No certification is held yet — no SOC 2, no ISO 27001, no TPN assessment. The security page lists every gap beside its plan.',

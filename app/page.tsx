@@ -21,6 +21,7 @@ import { feature, siteLabel } from '@/content/features'
 import { COLLABORATORS, SEGMENTS } from '@/content/segments'
 import { APP } from '@/lib/site'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/')
 
@@ -75,7 +76,7 @@ function Heading({ kicker, title, lead, icon }: { kicker: string; title: React.R
 }
 
 const SECURITY: { id: string; icon: IconName; title: string; body: string }[] = [
-  { id: 'FND-01', icon: 'Database', title: 'Isolation in the database', body: 'Studio isolation is enforced in the database, and proven by 76 automated security checks.' },
+  { id: 'FND-01', icon: 'Database', title: 'Isolation in the database', body: `Studio isolation is enforced in the database, and proven by ${HARNESS_ASSERTIONS} automated security checks.` },
   { id: 'IDN-15', icon: 'KeyRound', title: 'Two-factor and passkeys', body: 'Two-factor sign-in, passkeys, recovery codes, and a second check before sensitive actions.' },
   { id: 'IDN-14', icon: 'Fingerprint', title: 'Single sign-on and SCIM', body: 'SAML and OIDC on a proved domain, enforcement, just-in-time provisioning and SCIM 2.0.' },
   { id: 'IDN-17', icon: 'Timer', title: 'Your own rules', body: 'Required two-factor, a maximum session age and an idle timeout, set by the studio.' },

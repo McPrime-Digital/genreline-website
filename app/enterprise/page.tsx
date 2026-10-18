@@ -4,6 +4,7 @@ import { InquiryForm } from '@/components/interactive/InquiryForm'
 import { inquiryEnabled, TURNSTILE_SITE_KEY } from '@/lib/inquiry'
 import { pageMeta } from '@/lib/meta'
 import { SegmentPage } from '@/components/site/SegmentPage'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/enterprise')
 
@@ -37,7 +38,7 @@ export default function Enterprise() {
         />
         <CapabilityBlock
           title="Isolation, retention and erasure"
-          body={<p>Studio isolation is enforced in the database and proven by 76 automated security checks. Deleted rows wait out a grace window before they are purged; the activity ledger is kept for seven years; a person can be erased with a stable pseudonym left in their place. Everything is hosted in one US region.</p>}
+          body={<p>Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks. Deleted rows wait out a grace window before they are purged; the activity ledger is kept for seven years; a person can be erased with a stable pseudonym left in their place. Everything is hosted in one US region.</p>}
           features={['FND-01', 'FND-13', 'FND-12', 'FND-04']}
         />
       </Section>

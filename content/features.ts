@@ -13,6 +13,7 @@
  * S-F-A FA-12): the owner's renaming pass has not landed, so a working title
  * on a public page would be a published name the rename breaks.
  */
+import { HARNESS_ASSERTIONS } from './claims'
 
 export type Space =
   | 'platform' | 'identity' | 'messaging' | 'client' | 'review' | 'meetings'
@@ -261,7 +262,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'PUB-01', title: 'Landing page, social card, robots, sitemap, manifest', space: 'experience', status: 'built', timing: 'live', label: 'none' }),
   F({ id: 'PUB-02', title: 'Terms and privacy, with the accepted version recorded', space: 'experience', status: 'built', timing: 'live', label: 'none' }),
   F({ id: 'PUB-03', title: 'First-run checklist and onboarding', space: 'experience', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'OPS-01', title: 'Operator probe suite, the 76-assertion security harness, end-to-end tests', space: 'platform', status: 'built', timing: 'live', label: 'security' }),
+  F({ id: 'OPS-01', title: `Operator probe suite, the ${HARNESS_ASSERTIONS}-assertion security harness, end-to-end tests`, space: 'platform', status: 'built', timing: 'live', label: 'security' }),
   // OPS-02…04: S-O, the operator console (app repo, docs/specs/S-O-operator-console.md, 2026-10-03). Internal — never a public claim.
   F({ id: 'OPS-02', title: 'Operator console on its own address, with a staff list and an audit of every action', space: 'platform', status: 'not-built', timing: 'next', label: 'internal' }),
   F({ id: 'OPS-03', title: 'Platform announcements to studios, never to their clients', space: 'platform', status: 'not-built', timing: 'next', label: 'internal' }),

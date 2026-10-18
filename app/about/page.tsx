@@ -4,6 +4,7 @@ import { Media } from '@/components/site/Media'
 import { FOUNDER } from '@/lib/site'
 import { ManifestoVisual } from '@/components/cinema/HeroVisuals'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/about')
 
@@ -25,7 +26,7 @@ export default function About() {
       <Section title="How it is built" width="measure">
         <ul className="space-y-5 text-[16px] leading-7 text-muted-foreground">
           <li><span className="font-semibold text-foreground">Every claim on this site traces to an inventory.</span> A feature is marked available only when it works today. Everything else is on the <Link href="/roadmap" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">roadmap</Link>, with its status.</li>
-          <li><span className="font-semibold text-foreground">The boundary between studios is held in the database,</span> and 76 automated security checks prove it on every change.</li>
+          <li><span className="font-semibold text-foreground">The boundary between studios is held in the database,</span> and {HARNESS_ASSERTIONS} automated security checks prove it on every change.</li>
           <li><span className="font-semibold text-foreground">The gaps are published.</span> The <Link href="/security#not-yet" className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">security page</Link> lists what has not been done, beside what has.</li>
           <li><span className="font-semibold text-foreground">Nothing is quietly dropped.</span> A feature leaves the plan only by a decision, written down with its date.</li>
         </ul>

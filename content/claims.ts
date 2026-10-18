@@ -38,9 +38,16 @@ export const FORBIDDEN: readonly Forbidden[] = [
   { pattern: /ZZ-HARNESS|rls-harness|Harness (Owner|Crew|Finance|Contractor)/i, reason: 'W-8 — harness names belong in captures, never in copy' },
 ]
 
+/**
+ * THE HARNESS'S REAL COUNT — `npm run test:rls` in the app repository (scripts/test-rls.ts). Every page that
+ * states the number reads THIS constant (S-E-A §4.6, 2026-10-18: the site said 76 while the harness held 128);
+ * change it here when assertions are added, nowhere else.
+ */
+export const HARNESS_ASSERTIONS = 128
+
 /** S-W §3.1, verbatim, for reference on the security and product pages. */
 export const MAY_CLAIM = [
-  'Studio isolation enforced in the database and proven by 76 automated security checks',
+  `Studio isolation enforced in the database and proven by ${HARNESS_ASSERTIONS} automated security checks`,
   'roles, project roles, staff and contractor seats, individual grants and denials, and a permission ledger',
   'two-factor sign-in, passkeys, single sign-on (SAML/OIDC) and SCIM provisioning',
   'a studio’s own security rules (required two-factor, session limits)',

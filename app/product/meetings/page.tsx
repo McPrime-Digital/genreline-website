@@ -1,6 +1,7 @@
 import { Feature } from '@/components/FeatureLabel'
 import { CapabilityBlock, Connects, CtaBand, PageHero, Replaces, SecurityNote, Section } from '@/components/site/Frame'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/product/meetings')
 
@@ -59,7 +60,7 @@ export default function Meetings() {
       </Section>
       <Section id="security" width="measure">
         <SecurityNote>
-          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by 76 automated security checks.</Feature> A meeting admits exactly the people who can read it, and among those checks: a client can never read an internal meeting.</p>
+          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> A meeting admits exactly the people who can read it, and among those checks: a client can never read an internal meeting.</p>
         </SecurityNote>
       </Section>
       <CtaBand />

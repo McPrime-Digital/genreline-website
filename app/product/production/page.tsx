@@ -5,6 +5,7 @@ import { Icon, type IconName } from '@/components/Icon'
 import { Reveal } from '@/components/cinema/Reveal'
 import { siteLabel } from '@/content/features'
 import { pageMeta } from '@/lib/meta'
+import { HARNESS_ASSERTIONS } from '@/content/claims'
 
 export const metadata = pageMeta('/product/production')
 
@@ -68,7 +69,7 @@ export default function Production() {
       </Section>
       <Section id="security" width="measure">
         <SecurityNote>
-          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by 76 automated security checks.</Feature> A freelancer scoped to one production sees that production and nothing else.</p>
+          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> A freelancer scoped to one production sees that production and nothing else.</p>
         </SecurityNote>
       </Section>
       <CtaBand />
