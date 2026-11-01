@@ -12,7 +12,7 @@ export default function Crew() {
       <PageHero motif="clapper"
         kicker="The Crew space"
         title="Where the studio works."
-        lead="The Crew space is where the studio works: who is on the job, what they are doing, what they may see, and the breakdown that comes out of the script."
+        lead="The Crew space is where the studio works: who is on the job, what they are doing, what they may see, and every production they run."
         media="crew-tasks"
       />
       <Section id="replaces" kicker="What it replaces" title="Instead of a dozen tools">
@@ -45,18 +45,12 @@ export default function Crew() {
           features={['CRW-05', 'APR-02']}
         />
         <CapabilityBlock
-          title="From the script to the breakdown"
-          body={<p>Scenes and elements are read from the screenplay the writer is in — characters, locations, props, looks — so every shot the Stage generates starts from the script, not from a retyped list.</p>}
-          features={[{ id: 'CRW-07', text: 'Screenplay to scenes to breakdown' }]}
-          media="crew-production"
-        />
-        <CapabilityBlock
-          reverse
           title="Permissions that say exactly who sees what"
           body={<p>Company roles, project roles, staff and contractor seats, and individual grants and denials with expiry. A contractor sees nothing until assigned. A denial always beats a grant, and every change is written to the permission ledger.</p>}
           features={['IDN-01', 'IDN-02', 'IDN-03', 'IDN-04', 'IDN-08', 'IDN-06']}
         />
         <CapabilityBlock
+          reverse
           title="A budget for every person"
           body={<p>Set an AI spend limit per person or per seat class, by day, week or month. The person it governs can see it — a refused call is explained, never mysterious.</p>}
           features={['MON-06', 'MON-05']}
@@ -78,7 +72,7 @@ export default function Crew() {
         <Connects
           items={[
             { href: '/product/client', title: 'The Client space', body: 'Tasks and approvals reach the client’s team on the same board and the same record.' },
-            { href: '/product/suite', title: 'The Suite', body: 'The breakdown reads the screenplay the writer is working in.' },
+            { href: '/product/suite', title: 'The Suite', body: 'A task links to the script, the storyboard or the cut it is about.' },
             { href: '/product/meetings', title: 'The calendar', body: 'Review deadlines and invoice dates land on the calendar — the studio’s and the client’s.' },
           ]}
         />

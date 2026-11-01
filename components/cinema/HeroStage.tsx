@@ -30,7 +30,7 @@ const title = localFont({
 })
 
 const ROWS = [
-  ['client-messages', 'crew-tasks', 'portal-review', 'client-review-record', 'suite-library', 'crew-production', 'home-portal-brand-a'],
+  ['client-messages', 'crew-tasks', 'portal-review', 'client-review-record', 'suite-library', 'crew-directory', 'home-portal-brand-a'],
   ['crew-calendar', 'client-contracts', 'portal-files', 'crew-chat', 'client-guest-links', 'portal-certificate', 'client-brand-kit'],
   ['client-overview', 'portal-meetings', 'crew-directory', 'client-invoices', 'portal-messages', 'home-portal-brand-b', 'crew-sso'],
 ]

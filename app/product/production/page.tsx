@@ -13,17 +13,16 @@ export const metadata = pageMeta('/product/production')
  *  and where it lives. Statuses come from content/features.ts. */
 const CYCLE: { n: string; title: string; body: string; icon: IconName; featureId: string; href: string; also?: { featureId: string; text: string } }[] = [
   { n: '01', title: 'Script', body: 'Written and co-edited live in Script Design.', icon: 'PenTool', featureId: 'SWR-01', href: '/product/suite#write' },
-  { n: '02', title: 'Breakdown', body: 'Scenes, characters, locations and looks read from the script — lines the assistant suggested are marked.', icon: 'ListTree', featureId: 'CRW-07', href: '/product/crew' },
-  { n: '03', title: 'Boards and moodboards', body: 'Storyboards shot by shot, a prompt on every frame.', icon: 'LayoutGrid', featureId: 'SWR-09', href: '/product/suite#visualise', also: { featureId: 'NEW-01', text: 'Moodboards — references and palettes pinned to scenes' } },
-  { n: '04', title: 'Generate', body: 'The Stage: image and video from every major model, through one gate with a budget.', icon: 'WandSparkles', featureId: 'STG-01', href: '/product/suite#stage' },
-  { n: '05', title: 'Continuity', body: 'Characters, locations, wardrobe and style held from shot to shot.', icon: 'Fingerprint', featureId: 'STG-07', href: '/product/suite#stage' },
-  { n: '06', title: 'Hybrid', body: 'Filmed and generated shots in one cut, a signed release behind every face.', icon: 'Combine', featureId: 'NEW-02', href: '/product/suite#hybrid' },
-  { n: '07', title: 'Assemble', body: 'Build the cut from takes and generations; every version stacks and stays reviewable.', icon: 'Scissors', featureId: 'PST-01', href: '/product/suite#post' },
-  { n: '08', title: 'Review', body: 'Frame-accurate notes, drawings on the frame, sessions in sync.', icon: 'ScanEye', featureId: 'APR-14', href: '/product/review' },
-  { n: '09', title: 'Approve', body: 'On the record, with a printable certificate.', icon: 'BadgeCheck', featureId: 'APR-02', href: '/product/review' },
-  { n: '10', title: 'Rights and disclosure', body: 'Releases write the rights; the client sees what must be disclosed.', icon: 'Stamp', featureId: 'DOC-10', href: '/product/contracts' },
-  { n: '11', title: 'Finish and deliver', body: 'Grade, captions, every aspect ratio and cutdown from one master.', icon: 'SlidersHorizontal', featureId: 'PST-04', href: '/product/suite#post' },
-  { n: '12', title: 'Invoice', body: 'Numbered invoices in the client’s portal.', icon: 'Receipt', featureId: 'MON-01', href: '/product/money' },
+  { n: '02', title: 'Boards and moodboards', body: 'Storyboards shot by shot, a prompt on every frame.', icon: 'LayoutGrid', featureId: 'SWR-09', href: '/product/suite#visualise', also: { featureId: 'NEW-01', text: 'Moodboards — references and palettes pinned to scenes' } },
+  { n: '03', title: 'Generate', body: 'The Stage: image and video from every major model, through one gate with a budget.', icon: 'WandSparkles', featureId: 'STG-01', href: '/product/suite#stage' },
+  { n: '04', title: 'Continuity', body: 'Characters, locations, wardrobe and style held from shot to shot.', icon: 'Fingerprint', featureId: 'STG-07', href: '/product/suite#stage' },
+  { n: '05', title: 'Hybrid', body: 'Filmed and generated shots in one cut, a signed release behind every face.', icon: 'Combine', featureId: 'NEW-02', href: '/product/suite#hybrid' },
+  { n: '06', title: 'Assemble', body: 'Build the cut from takes and generations; every version stacks and stays reviewable.', icon: 'Scissors', featureId: 'PST-01', href: '/product/suite#post' },
+  { n: '07', title: 'Review', body: 'Frame-accurate notes, drawings on the frame, sessions in sync.', icon: 'ScanEye', featureId: 'APR-14', href: '/product/review' },
+  { n: '08', title: 'Approve', body: 'On the record, with a printable certificate.', icon: 'BadgeCheck', featureId: 'APR-02', href: '/product/review' },
+  { n: '09', title: 'Rights and disclosure', body: 'Releases write the rights; the client sees what must be disclosed.', icon: 'Stamp', featureId: 'DOC-10', href: '/product/contracts' },
+  { n: '10', title: 'Finish and deliver', body: 'Grade, captions, every aspect ratio and cutdown from one master.', icon: 'SlidersHorizontal', featureId: 'PST-04', href: '/product/suite#post' },
+  { n: '11', title: 'Invoice', body: 'Numbered invoices in the client’s portal.', icon: 'Receipt', featureId: 'MON-01', href: '/product/money' },
 ]
 
 export default function Production() {

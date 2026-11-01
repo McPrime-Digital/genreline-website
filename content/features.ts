@@ -186,8 +186,8 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'APR-20', title: 'Watch evidence joined to the approval', space: 'review', status: 'built', timing: 'live', label: 'available' }),
   // ── 4.6 Meetings, calendar and scheduling
   F({ id: 'MTG-01', title: 'Audio and video meetings', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
-  // MTG-02 / CRW-07: public wording carries no shoot days, strips or call sheets (owner,
-  // 2026-10-01: AI and hybrid production have no physical shoot days). S-F-A's rows are unchanged.
+  // MTG-02: public wording carries no shoot days, strips or call sheets (owner, 2026-10-01: AI and hybrid production have
+  // no physical shoot days); CRW-06 · 07 · 08 were REMOVED from the app with Breakdown (owner, 2026-11-01, S-P36).
   F({ id: 'MTG-02', title: 'Calendar on both sides — review deadlines and invoice dates, by projection', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'MTG-03', title: 'A real Today view', space: 'meetings', status: 'partial', timing: 'launch', label: 'hidden' }),
   F({ id: 'MTG-04', title: 'Booking — availability rules, overrides, time-zone safe; the meeting is the booking', space: 'meetings', status: 'built', timing: 'live', label: 'available' }),
@@ -234,9 +234,9 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'CRW-02', title: 'Directory as a production database — department, skills, day rate, union, equipment, availability, location', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'CRW-04', title: 'Task engine — assignees on both rosters, comments, labels, subtasks, relations, watchers, search', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'CRW-05', title: 'Internal approvals', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'CRW-06', title: 'Call sheets — sealed, numbered, sent in the studio’s voice', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'CRW-07', title: 'Screenplay to scenes to breakdown — every element read from the script', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'CRW-08', title: 'Shoot days on the calendar', space: 'crew', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'CRW-06', title: 'Call sheets — sealed, numbered, sent in the studio’s voice', space: 'crew', status: 'removed', timing: 'none', label: 'none' }),
+  F({ id: 'CRW-07', title: 'Screenplay to scenes to breakdown — every element read from the script', space: 'crew', status: 'removed', timing: 'none', label: 'none' }),
+  F({ id: 'CRW-08', title: 'Shoot days on the calendar', space: 'crew', status: 'removed', timing: 'none', label: 'none' }),
   F({ id: 'CRW-09', title: 'CRM, pipeline and lead generation', space: 'crew', status: 'removed', timing: 'none', label: 'none' }),
   F({ id: 'CRW-10', title: 'Location library', space: 'crew', status: 'not-built', timing: 'v2', label: 'hidden' }),
   F({ id: 'CRW-11', title: 'Payroll', space: 'crew', status: 'excluded', timing: 'none', label: 'none' }),
@@ -269,7 +269,7 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'OPS-04', title: 'Consented support access and credit adjustments by the operator', space: 'platform', status: 'not-built', timing: 'next', label: 'internal' }),
   // ── 4.14 The Suite — writing and pre-production (functions, never working titles)
   F({ id: 'SWR-01', title: 'Script Design — the screenplay editor: industry format, pagination, locked scenes, tracked changes, comments, snapshots', space: 'suite', status: 'built', timing: 'live', label: 'available' }),
-  F({ id: 'SWR-02', title: 'Document types — screenplay, treatment, bible, breakdown', space: 'suite', status: 'built', timing: 'live', label: 'available' }),
+  F({ id: 'SWR-02', title: 'Document types — screenplay, treatment, bible', space: 'suite', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'SWR-03', title: 'Revision mode — coloured pages, asterisks, omitted scenes', space: 'suite', status: 'not-built', timing: 'v1.5', label: 'coming' }),
   F({ id: 'SWR-04', title: 'Final Draft (FDX) import and export', space: 'suite', status: 'not-built', timing: 'v1.5', label: 'coming' }),
   F({ id: 'SWR-05', title: 'Import from Fountain, PDF and Word', space: 'suite', status: 'not-built', timing: 'v1.5', label: 'coming' }),
@@ -339,7 +339,9 @@ export const FEATURES: readonly Feature[] = [
  *  physical shoot days or call sheets … everything must conform to the AI
  *  production cycle". One list, read by every surface that enumerates features
  *  (the capability index, the search index) and by the label check. */
-export const OFF_SITE: ReadonlySet<string> = new Set(['CRW-06', 'CRW-08'])
+/** Built and kept off the site by the owner's decision. Empty since 2026-11-01: call sheets and shoot days (once here) left
+ *  the app with Breakdown (S-P36) and are `removed` rows above. */
+export const OFF_SITE: ReadonlySet<string> = new Set([])
 
 const BY_ID = new Map(FEATURES.map((f) => [f.id, f]))
 

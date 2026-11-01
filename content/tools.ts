@@ -15,7 +15,6 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
       { job: 'Team chat', today: 'Slack, Microsoft Teams, WhatsApp groups', featureId: 'MSG-02' },
       { job: 'Tasks and assignments', today: 'Asana, Monday, Trello', featureId: 'CRW-04' },
       { job: 'Crew lists and rates', today: 'Spreadsheets, Airtable', featureId: 'CRW-02' },
-      { job: 'Script breakdown', today: 'Movie Magic, StudioBinder, spreadsheets', featureId: 'CRW-07' },
       { job: 'Shared calendars', today: 'Google Calendar, Outlook', featureId: 'MTG-02' },
       { job: 'Video calls', today: 'Zoom, Google Meet', featureId: 'MTG-01' },
       { job: 'Who-can-see-what', today: 'Spreadsheets, IT tickets', featureId: 'IDN-04' },

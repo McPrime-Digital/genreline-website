@@ -43,11 +43,11 @@ export const SEGMENTS: readonly Segment[] = [
       { role: 'Talent', sees: 'One release to sign, through a single-use link', featureId: 'DOC-09' },
     ],
     wins: [
-      { title: 'Script to board in one chain', body: 'Scenes and elements read from the screenplay, and storyboards built from them — nothing retyped between tools.', featureId: 'CRW-07' },
+      { title: 'Script to board in one chain', body: 'The screenplay the writer is in, and the storyboard built beside it — a task links to both, nothing retyped between tools.', featureId: 'SWR-09' },
       { title: 'Sign-offs that hold up', body: 'Every cut approved on the record — who, when, what they watched and what they said — with a printable certificate.', featureId: 'APR-02' },
       { title: 'Releases that write the rights', body: 'A performer signs an AI-likeness release on a phone; the asset’s rights — including whether the likeness may be generated — are written by the signature.', featureId: 'DOC-10' },
     ],
-    media: ['crew-production', 'client-review-record', 'crew-calendar'],
+    media: ['crew-tasks', 'client-review-record', 'crew-calendar'],
   },
   {
     id: 'agencies',
@@ -124,7 +124,7 @@ export const SEGMENTS: readonly Segment[] = [
       { title: 'Releases that write the rights', body: 'A performer or a location owner signs on a phone; the asset’s rights — including whether a likeness may be generated — are written by the signature.', featureId: 'DOC-10' },
       { title: 'A record from the first cut', body: 'Every approval on the record — who, when, what they watched — with a printable certificate, before there is a lawyer in the room.', featureId: 'APR-02' },
     ],
-    media: ['crew-production', 'client-review-record', 'crew-calendar'],
+    media: ['crew-tasks', 'client-review-record', 'crew-calendar'],
     honest: 'Being a collaborator in another studio is always free for the person. The collaborator model — what each invitation lets you see and do — is specified and not yet built; today you are brought in as a contractor scoped to a production.',
   },
   {

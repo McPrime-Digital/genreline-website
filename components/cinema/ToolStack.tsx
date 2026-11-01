@@ -8,7 +8,7 @@ import { siteLabel } from '@/content/features'
 import { Icon, type IconName } from '@/components/Icon'
 
 const JOB_ICON: Record<string, IconName> = {
-  'Team chat': 'MessagesSquare', 'Tasks and assignments': 'ListChecks', 'Crew lists and rates': 'Contact', 'Script breakdown': 'ListTree', 'Shared calendars': 'CalendarDays', 'Video calls': 'Video', 'Who-can-see-what': 'KeyRound', 'AI spend control': 'Gauge',
+  'Team chat': 'MessagesSquare', 'Tasks and assignments': 'ListChecks', 'Crew lists and rates': 'Contact', 'Shared calendars': 'CalendarDays', 'Video calls': 'Video', 'Who-can-see-what': 'KeyRound', 'AI spend control': 'Gauge',
   'Client conversation': 'Mail', 'Review and approval': 'ScanEye', 'Live review sessions': 'MonitorPlay', 'Screening links': 'Eye', 'Large file transfer': 'Upload', 'E-signature': 'FileSignature', 'Talent and location releases': 'Stamp', 'Booking': 'CalendarClock', 'Invoicing': 'Receipt', 'A client portal': 'AppWindow',
   'Screenwriting': 'PenTool', 'Storyboards': 'LayoutGrid', 'Moodboards': 'Palette', 'Asset library': 'Library', 'Image generation': 'Image', 'Video generation': 'Film', 'Comparing models': 'Columns3', 'Upscale and restore': 'ImageUpscale', 'Dubbing and lip-sync': 'Languages', 'Resizing and cutdowns': 'Ratio', 'Music and sound': 'Music', 'Assembly and finishing': 'SlidersHorizontal', 'Pipelines': 'Workflow',
 }

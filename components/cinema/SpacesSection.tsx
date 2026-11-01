@@ -10,17 +10,16 @@ const feat = (featureId: string, text: string) => ({ featureId, text, badge: (si
 const SPACES: SpacePanel[] = [
   {
     id: 'crew', name: 'Crew', tagline: 'Where the studio works.', href: '/product/crew',
-    body: 'Who is on the job, what they are doing and what they may see — and the breakdown that comes straight out of the script.',
+    body: 'Who is on the job, what they are doing and what they may see — and every production they run, from the first task to the delivered master.',
     features: [
       feat('CRW-02', 'A directory that is a production database — skills, rates, union, kit, availability'),
       feat('CRW-04', 'Tasks with assignees from both rosters, subtasks, relations and watchers'),
       feat('MSG-02', 'Internal rooms, threads and a call button in every room'),
-      feat('CRW-07', 'Scenes and elements broken down from the script'),
       feat('MON-06', 'A budget per person for AI spend'),
       feat('IDN-04', 'Roles, project roles, seats, grants and denials with expiry'),
     ],
     people: ['Producers', 'Coordinators', 'Editors', 'Freelancers, scoped to their jobs', 'Finance'],
-    shots: shots([['crew-tasks', 'Tasks'], ['crew-production', 'Breakdown'], ['crew-chat', 'Crew rooms'], ['crew-directory', 'Directory'], ['crew-calendar', 'Calendar']]),
+    shots: shots([['crew-tasks', 'Tasks'], ['crew-chat', 'Crew rooms'], ['crew-directory', 'Directory'], ['crew-calendar', 'Calendar']]),
   },
   {
     id: 'client', name: 'Client', tagline: 'Where clients meet the work — in your brand.', href: '/product/client',

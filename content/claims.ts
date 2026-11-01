@@ -43,7 +43,7 @@ export const FORBIDDEN: readonly Forbidden[] = [
  * states the number reads THIS constant (S-E-A §4.6, 2026-10-18: the site said 76 while the harness held 128);
  * change it here when assertions are added, nowhere else.
  */
-export const HARNESS_ASSERTIONS = 128
+export const HARNESS_ASSERTIONS = 154
 
 /** S-W §3.1, verbatim, for reference on the security and product pages. */
 export const MAY_CLAIM = [
@@ -62,7 +62,7 @@ export const MAY_CLAIM = [
   'contract templates, field placement, consent before signature, cryptographic seal, certificate of completion, single-use signing links, releases that write rights',
   'invoices, credits, per-member budgets, per-call AI ceiling (for text AI)',
   'resumable large uploads, version stacking, the asset library',
-  'directory, task engine, call sheets, breakdown to stripboard to shoot days',
+  'directory, task engine, productions and their processes',
   'notifications, web push, SMS',
   'retention and erasure',
   'light and dark themes',

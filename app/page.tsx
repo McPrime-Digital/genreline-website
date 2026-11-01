@@ -31,19 +31,18 @@ const shot = (id: string, sizes = '(min-width: 1024px) 680px, 100vw') => (hasMed
 const REEL: ReelFrame[] = (
   [
     ['00:00:01:00', 'Script', 'Written and co-edited live in Script Design.', undefined, 'SWR-01'],
-    ['00:00:09:00', 'Breakdown', 'Scenes, characters and looks read from the script.', 'crew-production', 'CRW-07'],
-    ['00:00:17:00', 'Boards', 'Storyboards shot by shot, prompts on every frame.', undefined, 'SWR-09'],
-    ['00:00:24:00', 'Moodboards', 'References and palettes pinned to scenes.', undefined, 'NEW-01'],
-    ['00:00:33:00', 'Generate', 'The Stage — every major image and video model, one gate.', undefined, 'STG-01'],
-    ['00:00:41:00', 'Continuity', 'The same character and look, shot after shot.', undefined, 'STG-07'],
-    ['00:00:47:00', 'Assemble', 'Build the cut from takes and generations.', undefined, 'PST-01'],
-    ['00:00:52:00', 'Versions', 'Every new cut stacks on the last, compared side by side.', 'portal-files', 'APR-08'],
-    ['00:01:03:00', 'Review', 'Notes on the timecode, sessions in sync.', 'portal-review', 'APR-14'],
-    ['00:01:14:00', 'Approve', 'On the record, with a certificate.', 'client-review-record', 'APR-02'],
-    ['00:01:22:00', 'Rights', 'Releases write the rights they prove.', 'client-contracts', 'DOC-10'],
-    ['00:01:31:00', 'Finish', 'Grade, captions, delivery specs.', undefined, 'PST-04'],
-    ['00:01:39:00', 'Every version', 'Cutdowns, ratios and languages from one master.', undefined, 'STG-13'],
-    ['00:01:48:00', 'Invoice', 'Numbered, in the client’s portal.', 'client-invoices', 'MON-01'],
+    ['00:00:09:00', 'Boards', 'Storyboards shot by shot, prompts on every frame.', undefined, 'SWR-09'],
+    ['00:00:17:00', 'Moodboards', 'References and palettes pinned to scenes.', undefined, 'NEW-01'],
+    ['00:00:24:00', 'Generate', 'The Stage — every major image and video model, one gate.', undefined, 'STG-01'],
+    ['00:00:33:00', 'Continuity', 'The same character and look, shot after shot.', undefined, 'STG-07'],
+    ['00:00:41:00', 'Assemble', 'Build the cut from takes and generations.', undefined, 'PST-01'],
+    ['00:00:47:00', 'Versions', 'Every new cut stacks on the last, compared side by side.', 'portal-files', 'APR-08'],
+    ['00:00:52:00', 'Review', 'Notes on the timecode, sessions in sync.', 'portal-review', 'APR-14'],
+    ['00:01:03:00', 'Approve', 'On the record, with a certificate.', 'client-review-record', 'APR-02'],
+    ['00:01:14:00', 'Rights', 'Releases write the rights they prove.', 'client-contracts', 'DOC-10'],
+    ['00:01:22:00', 'Finish', 'Grade, captions, delivery specs.', undefined, 'PST-04'],
+    ['00:01:31:00', 'Every version', 'Cutdowns, ratios and languages from one master.', undefined, 'STG-13'],
+    ['00:01:39:00', 'Invoice', 'Numbered, in the client’s portal.', 'client-invoices', 'MON-01'],
   ] as const
 ).map(([tc, title, body, media, featureId]) => ({ tc, title, body, media, featureId, coming: siteLabel(featureId) === 'Coming' }))
 
@@ -144,7 +143,7 @@ export default function Home() {
       {/* 7 — THE AI PRODUCTION CYCLE */}
       <section id="production" className="py-24 sm:py-32">
         <div className="container-wide">
-          <Heading icon="Film" kicker="The production cycle" title="From the first line to the delivered master." lead="Script, breakdown, boards, generation, continuity, assembly, review, approval, rights, finishing, every version and the invoice — one chain, each stage reading from the one before it." />
+          <Heading icon="Film" kicker="The production cycle" title="From the first line to the delivered master." lead="Script, boards, generation, continuity, assembly, review, approval, rights, finishing, every version and the invoice — one chain, each stage reading from the one before it." />
         </div>
         <div className="mt-14"><ProductionReel frames={REEL} /></div>
         <div className="container-wide mt-8"><Link href="/product/production" className="text-[15px] font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-primary">The whole cycle, stage by stage</Link></div>

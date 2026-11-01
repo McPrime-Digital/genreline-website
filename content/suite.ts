@@ -24,9 +24,9 @@ export const SUITE_STAGES: readonly SuiteStage[] = [
  * does"). Coming tools are written as what they will do, never as shipped.
  */
 export const SUITE_DETAIL: Record<string, { does: string; points: string[] }> = {
-  'SWR-01': { does: 'A screenplay editor built for production, not just for the page.', points: ['Industry formatting and true pagination', 'Locked scenes and numbers that never shift', 'Tracked changes, comments and snapshots', 'The breakdown reads straight from it'] },
+  'SWR-01': { does: 'A screenplay editor built for production, not just for the page.', points: ['Industry formatting and true pagination', 'Locked scenes and numbers that never shift', 'Tracked changes, comments and snapshots'] },
   'SWR-06': { does: 'Write together in real time, with everyone’s cursor on the page.', points: ['Live co-editing on the same draft', 'See who is where in the script', 'No more emailing versions'] },
-  'SWR-02': { does: 'Every document a production writes, in one place.', points: ['Screenplay, treatment, bible, breakdown', 'One format system for all of them'] },
+  'SWR-02': { does: 'Every document a production writes, in one place.', points: ['Screenplay, treatment, bible', 'One format system for all of them'] },
   'AGT-01': { does: 'An assistant that works inside the script and documents — priced before every call.', points: ['Draft, rewrite and summarise in place', 'A per-call ceiling asks before anything expensive', 'Counts against the person’s budget'] },
   'SWR-03': { does: 'Revision mode the way productions run it.', points: ['Coloured revision pages', 'Asterisks on changed lines', 'OMITTED scenes held in place'] },
   'SWR-04': { does: 'Bring Final Draft scripts in and send them out, intact.', points: ['FDX import with formatting preserved', 'FDX export for anyone still on Final Draft'] },
