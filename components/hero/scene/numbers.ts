@@ -1,144 +1,185 @@
 /**
  * THE SCENE'S NUMBERS — every position, size, speed and amount the 3D hero
- * uses, in one place (batch W-3D-1 §2). Units are scene units; the camera's
- * first shot stands at z = 3 looking down −z.
+ * uses, in one place. Plain numbers, no three.js: the director (which ships
+ * with the page) reads the timeline from here too. Units are scene units;
+ * +y is up, the camera looks down −z at the stations.
  *
- * Source of each group:
- *  · THE LINE is the Genreline logo's own centreline (owner, 2026-11-03: "the
- *    line must match the actual genreline logo"). It was traced from
- *    public/brand/genreline-mark-gold.png — the stroke's centre sampled every
- *    8–16 px — and mapped at the prototype's scale: the Crew and Suite tile
- *    centres sit 760 px apart in the logo and 8.1 units apart in the
- *    prototype, so 1 px = 8.1 / 760 units. At that scale the logo puts the
- *    Client tile 3.04 units above Crew — the prototype had 3.0 — so the
- *    prototype's node spacing was already the logo's; what changes is the
- *    curve between the nodes (the logo's deep valley before Suite, Suite level
- *    with Crew) and that the line now starts at Crew and ends at Suite, as
- *    the logo does. Depth (z) is the prototype's: each node keeps its z, and
- *    the curve's z runs between them.
- *  · THE NODES' z, the dust, the glow tubes, the fog, the pointer tilt, the
- *    damping speeds, the field of view and the slow-frame test are lifted
- *    exactly from reference/hero-prototype.html.
- *  · THE SCREENS AND THE CAMERA start from the prototype's numbers and are
- *    re-framed where the logo's line moved a node, so each space's screen
- *    sits behind its node and wholly in frame at its shot (owner,
- *    2026-11-03). Every changed number says what it was.
+ * THE LINE is the Genreline logo's line (owner: "the line must match the
+ * actual genreline logo"), drawn as four clean cubic curves instead of a
+ * trace (owner, 2026-11-03: the traced line was "very unprofessionally
+ * crooked"). Its four landmarks are measured from the 1024-px mark,
+ * public/brand/genreline-mark-gold.png — the Crew tile's centre (133, 417),
+ * Client's (398, 130), the valley's floor (708, 712), Suite's (890, 417) —
+ * and set out at 0.085 units per pixel, which makes each trip long enough to
+ * be a journey (owner: "the distance between crew and client must be
+ * meaningful … currently its too short"): Crew → Client is 33 units, Client
+ * → the valley → Suite is 80. The curve leaves Crew climbing, rounds over the
+ * top at Client, falls steeply into the valley's round floor and climbs a
+ * little into Suite, as the mark does. Depth (z) bends it gently in space.
  */
 export type Vec3 = readonly [number, number, number]
+type V = [number, number, number]
 
-/** The logo's centreline, Crew tile centre → Client tile centre → the valley → Suite tile centre. */
-export const LINE_POINTS: readonly Vec3[] = [
-  [-4.2, -0.9, -10], [-3.518, -0.644, -10.602], [-3.049, -0.378, -11.015], [-2.942, -0.122, -11.109],
-  [-2.846, 0.134, -11.194], [-2.729, 0.304, -11.297], [-2.617, 0.475, -11.396], [-2.532, 0.731, -11.471],
-  [-2.452, 0.986, -11.541], [-1.93, 1.562, -12.002], [-1.365, 2.137, -12.5], [-0.917, 1.626, -12.405],
-  [-0.587, 0.986, -12.335], [-0.464, 0.645, -12.309], [-0.363, 0.304, -12.287], [-0.273, -0.037, -12.268],
-  [-0.193, -0.378, -12.251], [-0.107, -0.719, -12.233], [-0.022, -1.06, -12.215], [0.079, -1.401, -12.193],
-  [0.175, -1.742, -12.173], [0.271, -2.083, -12.152], [0.378, -2.424, -12.13], [0.495, -2.765, -12.105],
-  [0.649, -3.106, -12.072], [0.751, -3.277, -12.05], [1.214, -3.772, -11.952], [1.534, -3.959, -11.884],
-  [1.854, -4.039, -11.816], [2.173, -4.012, -11.638], [2.493, -3.804, -11.427], [2.813, -3.378, -11.217],
-  [3.079, -2.914, -11.041], [3.229, -2.616, -10.943], [3.346, -2.317, -10.865], [3.41, -2.168, -10.823],
-  [3.644, -1.55, -10.669], [3.9, -0.9, -10.5],
+const PX = 0.085
+const fromMark = (px: number, py: number, z: number): V => [(px - 133) * PX, -(py - 417) * PX, z]
+
+/** The three stations: each space's tile on the line. */
+export const NODES = {
+  crew: fromMark(133, 417, 0),
+  client: fromMark(398, 130, -8),
+  suite: fromMark(890, 417, -3),
+} as const satisfies Record<string, Vec3>
+const VALLEY = fromMark(708, 712, 4)
+
+const norm = (v: V): V => {
+  const l = Math.hypot(...v)
+  return [v[0] / l, v[1] / l, v[2] / l]
+}
+const deg = (a: number) => (a * Math.PI) / 180
+
+/** The landmarks with their direction of travel and how far each curve's handles reach in and out. */
+const KNOTS: { at: V; dir: V; in: number; out: number }[] = [
+  { at: [...NODES.crew], dir: norm([Math.cos(deg(52)), Math.sin(deg(52)), -0.12]), in: 0, out: 12 },
+  { at: [...NODES.client], dir: norm([1, 0, 0.14]), in: 12.5, out: 12 },
+  { at: VALLEY, dir: norm([1, 0, -0.06]), in: 11, out: 8 },
+  { at: [...NODES.suite], dir: norm([Math.cos(deg(58)), Math.sin(deg(58)), -0.1]), in: 9, out: 0 },
 ]
 
-/** The three nodes, at the logo's tile centres. Prototype: Client (−1.0, 2.1), Suite (3.9, 0.2). */
-export const NODES = {
-  crew: [-4.2, -0.9, -10],
-  client: [-1.365, 2.137, -12.5],
-  suite: [3.9, -0.9, -10.5],
-} as const satisfies Record<string, Vec3>
+/** Samples per curve: dense enough that the spline through them is the curve itself. */
+const PER_CURVE = 96
 
-/** A node tile's size (prototype 1.05; the logo's tiles are larger against the line, so a little up). */
-export const NODE_SIZE = 1.3
-export const NODE_GLOW_SIZE = 2.6
-export const NODE_GLOW_OPACITY = { dark: 0.55, light: 0.35 }
-
-/** The line: a core and two glow tubes. Radii, segments and opacities are the prototype's. */
-export const TUBE = {
-  core: { radius: 0.03, segments: 700 },
-  glowA: { radius: 0.09, segments: 500, opacity: { dark: 0.32, light: 0.22 } },
-  glowB: { radius: 0.24, segments: 300, opacity: { dark: 0.11, light: 0.08 } },
-  radialSegments: 8,
+function bezier(a: V, b: V, c: V, d: V, t: number): V {
+  const u = 1 - t
+  const w0 = u * u * u
+  const w1 = 3 * u * u * t
+  const w2 = 3 * u * t * t
+  const w3 = t * t * t
+  return [0, 1, 2].map((i) => a[i] * w0 + b[i] * w1 + c[i] * w2 + d[i] * w3) as V
 }
 
-/** The travelling playhead: one lap of the line every 7 s. */
-export const PLAYHEAD = { seconds: 7, size: 0.9 }
+/** The line, sampled densely along its three curves: Crew → Client → the valley → Suite. */
+export const LINE_POINTS: readonly Vec3[] = (() => {
+  const out: V[] = []
+  for (let k = 0; k < KNOTS.length - 1; k++) {
+    const A = KNOTS[k]
+    const B = KNOTS[k + 1]
+    const p1: V = [A.at[0] + A.dir[0] * A.out, A.at[1] + A.dir[1] * A.out, A.at[2] + A.dir[2] * A.out]
+    const p2: V = [B.at[0] - B.dir[0] * B.in, B.at[1] - B.dir[1] * B.in, B.at[2] - B.dir[2] * B.in]
+    for (let i = k === 0 ? 0 : 1; i <= PER_CURVE; i++) out.push(bezier(A.at, p1, p2, B.at, i / PER_CURVE))
+  }
+  return out
+})()
+/** Where each station sits in LINE_POINTS (Client ends the first curve; Suite ends the last). */
+export const NODE_SAMPLE = { crew: 0, client: PER_CURVE, suite: PER_CURVE * 3 } as const
+
+/** The logo's bounds, for the shots that show the whole line (the title and the close). */
+export const LOGO_BOX = { center: [32.2, -0.35, -2] as Vec3, halfWidth: 34.5, halfHeight: 27.5 }
+
+// ── THE LINE'S LOOK ─────────────────────────────────────────────────────────
+
+export const TUBE = {
+  segments: 1400,
+  radialSegments: 10,
+  /** The bright core, and the soft halo around it. Both grow with distance so the line holds a minimum width on screen. */
+  core: { radius: 0.075, perDistance: 0.0024 },
+  halo: { radius: 0.5, perDistance: 0.011 },
+  /** Light flowing along the line: one pulse every `spacing` units, moving at `speed` units a second. */
+  pulse: { spacing: 14, speed: 7 },
+} as const
+
+/** The tiles: the logo's three glyphs (and the Stakeholders face), as camera-facing cards. */
+export const TILE = { size: 3.4, glow: 9, minScreen: 0.07 } as const
+
+/** Particles streaming along the line, and the stars around it. */
+export const FLOW = { count: 3400, lowered: 1200, radius: 2.6, size: 0.075, speed: [0.006, 0.016] as const } as const
+export const STARS = { count: 4200, lowered: 1800, box: { min: [-70, -60, -110] as Vec3, max: [135, 60, 40] as Vec3 }, size: 0.16, streaks: 900 } as const
+
+// ── THE STATIONS ────────────────────────────────────────────────────────────
+
+/** A screen's size (the captures are 2248 × 1616). */
+export const PANEL = { width: 5.6, aspect: 1616 / 2248, label: 0.95, toolWidth: 4.9, tallWidth: 6.6 } as const
 
 /**
- * The screens, one behind each node. Width is the prototype's 4.0; height
- * follows the captures' own aspect (2248 × 1616), so nothing is stretched.
+ * Where the screens hang around their station's tile, relative to the tile.
+ * Wide frames ring the tile and leave its lower left clear for the caption;
+ * tall frames stack two above and two below.
  */
-export const SCREEN_WIDTH = 4.0
-export const SCREENS = {
-  // prototype (−6.1, 1.0, −12.5), rotation y 0.35
-  crew: { position: [-6.1, 1.0, -12.5], rotationY: 0.35 },
-  // prototype (1.6, 3.3, −15.0), rotation y −0.1
-  client: { position: [1.6, 3.3, -15.0], rotationY: -0.1 },
-  // prototype (6.3, −1.1, −12.5), rotation y −0.4
-  suite: { position: [6.3, -1.1, -12.5], rotationY: -0.4 },
-} as const satisfies Record<string, { position: Vec3; rotationY: number }>
+export const SLOTS: Record<'crew' | 'client' | 'suite', { wide: Vec3[]; tall: Vec3[] }> = {
+  crew: {
+    wide: [[-11.4, 3.0, -1.2], [-4.6, 6.4, -3.4], [4.6, 6.2, -2.4], [11.6, 1.6, -0.8], [8.3, -5.0, 0.6], [-0.6, -6.3, -1.6]],
+    tall: [[-3.55, 8.3, -1.6], [3.55, 7.9, -0.8], [-3.55, -5.8, -0.8], [3.55, -6.2, -1.6]],
+  },
+  client: {
+    wide: [[-11.2, 2.4, -0.8], [-5.0, 6.3, -2.6], [4.2, 6.4, -3.4], [11.6, 2.4, -1.2], [8.6, -4.8, 0.4], [-0.2, -6.3, -1.4]],
+    tall: [[-3.55, 7.9, -0.8], [3.55, 8.3, -1.6], [-3.55, -6.2, -1.6], [3.55, -5.8, -0.8]],
+  },
+  suite: {
+    wide: [[-11.6, 3.4, -1.0], [-5.6, 6.8, -3.0], [1.8, 7.2, -3.6], [8.8, 4.8, -1.8], [12.2, -1.0, -0.6], [7.8, -6.0, 0.6], [-1.4, -6.4, -1.4]],
+    tall: [[-3.55, 8.0, -1.6], [3.55, 8.4, -0.8], [-3.55, -5.8, -0.8], [3.55, -6.2, -1.6]],
+  },
+}
+/** Which of a station's screens the tall frame keeps (indexes into its list). */
+export const TALL_KEEP = { crew: [0, 1, 2, 3], client: [0, 1, 2, 3], suite: [0, 4, 3, 6] } as const
 
-/**
- * The camera's five shots: the title, Crew, Client, the Suite, the closing
- * line. The prototype's path framed each node so close (a third of the frame)
- * that its screen fell out of frame — Crew's cut at the top, Client's and the
- * Suite's off the right edge — and on a phone Crew left the opening frame.
- * Re-framed (owner, 2026-11-03: the screens "at the back very well and in
- * frame"): each node shot stands back far enough to hold the node and its
- * whole screen, in the part of the frame the words leave open. Prototype:
- *   camera (0.6, 0.4, 3.0) (−2.6, −0.4, −6.6) (−2.4, 2.7, −9.3) (2.3, 0.8, −7.1) (1.5, 1.2, 5.5)
- *   look   (0.3, 0.2, −12) (−5.4, −1.2, −10) (−2.3, 1.7, −12.5) (2.6, −0.1, −10.5) (0.5, 0.3, −13)
- * A tall frame (a phone) has its own path: the same shots, further back.
- */
-export const CAMERA_PATH: readonly Vec3[] = [
-  [0.6, 0.4, 10.5], [-1.2, 0.0, -3.4], [0.6, 2.3, -5.4], [5.2, 0.4, -4.4], [1.5, 1.2, 11.5],
+/** The Suite's tool chips: small tiles circling its tile on a tilted ring. */
+export const CHIPS = { radius: 4.6, size: 1.15, tilt: 0.42, period: 38 } as const
+/** The rings round every tile. */
+export const RINGS = [{ radius: 2.75, tilt: [1.2, 0.2] }, { radius: 3.55, tilt: [1.35, -0.5] }] as const
+
+/** Client ↔ Stakeholders: the face turns every three seconds (owner, 2026-11-03), the turn itself takes 0.7 s. */
+export const FACE = { every: 3000, turn: 0.7 } as const
+
+// ── THE CAMERA ──────────────────────────────────────────────────────────────
+
+export const FOV = { wide: 46, tall: 62, tallBelowAspect: 0.8, ride: 7 } as const
+
+export const VIEW = {
+  /** At a station: straight on, this far back (more on narrow frames, so the ring of screens fits). */
+  station: { wide: { lift: 0.5, distance: 28.5, fitHalfWidth: 15.6 }, tall: { lift: 0.4, distance: 29 } },
+  /** On the way: riding above and in front of the line, looking down it. */
+  ride: { wide: [0, 2.7, 10.5] as Vec3, tall: [0, 2.7, 15] as Vec3, lookAhead: 0.05, pitch: 0.5 },
+  /** The title and the close show the whole line — the logo — in space. */
+  whole: { margin: 1.12 },
+  /** While holding a shot the camera keeps creeping forward, so the scene never freezes. */
+  creep: 0.05,
+  /** The lens shift [x, y] (fractions of the frame; +x moves the scene right, +y up) leaving room for the words. */
+  shift: {
+    wide: { title: [0.19, -0.04], station: [0.1, -0.05], close: [0.08, -0.05] },
+    tall: { title: [0, 0.18], station: [0, 0.03], close: [0, 0.18] },
+  },
+  pointer: { x: 0.9, y: 0.5, damping: 2.6 },
+} as const
+
+// ── THE TIMELINE ────────────────────────────────────────────────────────────
+//
+// The hero is a sticky stage scrolled through `SCROLL_VH` of page. The
+// visitor's scroll runs this timeline: five shots (title, Crew, Client, the
+// Suite, the close) held in place, and four journeys between them. A hold
+// keeps the camera creeping; a journey rides the line.
+
+export type Shot = 0 | 1 | 2 | 3 | 4
+export type Segment = { kind: 'hold'; shot: Shot; vh: number } | { kind: 'travel'; from: Shot; to: Shot; vh: number }
+
+export const STORY: readonly Segment[] = [
+  { kind: 'hold', shot: 0, vh: 30 },
+  { kind: 'travel', from: 0, to: 1, vh: 85 },
+  { kind: 'hold', shot: 1, vh: 90 },
+  { kind: 'travel', from: 1, to: 2, vh: 140 },
+  { kind: 'hold', shot: 2, vh: 110 },
+  { kind: 'travel', from: 2, to: 3, vh: 150 },
+  { kind: 'hold', shot: 3, vh: 90 },
+  { kind: 'travel', from: 3, to: 4, vh: 100 },
+  { kind: 'hold', shot: 4, vh: 60 },
 ]
-export const LOOK_PATH: readonly Vec3[] = [
-  [-1.6, 0.0, -12], [-4.7, 0.1, -11.5], [-0.2, 2.6, -13.6], [5.0, -0.4, -11.3], [-0.4, -2.2, -13],
-]
-export const CAMERA_PATH_TALL: readonly Vec3[] = [
-  [0.4, 0.6, 15.5], [-3.6, 0.6, -1.2], [0.4, 3.4, 0.8], [5.8, 0.0, 1.6], [0.6, 0.8, 17.0],
-]
-export const LOOK_PATH_TALL: readonly Vec3[] = [
-  [0.0, 0.2, -12], [-5.1, 0.8, -11.5], [0.3, 2.6, -13.6], [5.5, -0.6, -11.3], [0.3, 0.3, -13],
-]
-
-/** Field of view: 50°, widened to 66° when the frame is taller than it is wide (aspect < 0.8). */
-export const FOV = { wide: 50, tall: 66, tallBelowAspect: 0.8 }
-
-/**
- * Dust: 1,400 points in a 30 × 16 × 32 box whose near face is at z = 4. Each
- * point is drawn as a soft round speck rather than the prototype's square, at
- * 1.6 × the prototype's size, since a soft speck's visible core is smaller.
- */
-export const DUST = { count: 1400, spread: [30, 16, 32] as Vec3, nearZ: 4, size: 0.05, opacity: { dark: 0.75, light: 0.45 }, lowered: 600 }
-
-export const FOG_DENSITY = { dark: 0.034, light: 0.026 }
-
-/** Pointer tilt: how far the camera leans toward the pointer, and how fast it follows. */
-export const POINTER = { x: 0.35, y: 0.22, damping: 3 }
-
-/** How fast the camera catches up with the scroll (per second). */
-export const SCROLL_DAMPING = 4.5
-
-/** Device pixel ratio cap, and the ratio a slow device drops to. */
-export const DPR = { cap: 1.5, lowered: 1 }
-
-/** The slow-frame test: 150 frames after the first second; slower than 28 ms on average lowers the scene. */
-export const SLOW_FRAMES = { samples: 150, seconds: 0.028 }
-
-/** The scene's clock: the whole scroll is 16 seconds of timecode at 24 frames a second. */
-export const TIMECODE = { seconds: 16, fps: 24 }
-
-/** The number of shots, and the progress each one sits at (0, ¼, ½, ¾, 1). */
+export const SCROLL_VH = STORY.reduce((s, x) => s + x.vh, 0)
 export const SHOTS = 5
 
-/**
- * The lens shift, as a fraction of the frame: [right, up]. The words sit on
- * the left of a wide frame and at the foot of a tall one, so the picture is
- * moved into the space they leave — the camera's path is unchanged. A wide
- * frame shifts more the wider it is (a squarer frame has less room to give).
- */
-export function viewShift(aspect: number): readonly [number, number] {
-  if (aspect < FOV.tallBelowAspect) return [0, 0.25]
-  return [Math.min(0.17, Math.max(0, (aspect - 1.3) * 0.56)), 0]
-}
+/** How fast the camera catches up with the scroll (per second). */
+export const SCROLL_DAMPING = 3.2
+/** The slate line's clock: the shots land on 0, 4, 8, 12 and 16 seconds, at 24 fps. */
+export const TIMECODE = { seconds: 16, fps: 24 } as const
+
+/** Resolution: capped at 1.5× (lowered to 1× on slow frames). */
+export const DPR = { cap: 1.5, lowered: 1 } as const
+/** The slow-frame test: slower than 28 ms a frame on average. */
+export const SLOW_FRAMES = { seconds: 0.028 } as const

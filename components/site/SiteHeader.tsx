@@ -21,7 +21,6 @@ import { ProductMark } from '@/components/ProductMark'
 import { MobileNav } from '@/components/site/MobileNav'
 import { MegaMenu } from '@/components/site/MegaMenu'
 import { ThemeToggle } from '@/components/site/ThemeToggle'
-import { MotionToggle } from '@/components/site/MotionToggle'
 import { cx as cn } from '@/lib/cx'
 import { APP } from '@/lib/site'
 import type { NavColumn, NavLink, NavLinkWithBadge } from '@/content/nav'
@@ -79,7 +78,6 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
 
           <div className="ml-auto flex items-center gap-2">
             {/* The Motion button lives where the 3D hero is (batch W-3D-1 §4). */}
-            {pathname === '/' && <MotionToggle />}
             <ThemeToggle compact />
             <a href={APP.login} className="liquid-pill hidden outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex">
               Sign in

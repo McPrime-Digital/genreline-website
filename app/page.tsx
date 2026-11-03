@@ -4,6 +4,7 @@ import { Media, hasMedia } from '@/components/site/Media'
 import { BrandDemo } from '@/components/interactive/BrandDemo'
 import { HomeJsonLd } from '@/components/site/JsonLd'
 import { HomeHero } from '@/components/hero/HomeHero'
+import { SpacesIndex } from '@/components/site/SpacesIndex'
 import { SpacesBento } from '@/components/cinema/SpacesBento'
 import { SuiteSection } from '@/components/cinema/SuiteSection'
 import { ToolStack } from '@/components/cinema/ToolStack'
@@ -282,6 +283,9 @@ export default function Home() {
           </Reveal>
         </div>
       </section>
+
+      {/* THE SPACES INDEX — every space and portal, at the foot of the page */}
+      <SpacesIndex />
     </>
   )
 }
