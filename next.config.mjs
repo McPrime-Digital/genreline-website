@@ -125,7 +125,12 @@ const nextConfig = {
   // `radix-ui` is a barrel re-exporting every primitive; without this the
   // first page load carries primitives no page uses.
   experimental: { optimizePackageImports: ['radix-ui'] },
-  turbopack: { root: __dirname },
+  turbopack: {
+    root: __dirname,
+    // The home hero's three, cut to what it uses (lib/three-slim.mjs). Browser
+    // only: the server never renders the 3D canvas (next/dynamic, ssr: false).
+    resolveAlias: { three: { browser: './lib/three-slim.mjs' } },
+  },
   async headers() {
     return [{ source: '/:path*', headers: [...securityHeaders, ...robotsHeaders] }]
   },

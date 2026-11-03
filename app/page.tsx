@@ -3,7 +3,7 @@ import { Feature, FeatureLabel } from '@/components/FeatureLabel'
 import { Media, hasMedia } from '@/components/site/Media'
 import { BrandDemo } from '@/components/interactive/BrandDemo'
 import { HomeJsonLd } from '@/components/site/JsonLd'
-import { HeroStage } from '@/components/cinema/HeroStage'
+import { HomeHero } from '@/components/hero/HomeHero'
 import { SpacesBento } from '@/components/cinema/SpacesBento'
 import { SuiteSection } from '@/components/cinema/SuiteSection'
 import { ToolStack } from '@/components/cinema/ToolStack'
@@ -88,7 +88,7 @@ export default function Home() {
   return (
     <>
       <HomeJsonLd />
-      <HeroStage />
+      <HomeHero />
 
       {/* 1 — THE SPACES AND PORTALS */}
       <section id="spaces" className="relative py-20 sm:py-28">
