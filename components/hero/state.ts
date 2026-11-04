@@ -20,6 +20,13 @@ export const heroState = {
   faceAt: -1e9,
   /** The pointer is on one of the Client station's screens: the face waits. */
   holdFace: false,
+  /**
+   * Where the words sit on the stage, measured from the page (fractions of the stage, 0 = top or
+   * left): the camera fits every shot into the room they leave, at any screen size, shape or text
+   * size (rig.ts). `top` is under the slate line, `bottom` above the track; the rest are the edges
+   * of the title card, a space's caption and the close.
+   */
+  layout: { top: 0.15, bottom: 0.93, titleRight: 0.42, titleTop: 0.6, captionTop: 0.74, captionRight: 0.42, closeTop: 0.74, closeRight: 0.5 },
   /** The scene asks for one frame (demand mode); a no-op until the scene mounts. */
   invalidate: () => {},
   /** Scroll the page to a shot (0–4); set by the director. */

@@ -12,21 +12,28 @@
  *  · The Client station turns to its Stakeholders face every three seconds
  *    while it is on screen (the owner, 2026-11-03), and back — its words and
  *    the 3D together. The pointer resting on one of its screens holds it.
- *  · The scene: after first paint and the visitor's first move (or five
- *    seconds of reading), and only where it will run well — detect-gpu tier
- *    2 or 3, a CPU that passes a short probe, no Save-Data. Everywhere else
- *    the hero is played as stills: a poster of each shot, rendered by the
- *    scene, cross-fading as the visitor scrolls.
- *    `?hero=live` or `?hero=poster` overrides the choice, and `?shot=crew`
- *    (title, crew, client, stakeholders, suite, close) holds one shot, for
- *    checking a device and rendering the posters.
+ *  · The scene: after first paint, on the visitor's first move. Every device
+ *    that draws WebGL 2 on real graphics hardware gets the live scene — a
+ *    laptop's integrated graphics, a gaming PC, a tablet, a phone, on any
+ *    system and in any browser — at a starting quality fitted to it (the GPU's
+ *    benchmark where detect-gpu knows it; the middle quality where it cannot
+ *    tell, as in Firefox). In the scene a governor then watches the real frame
+ *    rate and steps the quality and the resolution down until it runs
+ *    smoothly (HeroCanvas). Only a device without WebGL 2, drawing in
+ *    software, asking to save data, or too slow even at the lowest quality,
+ *    plays the hero as stills — a poster of each shot, rendered by the scene,
+ *    cross-fading as the visitor scrolls.
+ *    `?hero=live` or `?hero=poster` overrides the choice, `?quality=0|1|2`
+ *    sets the starting quality, and `?shot=crew` (title, crew, client,
+ *    stakeholders, suite, close) holds one shot, for checking a device and
+ *    rendering the posters.
  *
  * Nothing here re-renders on scroll: the frame loop writes styles directly.
  */
 import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { cut, heroState, nearestShot, SHOT_AT, shotWeight, storyAt, timecode } from '@/components/hero/state'
-import { FACE, SCROLL_DAMPING, type Shot } from '@/components/hero/scene/numbers'
+import { FACE, SCROLL_DAMPING, type Quality, type Shot } from '@/components/hero/scene/numbers'
 import type { HeroSources } from '@/components/hero/scene/textures'
 import { useReducedMotion } from '@/lib/motion'
 
@@ -67,30 +74,10 @@ function afterFirstPaint(fn: () => void) {
 }
 
 /**
- * The scene needs CPU headroom as well as a GPU. A fixed piece of arithmetic
- * takes about 2.3 ms on an Apple M2 and about 8.6 ms under Lighthouse's 4×
- * mobile CPU throttle (measured 2026-11-03); slower than 6 ms plays the
- * posters. The best of four runs, so one hiccup does not decide it.
- */
-const SLOW_CPU_MS = 6
-function cpuIsSlow() {
-  let sink = 0
-  const run = () => {
-    const t = performance.now()
-    let x = 0
-    for (let i = 0; i < 400_000; i++) x += Math.sqrt(i) * Math.sin(i)
-    sink += x
-    return performance.now() - t
-  }
-  const best = Math.min(run(), run(), run(), run())
-  return best > SLOW_CPU_MS && sink !== 0
-}
-
-/**
  * The scene wakes when the visitor first does something — moves the mouse,
- * scrolls, touches, presses a key — or after five seconds of reading. Until
- * then the title's poster IS the scene (its first frame, rendered by the
- * scene), so nothing visible changes.
+ * scrolls, touches, presses a key. Until then the title's poster IS the scene
+ * (its first frame, rendered by the scene), so nothing visible changes, and
+ * the 3D never competes with the page's first seconds.
  */
 function whenEngaged(fn: () => void) {
   const events = ['pointermove', 'pointerdown', 'wheel', 'touchstart', 'keydown', 'scroll'] as const
@@ -101,9 +88,7 @@ function whenEngaged(fn: () => void) {
     stop()
     fn()
   }
-  const timer = setTimeout(go, 5000)
   const stop = () => {
-    clearTimeout(timer)
     for (const e of events) window.removeEventListener(e, go)
   }
   for (const e of events) window.addEventListener(e, go, { passive: true, once: true })
@@ -112,20 +97,52 @@ function whenEngaged(fn: () => void) {
 
 const params = () => new URLSearchParams(window.location.search)
 
-async function chooseTier(): Promise<Exclude<Tier, 'pending'>> {
-  const asked = params().get('hero')
-  if (asked === 'live' || asked === 'poster') return asked
+type Choice = { tier: 'live'; quality: Quality } | { tier: 'poster' }
+
+/** A renderer that draws in software (no graphics hardware): far too slow for the scene. */
+const SOFTWARE = /swiftshader|llvmpipe|softpipe|software|basic render|mesa offscreen|virtualbox|vmware svga/i
+
+/**
+ * Whether this device runs the live scene, and at what starting quality.
+ * The governor in the scene corrects the start either way, so this errs
+ * toward running: an unknown GPU starts in the middle, not on the stills.
+ */
+async function choose(): Promise<Choice> {
+  const q = params()
+  const asked = q.get('hero')
+  const askedQuality = q.get('quality')
+  const forced: Quality | null = askedQuality === '0' || askedQuality === '1' || askedQuality === '2' ? (Number(askedQuality) as Quality) : null
+  if (asked === 'poster') return { tier: 'poster' }
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-  if (connection?.saveData) return 'poster'
-  if (cpuIsSlow()) return 'poster'
+  if (asked !== 'live' && connection?.saveData) return { tier: 'poster' }
+
+  // WebGL 2, on graphics hardware
+  let gl: WebGL2RenderingContext | null = null
+  try {
+    gl = document.createElement('canvas').getContext('webgl2', { powerPreference: 'high-performance' })
+  } catch {}
+  if (!gl) return asked === 'live' ? { tier: 'live', quality: forced ?? 0 } : { tier: 'poster' }
+  const info = gl.getExtension('WEBGL_debug_renderer_info')
+  const renderer = String((info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '')
+  if (asked !== 'live' && SOFTWARE.test(renderer)) {
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    return { tier: 'poster' }
+  }
+
+  let quality: Quality = 1
   try {
     const { getGPUTier } = await import('detect-gpu')
     // The benchmark data is served from this site (public/detect-gpu), never fetched from a third party.
-    const gpu = await getGPUTier({ benchmarksURL: '/detect-gpu' })
-    return gpu.tier >= 2 ? 'live' : 'poster'
+    const gpu = await getGPUTier({ benchmarksURL: '/detect-gpu', glContext: gl })
+    if (asked !== 'live' && (gpu.type === 'BLOCKLISTED' || gpu.type === 'WEBGL_UNSUPPORTED')) return { tier: 'poster' }
+    if (gpu.type === 'BENCHMARK') quality = gpu.tier >= 3 ? 2 : gpu.tier === 2 ? 1 : 0
+    // FALLBACK (a GPU it cannot name — Firefox hides it, for one): the middle, and the governor decides
   } catch {
-    return 'poster'
+    // the benchmarks could not be read: start in the middle all the same
+  } finally {
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
+  return { tier: 'live', quality: forced ?? quality }
 }
 
 /** `?shot=` — hold one shot (for checking by hand, and for rendering the posters). */
@@ -139,6 +156,7 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
   const reducedPref = useReducedMotion()
   const reduced = reducedPref ?? false
   const [tier, setTier] = React.useState<Tier>('pending')
+  const [quality, setQuality] = React.useState<Quality>(1)
   const [visible, setVisible] = React.useState(true)
   const [stage, setStage] = React.useState<HTMLElement | null>(null)
   // The stage is the scene's event source, so the 3D answers the pointer through the words laid over it.
@@ -281,6 +299,55 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     }
     section.addEventListener('focusin', onFocus)
 
+    // Where the words sit, measured from the page itself — the camera frames every shot into the room
+    // they leave (rig.ts). Measured without the cards' fade transforms, again on every resize and once
+    // the fonts have settled, so any screen, shape or text size fits.
+    const stageEl = section.querySelector<HTMLElement>('[data-hero-stage]')
+    const shotsEl = section.querySelector<HTMLElement>('.hero-shots')
+    const slateEl = section.querySelector<HTMLElement>('.hero-top')
+    const trackEl = section.querySelector<HTMLElement>('.hero-track')
+    const card = (n: number) => section.querySelector<HTMLElement>(`[data-shot="${n}"]`)
+    const measure = () => {
+      if (!stageEl || !shotsEl) return
+      const st = stageEl.getBoundingClientRect()
+      if (!st.width || !st.height) return
+      const sh = shotsEl.getBoundingClientRect()
+      const fy = (y: number) => Math.min(1, Math.max(0, (y - st.top) / st.height))
+      const fx = (x: number) => Math.min(1, Math.max(0, (x - st.left) / st.width))
+      const edges = (el: HTMLElement | null) => {
+        if (!el) return null
+        // offsets ignore the transforms the fades put on the cards
+        const left = sh.left + el.offsetLeft
+        const top = sh.top + el.offsetTop
+        // the widest line of the card, not the card's own box
+        let right = left
+        for (const child of Array.from(el.querySelectorAll<HTMLElement>('h1 > span, h2 > span, h2, p, .hero-ctas > a'))) {
+          const r = child.getBoundingClientRect()
+          if (r.width) right = Math.max(right, r.right)
+        }
+        return { top: fy(top), right: fx(right) }
+      }
+      const title = edges(card(0))
+      const caption = edges(card(1))
+      const close = edges(card(4))
+      const pad = 10 / st.height
+      s.layout = {
+        top: slateEl ? fy(slateEl.getBoundingClientRect().bottom) + pad : 0.15,
+        bottom: trackEl ? fy(trackEl.getBoundingClientRect().top) - pad * 2.4 : 0.93,
+        titleRight: title?.right ?? 0.42,
+        titleTop: title?.top ?? 0.6,
+        captionTop: caption?.top ?? 0.74,
+        captionRight: caption?.right ?? 0.42,
+        closeTop: close?.top ?? 0.74,
+        closeRight: close?.right ?? 0.5,
+      }
+      s.invalidate()
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (stageEl) ro.observe(stageEl)
+    document.fonts?.ready.then(measure).catch(() => {})
+
     // Is the hero on screen at all? Off screen, the scene stops drawing and the face stops turning.
     let onScreen = true
     const io = new IntersectionObserver(([e]) => {
@@ -327,6 +394,7 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
       stopWaiting()
       revert()
       io.disconnect()
+      ro.disconnect()
       window.clearInterval(turn)
       section.removeEventListener('focusin', onFocus)
       cancelAnimationFrame(raf)
@@ -335,19 +403,37 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     }
   }, [])
 
-  // The device tier: after first paint, once the visitor is engaged.
+  // The device tier: once the page has painted and the visitor is there. The visitor is listened for
+  // from the moment the page is interactive, and a mouse already resting on the page, or a page
+  // restored mid-scroll, counts — so a first move made while the page was settling is never lost.
   React.useEffect(() => {
     let alive = true
-    let stopEngaged = () => {}
-    const stopPaint = afterFirstPaint(() => {
-      stopEngaged = whenEngaged(() => {
-        chooseTier().then((t) => {
+    let painted = false
+    // already engaged: the page restored mid-scroll, or a mouse already resting on the page
+    let engaged = window.scrollY > 0 || document.querySelector(':hover') !== null
+    let started = false
+    const start = () => {
+      if (started || !painted || !engaged || !alive) return
+      started = true
+      choose()
+        .catch((): Choice => ({ tier: 'poster' }))
+        .then((c) => {
           if (!alive) return
-          tierRef.current = t
-          setTier(t)
+          tierRef.current = c.tier
+          // the choice, on the page, for anyone checking a device by hand (inspect the element)
+          layer.current?.setAttribute('data-tier', c.tier === 'live' ? `live (quality ${c.quality})` : 'stills')
+          if (c.tier === 'live') setQuality(c.quality)
+          setTier(c.tier)
           kickRef.current()
         })
-      })
+    }
+    const stopEngaged = whenEngaged(() => {
+      engaged = true
+      start()
+    })
+    const stopPaint = afterFirstPaint(() => {
+      painted = true
+      start()
     })
     return () => {
       alive = false
@@ -359,6 +445,7 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
   const onReady = React.useCallback(() => layer.current?.setAttribute('data-ready', 'true'), [])
   const onLost = React.useCallback(() => {
     layer.current?.removeAttribute('data-ready')
+    layer.current?.setAttribute('data-tier', 'stills (the scene could not run smoothly here)')
     tierRef.current = 'poster'
     setTier('poster')
     kickRef.current()
@@ -368,7 +455,7 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     <div ref={attach} aria-hidden className="hero-scene">
       {tier === 'live' && stage && reducedPref !== null && (
         <Fallback onError={onLost}>
-          <HeroCanvas sources={sources} reduced={reduced} visible={visible} eventSource={stage} onReady={onReady} onLost={onLost} />
+          <HeroCanvas sources={sources} quality={quality} reduced={reduced} visible={visible} eventSource={stage} onReady={onReady} onLost={onLost} />
         </Fallback>
       )}
     </div>

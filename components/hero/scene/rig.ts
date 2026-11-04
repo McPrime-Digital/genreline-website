@@ -14,8 +14,8 @@
  * visitor can stop, reverse or jump anywhere.
  */
 import { CatmullRomCurve3, Vector3 } from 'three'
-import { FOV, LINE_POINTS, LOGO_BOX, NODES, NODE_SAMPLE, VIEW, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
-import { smoothstep, type Place } from '@/components/hero/state'
+import { CHIPS, FOV, LINE_POINTS, LOGO_BOX, NODES, NODE_SAMPLE, PANEL, RINGS, SLOTS, TALL_KEEP, TILE, VIEW, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
+import { heroState, smoothstep, type Place } from '@/components/hero/state'
 
 export const v3 = (p: Vec3) => new Vector3(p[0], p[1], p[2])
 
@@ -54,57 +54,136 @@ export const makeView = (): View => ({ pos: new Vector3(), look: new Vector3(), 
 const tmp = new Vector3()
 const tmp2 = new Vector3()
 
-function lensFor(tall: boolean) {
-  return tall ? FOV.tall : FOV.wide
+// ── FITTING EACH SHOT INTO THE ROOM THE WORDS LEAVE ─────────────────────────
+//
+// A shot is a box of scene (its extent around a point, in scene units) and a
+// band of the frame (fractions, 0 = top or left) that the words leave clear,
+// measured from the page (heroState.layout). The camera stands back just far
+// enough for the box to fill the band, and the lens is shifted so the box
+// sits in it. So every shot fits whatever the screen's size and shape, its
+// text size, or how the page's words wrap.
+
+type Box = { xMin: number; xMax: number; yMin: number; yMax: number }
+type Band = { x0: number; x1: number; y0: number; y1: number }
+
+/** The whole logo: the line's extent. */
+const LINE_BOX: Box = (() => {
+  const xs = LINE_POINTS.map((p) => p[0])
+  const ys = LINE_POINTS.map((p) => p[1])
+  return { xMin: Math.min(...xs), xMax: Math.max(...xs), yMin: Math.min(...ys), yMax: Math.max(...ys) }
+})()
+const grow = (b: Box, m: number): Box => ({ xMin: b.xMin - m, xMax: b.xMax + m, yMin: b.yMin - m, yMax: b.yMax + m })
+/** Room for a tile at the line's ends: the tiles are drawn larger the farther the camera stands (TILE.minScreen). */
+const tileRoom = (d: number) => Math.max(TILE.size, d * TILE.minScreen) / 2 + 0.8
+/** The distance at which the logo, its tiles included, fills a band (the tiles' size depends on that distance: settled in three passes). */
+function logoDistance(band: Band, aspect: number, tanH: number) {
+  let d = 60
+  for (let i = 0; i < 3; i++) d = distanceFor(grow(LINE_BOX, tileRoom(d)), band, aspect, tanH)
+  return d
+}
+const LOGO_Z = LOGO_BOX.center[2]
+
+/** A station's extent: its ring of screens with their labels, the tile, its rings (and the Suite's chips). */
+function stationBox(id: keyof typeof NODES, tall: boolean): Box {
+  const w = tall ? PANEL.tallWidth : id === 'suite' ? PANEL.toolWidth : PANEL.width
+  const h = w * PANEL.aspect
+  const label = PANEL.label * (w / PANEL.width)
+  const core = Math.max(TILE.size / 2, RINGS[RINGS.length - 1].radius, id === 'suite' ? CHIPS.radius + CHIPS.size / 2 : 0)
+  const box: Box = { xMin: -core, xMax: core, yMin: -core, yMax: core }
+  const slots = tall ? SLOTS[id].tall.slice(0, TALL_KEEP[id].length) : SLOTS[id].wide
+  for (const [x, y] of slots) {
+    box.xMin = Math.min(box.xMin, x - w / 2)
+    box.xMax = Math.max(box.xMax, x + w / 2)
+    box.yMax = Math.max(box.yMax, y + h / 2)
+    box.yMin = Math.min(box.yMin, y - h / 2 - label)
+  }
+  // room for the float, the lift under the hand, and the creep of a held shot
+  const m = 0.7
+  return { xMin: box.xMin - m, xMax: box.xMax + m, yMin: box.yMin - m, yMax: box.yMax + m }
+}
+const STATION_BOX = {
+  crew: { wide: stationBox('crew', false), tall: stationBox('crew', true) },
+  client: { wide: stationBox('client', false), tall: stationBox('client', true) },
+  suite: { wide: stationBox('suite', false), tall: stationBox('suite', true) },
 }
 
-/** A station, straight on. `creep` 0–1 moves the camera in by VIEW.creep of its distance. */
+/** How far back the camera stands for `box` to fill `band`. */
+function distanceFor(box: Box, band: Band, aspect: number, tanH: number) {
+  const bw = Math.max(0.12, band.x1 - band.x0)
+  const bh = Math.max(0.12, band.y1 - band.y0)
+  return Math.max((box.yMax - box.yMin) / (2 * tanH * bh), (box.xMax - box.xMin) / (2 * tanH * aspect * bw))
+}
+
+/** The camera for `box` (around the point x, y, z) in `band`, `creep` 0–1 moving it in by VIEW.creep. */
+function fit(box: Box, band: Band, x: number, y: number, z: number, tall: boolean, aspect: number, creep: number, out: View) {
+  const fov = tall ? FOV.tall : FOV.wide
+  const tanH = Math.tan(((fov / 2) * Math.PI) / 180)
+  const d = distanceFor(box, band, aspect, tanH) * (1 - VIEW.creep * creep)
+  const cx = x + (box.xMin + box.xMax) / 2
+  const cy = y + (box.yMin + box.yMax) / 2
+  out.look.set(cx, cy, z)
+  out.pos.set(cx, cy, z + d)
+  out.fov = fov
+  out.shift[0] = (band.x0 + band.x1) / 2 - 0.5
+  out.shift[1] = 0.5 - (band.y0 + band.y1) / 2
+}
+
+const clampBand = (b: Band): Band => ({ x0: b.x0, x1: Math.max(b.x1, b.x0 + 0.12), y0: b.y0, y1: Math.max(b.y1, b.y0 + 0.12) })
+
+/** A station, straight on, its ring of screens in the room the caption leaves. */
 function stationView(shot: 1 | 2 | 3, tall: boolean, aspect: number, creep: number, out: View) {
-  const c = NODES[STATION_OF[shot]]
-  const fov = lensFor(tall)
-  const tanH = Math.tan(((fov / 2) * Math.PI) / 180)
-  let d: number
-  let lift: number
-  if (tall) {
-    d = VIEW.station.tall.distance
-    lift = VIEW.station.tall.lift
-  } else {
-    // far enough back that the ring's right edge clears the frame, whatever the frame's shape
-    const rightRoom = (0.5 - VIEW.shift.wide.station[0]) * 2 * tanH * aspect
-    d = Math.max(VIEW.station.wide.distance, VIEW.station.wide.fitHalfWidth / rightRoom)
-    lift = VIEW.station.wide.lift
+  const id = STATION_OF[shot]
+  const c = NODES[id]
+  const L = heroState.layout
+  const box = STATION_BOX[id][tall ? 'tall' : 'wide']
+  let band: Band
+  if (tall) band = { x0: 0.03, x1: 0.97, y0: L.top, y1: L.captionTop - 0.025 }
+  else {
+    // the ring leaves its lower left open for the caption: shift the ring right just enough that the
+    // nearest screen to the caption (the bottom one) clears the caption's widest line
+    const bottomLeft = Math.min(...SLOTS[id].wide.filter((p) => p[1] < 0).map((p) => p[0] - (id === 'suite' ? PANEL.toolWidth : PANEL.width) / 2))
+    const r = (bottomLeft - box.xMin) / (box.xMax - box.xMin)
+    const x1 = 0.97
+    const x0 = Math.min(0.35, Math.max(0.04, (L.captionRight + 0.015 - r * x1) / (1 - r)))
+    band = { x0, x1, y0: L.top, y1: L.bottom }
   }
-  d *= 1 - VIEW.creep * creep
-  out.pos.set(c[0], c[1] + lift, c[2] + d)
-  out.look.set(c[0], c[1] + lift * 0.4, c[2])
-  out.fov = fov
-  const s = tall ? VIEW.shift.tall.station : VIEW.shift.wide.station
-  out.shift[0] = s[0]
-  out.shift[1] = s[1]
+  fit(box, clampBand(band), c[0], c[1], c[2], tall, aspect, creep, out)
 }
 
-/** The whole line, the logo: for the title (room for the words on the left) or the close (centred, the words below). */
+/**
+ * The whole line, the logo — for the title and the close. Two places are
+ * tried — beside the words and above them — and the one that shows the logo
+ * larger, clear of the words, is used.
+ */
 function wholeView(kind: 'title' | 'close', tall: boolean, aspect: number, creep: number, out: View) {
-  const fov = lensFor(tall)
+  const L = heroState.layout
+  const fov = tall ? FOV.tall : FOV.wide
   const tanH = Math.tan(((fov / 2) * Math.PI) / 180)
-  const [cx, cy, cz] = LOGO_BOX.center
-  const w = LOGO_BOX.halfWidth * VIEW.whole.margin
-  const h = LOGO_BOX.halfHeight * VIEW.whole.margin
-  let d: number
-  if (tall) {
-    d = w / (0.94 * tanH * aspect)
-  } else {
-    // the title gives the logo the right 58% of the frame; the close, 80%
-    const share = kind === 'title' ? 0.58 : 0.8
-    d = Math.max(h / (kind === 'title' ? 0.72 : 0.64) / tanH, w / (share * tanH * aspect))
+  const wordsTop = kind === 'title' ? L.titleTop : L.closeTop
+  const above: Band = { x0: 0.04, x1: 0.96, y0: L.top, y1: wordsTop - 0.03 }
+  const bands: Band[] = [above]
+  if (!tall) {
+    if (kind === 'title') bands.push({ x0: L.titleRight + 0.03, x1: 0.97, y0: L.top, y1: L.bottom })
+    else {
+      // the close sits in the room the logo leaves below Crew: the whole frame, if the words stay clear of
+      // the valley (right of 41% of the logo's width) and below Crew's tile (61% of its height)
+      const full: Band = { x0: 0.05, x1: 0.96, y0: L.top, y1: L.bottom }
+      const clearX = full.x0 + 0.41 * (full.x1 - full.x0)
+      const clearY = full.y0 + 0.61 * (full.y1 - full.y0)
+      if (L.closeRight <= clearX && L.closeTop >= clearY) bands.push(full)
+    }
   }
-  d *= 1 - VIEW.creep * 0.6 * creep
-  out.pos.set(cx, cy + d * 0.05, cz + d)
-  out.look.set(cx, cy, cz)
-  out.fov = fov
-  const s = (tall ? VIEW.shift.tall : VIEW.shift.wide)[kind]
-  out.shift[0] = s[0]
-  out.shift[1] = s[1]
+  let best = clampBand(bands[0])
+  let bestD = logoDistance(best, aspect, tanH)
+  for (const b of bands.slice(1)) {
+    const band = clampBand(b)
+    const d = logoDistance(band, aspect, tanH)
+    if (d < bestD) {
+      best = band
+      bestD = d
+    }
+  }
+  fit(grow(LINE_BOX, tileRoom(bestD)), best, 0, 0, LOGO_Z, tall, aspect, creep * 0.6, out)
 }
 
 function shotView(shot: Shot, tall: boolean, aspect: number, creep: number, out: View) {
@@ -121,7 +200,7 @@ function rideView(u: number, tall: boolean, out: View) {
   LINE.getPointAt(Math.min(1, u + VIEW.ride.lookAhead), tmp2)
   out.look.copy(tmp2)
   out.look.y = out.pos.y + (tmp2.y - out.pos.y) * VIEW.ride.pitch
-  out.fov = lensFor(tall) + FOV.ride
+  out.fov = (tall ? FOV.tall : FOV.wide) + FOV.ride
 }
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)

@@ -47,6 +47,7 @@ async function main() {
       for (const shot of SHOTS) {
         const page = await ctx.newPage()
         await page.goto(`${BASE}/?hero=live&shot=${shot}`, { waitUntil: 'load', timeout: 90_000 })
+        await page.mouse.move(8, 8) // the scene wakes on the visitor's first move
         await page.waitForSelector('.hero-scene[data-ready="true"]', { timeout: 90_000 })
         await page.addStyleTag({ content: 'header, .hero-top, .hero-shots, .hero-track, .hero-shade, nextjs-portal { visibility: hidden !important } .hero-scene { transition: none !important }' })
         await page.waitForTimeout(4000) // the screens' captures and labels load and decode

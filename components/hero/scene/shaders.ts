@@ -537,18 +537,22 @@ export const PANEL_FRAG = /* glsl */ `
   void main() {
     vec2 full = vec2(uSize.x, uSize.y + uLabelH);
     vec2 p = vUv * full;
+    vec2 q = p - vec2(0.0, uLabelH);
+    vec2 uv = clamp(q / uSize, 0.0, 1.0);
+    // Everything with a derivative — the edge's width, both texture reads — is worked out before any
+    // branch, so Direct3D's compiler (Chrome and Edge on Windows) never meets one in divergent flow.
+    float d = sdBox(q - uSize * 0.5, uSize * 0.5, uRadius);
+    float px = max(fwidth(d), 1e-4);
+    vec3 picture = texture(uMap, uv).rgb;
+    vec4 lab = texture(uLabel, vec2(p.x / uSize.x, clamp(p.y / uLabelH, 0.0, 1.0)));
     vec3 col = vec3(0.0);
     float alpha = 0.0;
     if (p.y >= uLabelH) {
-      vec2 q = p - vec2(0.0, uLabelH);
-      vec2 uv = q / uSize;
-      float d = sdBox(q - uSize * 0.5, uSize * 0.5, uRadius);
-      float px = fwidth(d);
       alpha = 1.0 - smoothstep(-px, px, d);
       if (uArt > 0) {
         col = art(uv, uSize.x / uSize.y);
       } else if (uHasMap > 0.5) {
-        col = texture(uMap, uv).rgb;
+        col = picture;
       } else {
         // the skeleton of an app while the picture loads: a sidebar, a header, rows, a shimmer passing
         col = uGlass;
@@ -570,7 +574,6 @@ export const PANEL_FRAG = /* glsl */ `
       col = mix(col, uRim, rim * (0.55 + 0.45 * uHover));
       col *= mix(0.62, 1.0, uFocus);
     } else if (uHasLabel > 0.5) {
-      vec4 lab = texture(uLabel, vec2(p.x / uSize.x, p.y / uLabelH));
       col = lab.rgb;
       alpha = lab.a * mix(0.55, 1.0, max(uFocus, uHover));
     }

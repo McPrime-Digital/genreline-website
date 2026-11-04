@@ -90,9 +90,9 @@ export const TUBE = {
 /** The tiles: the logo's three glyphs (and the Stakeholders face), as camera-facing cards. */
 export const TILE = { size: 3.4, glow: 9, minScreen: 0.07 } as const
 
-/** Particles streaming along the line, and the stars around it. */
-export const FLOW = { count: 3400, lowered: 1200, radius: 2.6, size: 0.075, speed: [0.006, 0.016] as const } as const
-export const STARS = { count: 4200, lowered: 1800, box: { min: [-70, -60, -110] as Vec3, max: [135, 60, 40] as Vec3 }, size: 0.16, streaks: 900 } as const
+/** Particles streaming along the line, and the stars around it (the most any quality draws; QUALITY sets how many). */
+export const FLOW = { count: 3400, radius: 2.6, size: 0.075, speed: [0.006, 0.016] as const } as const
+export const STARS = { count: 4200, box: { min: [-70, -60, -110] as Vec3, max: [135, 60, 40] as Vec3 }, size: 0.16, streaks: 900 } as const
 
 // ── THE STATIONS ────────────────────────────────────────────────────────────
 
@@ -134,21 +134,14 @@ export const FACE = { every: 3000, turn: 0.7 } as const
 export const FOV = { wide: 46, tall: 62, tallBelowAspect: 0.8, ride: 7 } as const
 
 export const VIEW = {
-  /** At a station: straight on, this far back (more on narrow frames, so the ring of screens fits). */
-  station: { wide: { lift: 0.5, distance: 28.5, fitHalfWidth: 15.6 }, tall: { lift: 0.4, distance: 29 } },
   /** On the way: riding above and in front of the line, looking down it. */
   ride: { wide: [0, 2.7, 10.5] as Vec3, tall: [0, 2.7, 15] as Vec3, lookAhead: 0.05, pitch: 0.5 },
-  /** The title and the close show the whole line — the logo — in space. */
-  whole: { margin: 1.12 },
   /** While holding a shot the camera keeps creeping forward, so the scene never freezes. */
   creep: 0.05,
-  /** The lens shift [x, y] (fractions of the frame; +x moves the scene right, +y up) leaving room for the words. */
-  shift: {
-    wide: { title: [0.19, -0.04], station: [0.1, -0.05], close: [0.08, -0.05] },
-    tall: { title: [0, 0.18], station: [0, 0.03], close: [0, 0.18] },
-  },
+  /** The camera leans with the pointer, a little (scaled by its distance). */
   pointer: { x: 0.9, y: 0.5, damping: 2.6 },
 } as const
+// Every held shot is framed by rig.ts: its box of scene fitted into the room the words leave, measured from the page.
 
 // ── THE TIMELINE ────────────────────────────────────────────────────────────
 //
@@ -179,7 +172,41 @@ export const SCROLL_DAMPING = 3.2
 /** The slate line's clock: the shots land on 0, 4, 8, 12 and 16 seconds, at 24 fps. */
 export const TIMECODE = { seconds: 16, fps: 24 } as const
 
-/** Resolution: capped at 1.5× (lowered to 1× on slow frames). */
-export const DPR = { cap: 1.5, lowered: 1 } as const
-/** The slow-frame test: slower than 28 ms a frame on average. */
-export const SLOW_FRAMES = { seconds: 0.028 } as const
+// ── QUALITY: ONE SCENE, FITTED TO EVERY DEVICE ──────────────────────────────
+//
+// Three qualities. A device starts at the one its GPU's benchmark suggests
+// (HeroDirector) and the governor (HeroCanvas) moves it on the frame rate it
+// actually gets. Resolution is held to a pixel budget as well as a ratio, so
+// a 4K monitor or a 3× phone draws no more pixels than its GPU can fill.
+
+export type Quality = 0 | 1 | 2
+
+export const QUALITY = [
+  // 0 — modest graphics: budget phones and tablets, older integrated graphics on big screens
+  { dpr: 1, pixels: 1.5e6, stars: 1800, flow: 1300, streaks: false, antialias: false, texture: 720 },
+  // 1 — the middle: most laptops' integrated graphics, mid-range phones, any GPU the browser will not name
+  { dpr: 1.25, pixels: 2.6e6, stars: 3000, flow: 2400, streaks: true, antialias: true, texture: 1024 },
+  // 2 — strong graphics: Apple silicon, recent phones, discrete GPUs
+  { dpr: 1.5, pixels: 3.8e6, stars: 4200, flow: 3400, streaks: true, antialias: true, texture: 1400 },
+] as const
+
+/** The governor's ladder, lowest first: quality 0 at reduced resolution, then each quality at full. */
+export const LEVELS = [
+  { quality: 0, scale: 0.7 },
+  { quality: 0, scale: 0.85 },
+  { quality: 0, scale: 1 },
+  { quality: 1, scale: 1 },
+  { quality: 2, scale: 1 },
+] as const
+/** Where each starting quality enters the ladder. */
+export const LEVEL_OF_QUALITY = [2, 3, 4] as const
+
+/**
+ * The governor: frames are averaged over `window` seconds (after `settle`
+ * seconds to warm up). Below `slow` fps it steps down a level; at the bottom,
+ * below `floor` fps twice running, the hero plays as stills. A steady frame
+ * rate that is merely capped (30 Hz in a battery saver or Low Power Mode) is
+ * not slowness. Stepping up needs `climb` good windows in a row, at most one
+ * level above the start, and never back above a level it had to leave.
+ */
+export const GOVERNOR = { window: 1.2, settle: 2.5, slow: 40, floor: 25, good: 55, climb: 5 } as const

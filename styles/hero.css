@@ -164,6 +164,11 @@
   .hero-node-title { font-size: clamp(26px, min(8vw, 4.8svh), 38px); }
   .hero-close-title { font-size: clamp(22px, min(6.6vw, 4.4svh), 34px); }
 }
+/* A near-square frame (a tablet, a small window): the title and the close move to the foot of the
+   frame, and the camera puts the whole line above them (rig.ts picks whichever shows it larger). */
+@media (min-aspect-ratio: 4/5) and (max-aspect-ratio: 5/4) {
+  .hero-shot-title, .hero-shot-close { align-self: end; }
+}
 /* A short landscape screen (a phone on its side): everything steps down so the title card still fits. */
 @media (max-height: 560px) and (min-aspect-ratio: 4/5) {
   .hero-top { top: calc(64px + 10px); }

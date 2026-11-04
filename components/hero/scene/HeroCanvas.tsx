@@ -1,21 +1,28 @@
 'use client'
 /**
- * The 3D canvas — loaded with next/dynamic (ssr: false) after first paint,
- * and only on a device that can carry it (HeroDirector decides). Hidden from
- * assistive technology: every word the hero says is in the HTML around it.
+ * The 3D canvas — loaded with next/dynamic (ssr: false) on the visitor's
+ * first move, on every device that draws WebGL 2 on graphics hardware
+ * (HeroDirector decides). Hidden from assistive technology: every word the
+ * hero says is in the HTML around it.
+ *
+ * ONE SCENE, FITTED TO EVERY DEVICE. It starts at the quality HeroDirector
+ * chose from the GPU, and the GOVERNOR below then watches the frame rate the
+ * device actually delivers: too slow, and it steps down — fewer particles and
+ * stars, no streaks, then a lower resolution — until the scene runs
+ * smoothly; comfortably fast, and it may step up one level. Resolution is
+ * held to a pixel budget as well as a ratio (numbers.ts QUALITY), so a big
+ * 4K screen draws no more pixels than its GPU can fill. If even the lowest
+ * level cannot keep up, the hero plays as stills (onLost).
  *
  * THE RENDERER (reported in HANDOFF.md): WebGL 2, through R3F v9's `gl`
  * factory. three's WebGPURenderer was measured and does not fit the 3D
- * bundle's 250 KB budget (three/webgpu alone is 306 KB gzipped), so the
- * factory builds a WebGLRenderer; the WebGPU swap is one line here when the
- * budget allows.
+ * bundle's 250 KB budget, so the factory builds a WebGLRenderer.
  */
 import * as React from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { PerformanceMonitor } from '@react-three/drei/core/PerformanceMonitor'
 import { WebGLRenderer } from 'three'
 import { HeroScene } from '@/components/hero/scene/HeroScene'
-import { DPR, FOV, SLOW_FRAMES } from '@/components/hero/scene/numbers'
+import { FOV, GOVERNOR, LEVEL_OF_QUALITY, LEVELS, QUALITY, type Quality } from '@/components/hero/scene/numbers'
 import type { HeroSources } from '@/components/hero/scene/textures'
 
 /**
@@ -24,7 +31,7 @@ import type { HeroSources } from '@/components/hero/scene/textures'
  * tells the page the first frame is on screen, so the canvas fades in over
  * the poster.
  */
-function Ready({ onReady }: { onReady: () => void }) {
+function Ready({ onReady, onFailed }: { onReady: () => void; onFailed: () => void }) {
   const get = useThree((s) => s.get)
   const compiled = React.useRef(false)
   const told = React.useRef(false)
@@ -37,14 +44,32 @@ function Ready({ onReady }: { onReady: () => void }) {
         o.visible = true
       }
     })
-    gl.compileAsync(scene, camera)
+    // in parallel where the browser can (most); in one pass where it cannot (some Firefox builds), without three's warning
+    const compiling = gl.extensions.has('KHR_parallel_shader_compile') ? gl.compileAsync(scene, camera) : Promise.resolve(gl.compile(scene, camera))
+    compiling
       .catch(() => {})
       .finally(() => {
         for (const o of hidden) o.visible = false
+        // A shader this device's graphics driver could not build would leave part of the scene blank
+        // (three would only notice the first time it drew with it): ask the driver about every one
+        // now, and rather than a broken scene, play the hero as stills.
+        const ctx = gl.getContext()
+        const broken = (gl.info.programs ?? []).some((p) => {
+          const raw = (p as { program?: WebGLProgram }).program
+          return raw ? ctx.getProgramParameter(raw, ctx.LINK_STATUS) === false : false
+        })
+        if (broken) return onFailed()
         compiled.current = true
         invalidate()
       })
-  }, [get])
+  }, [get, onFailed])
+  // and if the scene is not drawing within 20 s for any reason (a driver stuck building shaders), the stills
+  React.useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (!told.current) onFailed()
+    }, 20000)
+    return () => window.clearTimeout(t)
+  }, [onFailed])
   useFrame(() => {
     if (told.current || !compiled.current) return
     told.current = true
@@ -53,8 +78,77 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null
 }
 
+/** The governor: measures the frame rate the device delivers and moves the level (see numbers.ts GOVERNOR). */
+function Governor({ level, start, onLevel, onTooSlow }: { level: number; start: number; onLevel: (l: number) => void; onTooSlow: () => void }) {
+  const st = React.useRef({ settle: GOVERNOR.settle as number, sum: 0, frames: 0, min: Infinity, good: 0, floorSlow: 0, cap: Math.min(LEVELS.length - 1, start + 1) })
+  useFrame((_, dt) => {
+    const s = st.current
+    // a frame longer than a quarter second is a hidden tab or a stall, not the scene's pace
+    if (dt > 0.25) {
+      s.sum = 0
+      s.frames = 0
+      s.min = Infinity
+      return
+    }
+    if (s.settle > 0) {
+      s.settle -= dt
+      return
+    }
+    s.sum += dt
+    s.frames++
+    s.min = Math.min(s.min, dt)
+    if (s.sum < GOVERNOR.window) return
+    const avg = s.sum / s.frames
+    const fps = 1 / avg
+    // a steady rate held down by the display or a battery saver (30 Hz): not slowness
+    const capped = avg <= s.min * 1.15 && fps > 27
+    s.sum = 0
+    s.frames = 0
+    s.min = Infinity
+    if (fps < GOVERNOR.slow && !capped) {
+      s.good = 0
+      if (level > 0) {
+        s.cap = level - 1
+        s.settle = 1
+        onLevel(level - 1)
+      } else if (fps < GOVERNOR.floor && ++s.floorSlow >= 2) {
+        onTooSlow()
+      }
+      return
+    }
+    s.floorSlow = 0
+    if (fps >= GOVERNOR.good && level < s.cap) {
+      if (++s.good >= GOVERNOR.climb) {
+        s.good = 0
+        s.settle = 1
+        onLevel(level + 1)
+      }
+    } else s.good = 0
+  })
+  return null
+}
+
+/** The pixel ratio for a level: the device's, held under the quality's ratio and its pixel budget for this screen. */
+function dprFor(level: number, width: number, height: number) {
+  const { quality, scale } = LEVELS[level]
+  const q = QUALITY[quality]
+  const fit = Math.sqrt(q.pixels / Math.max(1, width * height))
+  return Math.max(0.6, Math.min(window.devicePixelRatio || 1, q.dpr, fit) * scale)
+}
+
+function useViewport() {
+  const [size, setSize] = React.useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
+  React.useEffect(() => {
+    const on = () => setSize({ w: window.innerWidth, h: window.innerHeight })
+    window.addEventListener('resize', on)
+    return () => window.removeEventListener('resize', on)
+  }, [])
+  return size
+}
+
 export type HeroCanvasProps = {
   sources: HeroSources
+  quality: Quality
   reduced: boolean
   visible: boolean
   eventSource: HTMLElement
@@ -62,20 +156,27 @@ export type HeroCanvasProps = {
   onLost: () => void
 }
 
-export default function HeroCanvas({ sources, reduced, visible, eventSource, onReady, onLost }: HeroCanvasProps) {
-  // Slow frames lower the resolution and drop the outer glow and the streaks, once and for good.
-  const [lowered, setLowered] = React.useState(false)
-  const lower = React.useCallback(() => setLowered(true), [])
+export default function HeroCanvas({ sources, quality, reduced, visible, eventSource, onReady, onLost }: HeroCanvasProps) {
+  const start = LEVEL_OF_QUALITY[quality]
+  const [level, setLevel] = React.useState<number>(start)
+  const { w, h } = useViewport()
+  const dpr = dprFor(level, w, h)
+  // edge smoothing is fixed when the context is made: on for the middle and strong qualities
+  const [antialias] = React.useState<boolean>(QUALITY[quality].antialias)
+  // the level in use, on the stage, for anyone checking a device by hand (inspect the element)
+  React.useEffect(() => {
+    eventSource.setAttribute('data-hero-level', `${level} (quality ${LEVELS[level].quality}, ${dpr.toFixed(2)}x)`)
+  }, [eventSource, level, dpr])
 
   return (
     <Canvas
       aria-hidden
       flat
-      dpr={lowered ? DPR.lowered : [1, DPR.cap]}
+      dpr={dpr}
       frameloop={!visible ? 'never' : reduced ? 'demand' : 'always'}
       camera={{ fov: FOV.wide, near: 0.1, far: 900, position: [32, 0, 80] }}
       gl={(defaults) => {
-        const renderer = new WebGLRenderer({ ...defaults, antialias: true, alpha: false, stencil: false, powerPreference: 'high-performance' })
+        const renderer = new WebGLRenderer({ ...defaults, antialias, alpha: false, stencil: false, powerPreference: 'high-performance' })
         renderer.domElement.addEventListener('webglcontextlost', (e) => {
           e.preventDefault()
           onLost()
@@ -86,16 +187,9 @@ export default function HeroCanvas({ sources, reduced, visible, eventSource, onR
       eventPrefix="client"
       style={{ position: 'absolute', inset: 0 }}
     >
-      {!reduced && visible && (
-        <PerformanceMonitor
-          // slower than 28 ms a frame on average
-          bounds={(refresh) => [Math.round(1 / SLOW_FRAMES.seconds), refresh + 10]}
-          onDecline={lower}
-          onFallback={lower}
-        />
-      )}
-      <HeroScene sources={sources} lowered={lowered} reduced={reduced} />
-      <Ready onReady={onReady} />
+      {!reduced && visible && <Governor level={level} start={start} onLevel={setLevel} onTooSlow={onLost} />}
+      <HeroScene sources={sources} quality={LEVELS[level].quality} reduced={reduced} />
+      <Ready onReady={onReady} onFailed={onLost} />
     </Canvas>
   )
 }

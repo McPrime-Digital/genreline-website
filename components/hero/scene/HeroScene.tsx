@@ -17,7 +17,7 @@ import {
   PlaneGeometry, RGBAFormat, TubeGeometry, Vector3, type ShaderMaterial,
 } from 'three'
 import { heroState, storyAt } from '@/components/hero/state'
-import { FLOW, FOV, LOGO_BOX, STARS, TUBE, VIEW } from '@/components/hero/scene/numbers'
+import { FLOW, FOV, LOGO_BOX, QUALITY, STARS, TUBE, VIEW, type Quality } from '@/components/hero/scene/numbers'
 import { cameraAt, LINE, LINE_LENGTH, live, makeView } from '@/components/hero/scene/rig'
 import {
   FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, SKY_FRAG, SKY_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
@@ -61,7 +61,7 @@ function pixelScale(height: number, dpr: number, fov: number) {
 
 // ── THE STARS, AND THEIR STREAKS ON A JOURNEY ───────────────────────────────
 
-function Stars({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
+function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   const geos = React.useMemo(() => {
     const rnd = seeded(4242)
     const n = STARS.count
@@ -100,7 +100,7 @@ function Stars({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
     return { stars, streaks }
   }, [])
   React.useEffect(() => () => { geos.stars.dispose(); geos.streaks.dispose() }, [geos])
-  React.useEffect(() => geos.stars.setDrawRange(0, lowered ? STARS.lowered : STARS.count), [geos, lowered])
+  React.useEffect(() => geos.stars.setDrawRange(0, QUALITY[quality].stars), [geos, quality])
 
   const starUniforms = React.useMemo(
     () => ({
@@ -127,7 +127,7 @@ function Stars({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
       <points geometry={geos.stars} frustumCulled={false} renderOrder={-4}>
         <shaderMaterial ref={starMat} vertexShader={STAR_VERT} fragmentShader={STAR_FRAG} uniforms={starUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
       </points>
-      {!lowered && (
+      {QUALITY[quality].streaks && (
         <lineSegments geometry={geos.streaks} frustumCulled={false} renderOrder={-3}>
           <shaderMaterial ref={streakMat} vertexShader={STREAK_VERT} fragmentShader={STREAK_FRAG} uniforms={streakUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
         </lineSegments>
@@ -163,7 +163,7 @@ function DeepSky({ theme }: { theme: HeroTheme }) {
 
 // ── THE LINE ────────────────────────────────────────────────────────────────
 
-function Line({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
+function Line({ theme }: { theme: HeroTheme }) {
   const geos = React.useMemo(
     () => ({
       core: new TubeGeometry(LINE, TUBE.segments, TUBE.core.radius, TUBE.radialSegments, false),
@@ -196,11 +196,9 @@ function Line({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
   })
   return (
     <group>
-      {!lowered && (
-        <mesh geometry={geos.halo} renderOrder={4} frustumCulled={false}>
-          <shaderMaterial ref={halo} vertexShader={LINE_VERT} fragmentShader={LINE_HALO_FRAG} uniforms={haloUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
-        </mesh>
-      )}
+      <mesh geometry={geos.halo} renderOrder={4} frustumCulled={false}>
+        <shaderMaterial ref={halo} vertexShader={LINE_VERT} fragmentShader={LINE_HALO_FRAG} uniforms={haloUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
+      </mesh>
       <mesh geometry={geos.core} renderOrder={5} frustumCulled={false}>
         <shaderMaterial ref={core} vertexShader={LINE_VERT} fragmentShader={LINE_CORE_FRAG} uniforms={coreUniforms} />
       </mesh>
@@ -226,7 +224,7 @@ function bakeLine() {
   return { tex, N }
 }
 
-function Flow({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
+function Flow({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   const baked = React.useMemo(() => bakeLine(), [])
   React.useEffect(() => () => baked.tex.dispose(), [baked])
   const geo = React.useMemo(() => {
@@ -258,7 +256,7 @@ function Flow({ theme, lowered }: { theme: HeroTheme; lowered: boolean }) {
     return g
   }, [])
   React.useEffect(() => () => geo.dispose(), [geo])
-  React.useEffect(() => geo.setDrawRange(0, lowered ? FLOW.lowered : FLOW.count), [geo, lowered])
+  React.useEffect(() => geo.setDrawRange(0, QUALITY[quality].flow), [geo, quality])
   const uniforms = React.useMemo(
     () => ({
       uCurve: { value: baked.tex }, uCurveSize: { value: baked.N }, uFlow: { value: 0 }, uTime: { value: 0 }, uSpread: { value: FLOW.radius },
@@ -362,7 +360,7 @@ function CameraRig() {
 
 const STATIONS = ['crew', 'client', 'suite'] as const
 
-export function HeroScene({ sources, lowered, reduced }: { sources: HeroSources; lowered: boolean; reduced: boolean }) {
+export function HeroScene({ sources, quality, reduced }: { sources: HeroSources; quality: Quality; reduced: boolean }) {
   const theme = useHeroTheme()
   const gl = useThree((s) => s.gl)
   const size = useThree((s) => s.size)
@@ -371,8 +369,10 @@ export function HeroScene({ sources, lowered, reduced }: { sources: HeroSources;
   const soft = React.useMemo(() => softTexture(), [])
   React.useEffect(() => () => soft.dispose(), [soft])
   const tall = size.width / size.height < FOV.tallBelowAspect
-  // a screen's picture no wider than it can be shown, even close up
-  const maxWidth = Math.round(Math.min(1400, Math.max(720, size.width * Math.min(window.devicePixelRatio || 1, 1.5) * 0.5)))
+  // a screen's picture no wider than it can be shown, even close up, and no wider than the quality allows
+  // (fixed at the starting quality, so a step down never reloads pictures)
+  const [startQuality] = React.useState(quality)
+  const maxWidth = Math.round(Math.min(QUALITY[startQuality].texture, Math.max(640, size.width * Math.min(window.devicePixelRatio || 1, 1.5) * 0.5)))
 
   // The screens' pictures load station by station, as the visitor nears each one.
   const [armed, setArmed] = React.useState(1)
@@ -411,9 +411,9 @@ export function HeroScene({ sources, lowered, reduced }: { sources: HeroSources;
       <Atmosphere theme={theme} />
       <CameraRig />
       <DeepSky theme={theme} />
-      <Stars theme={theme} lowered={lowered} />
-      <Line theme={theme} lowered={lowered} />
-      <Flow theme={theme} lowered={lowered} />
+      <Stars theme={theme} quality={quality} />
+      <Line theme={theme} />
+      <Flow theme={theme} quality={quality} />
       {STATIONS.map((id, i) => (
         <Station key={id} id={id} theme={theme} sources={sources} soft={soft} anisotropy={anisotropy} tall={tall} maxWidth={maxWidth} armed={armed >= i + 1} />
       ))}
