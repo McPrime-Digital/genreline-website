@@ -20,7 +20,7 @@ import { heroState, presence, skyWeight } from '@/components/hero/state'
 import { CHIPS, FACE, NODES, PANEL, RINGS, SLOTS, TALL_KEEP, TILE, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
 import { live } from '@/components/hero/scene/rig'
 import { PANEL_FRAG, PANEL_VERT, SKY_FRAG, SKY_VERT, STRUCTURE_FRAG, STRUCTURE_VERT } from '@/components/hero/scene/shaders'
-import { chipTexture, getScreenTexture, hsl, labelTexture, tileTexture, type HeroSources, type HeroTheme, type TileKind } from '@/components/hero/scene/textures'
+import { chipTexture, getScreenTexture, hsl, labelTexture, tileTexture, uploadSoon, type HeroSources, type HeroTheme, type TileKind } from '@/components/hero/scene/textures'
 
 export type StationId = 'crew' | 'client' | 'suite'
 const SHOT_OF: Record<StationId, Shot> = { crew: 1, client: 2, suite: 3 }
@@ -116,7 +116,7 @@ function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
   const mesh = React.useRef<Mesh>(null)
   const uniforms = React.useMemo(
     () => ({
-      uMode: { value: s.mode }, uSize: { value: [s.size[0], s.size[1]] }, uColor: { value: theme.dark ? theme.glow.clone() : theme.core.clone() },
+      uSize: { value: [s.size[0], s.size[1]] }, uColor: { value: theme.dark ? theme.glow.clone() : theme.core.clone() },
       uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: theme.dark ? s.opacity[0] : s.opacity[1] },
     }),
     [s, theme],
@@ -139,7 +139,7 @@ function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
       scale={[s.size[0], s.size[1], 1]}
       renderOrder={-5}
     >
-      <shaderMaterial ref={mat} vertexShader={STRUCTURE_VERT} fragmentShader={STRUCTURE_FRAG} uniforms={uniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
+      <shaderMaterial ref={mat} vertexShader={STRUCTURE_VERT} fragmentShader={STRUCTURE_FRAG} defines={{ MODE: s.mode }} uniforms={uniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
     </mesh>
   )
 }
@@ -296,7 +296,6 @@ function Panel({
   const mat = React.useRef<ShaderMaterial>(null)
   const state = React.useRef({ hover: 0, hoverTo: 0, showing: 0 })
   const invalidate = useThree((s) => s.invalidate)
-  const gl = useThree((s) => s.gl)
 
   // Each face's picture and label: asked for once the station is near, kept until the theme changes.
   const [pictures, setPictures] = React.useState<{ key: string; maps: (Texture | null)[]; labels: (Texture | null)[] } | null>(null)
@@ -305,20 +304,21 @@ function Panel({
     if (!armed) return
     let alive = true
     const made: Texture[] = []
-    const keep = (t: Texture | null) => {
+    // made off the main thread where possible, then handed to the GPU one a frame (textures.ts uploadSoon)
+    const keep = async (t: Texture | null) => {
       if (!t) return null
       if (!alive) {
         t.dispose()
         return null
       }
       made.push(t)
-      gl.initTexture(t)
+      await uploadSoon(t)
       return t
     }
     Promise.all(
       faces.map(async (f) => {
-        const map = f.capture ? keep(await getScreenTexture(f.capture, theme.dark, sources, anisotropy, maxWidth, !heroState.reduced)) : null
-        const label = keep(await labelTexture(f.label, sources.icons[f.icon], theme, width / labelH, anisotropy))
+        const map = f.capture ? await keep(await getScreenTexture(f.capture, theme.dark, sources, anisotropy, maxWidth, !heroState.reduced)) : null
+        const label = await keep(await labelTexture(f.label, sources.icons[f.icon], theme, width / labelH, anisotropy))
         return { map, label }
       }),
     ).then((out) => {
@@ -328,17 +328,17 @@ function Panel({
       alive = false
       made.forEach((t) => t.dispose())
     }
-  }, [armed, faces, theme, sources, anisotropy, maxWidth, width, labelH, gl, key])
+  }, [armed, faces, theme, sources, anisotropy, maxWidth, width, labelH, key])
 
   const uniforms = React.useMemo(
     () => ({
       uMap: { value: null as Texture | null }, uLabel: { value: null as Texture | null }, uHasMap: { value: 0 }, uHasLabel: { value: 0 },
-      uArt: { value: faces[0].art }, uSize: { value: [width, height] }, uLabelH: { value: labelH }, uRadius: { value: width * 0.028 },
+      uSize: { value: [width, height] }, uLabelH: { value: labelH }, uRadius: { value: width * 0.028 },
       uOpacity: { value: 0 }, uHover: { value: 0 }, uFocus: { value: 1 }, uTime: { value: 0 }, uSheen: { value: -1 }, uDark: { value: theme.dark ? 1 : 0 },
       uRim: { value: theme.dark ? theme.glow.clone() : theme.core.clone() }, uGlass: { value: theme.glass.clone() }, uInk: { value: theme.ink.clone() },
       uGold: { value: theme.primary.clone() }, uPointer: { value: [0, 0] },
     }),
-    [faces, width, height, labelH, theme],
+    [width, height, labelH, theme],
   )
 
   const show = React.useCallback(
@@ -352,9 +352,8 @@ function Panel({
       m.uniforms.uHasMap.value = map ? 1 : 0
       m.uniforms.uLabel.value = label
       m.uniforms.uHasLabel.value = label ? 1 : 0
-      m.uniforms.uArt.value = faces[face].art
     },
-    [pictures, key, faces],
+    [pictures, key],
   )
   React.useEffect(() => {
     show(state.current.showing)
@@ -435,7 +434,7 @@ function Panel({
     <group ref={group} visible={false}>
       <mesh ref={mesh} position-y={-labelH / 2} scale={[width, height + labelH, 1]} renderOrder={10} {...handlers}>
         <planeGeometry args={[1, 1]} />
-        <shaderMaterial ref={mat} vertexShader={PANEL_VERT} fragmentShader={PANEL_FRAG} uniforms={uniforms} transparent depthWrite={false} />
+        <shaderMaterial ref={mat} vertexShader={PANEL_VERT} fragmentShader={PANEL_FRAG} defines={{ ART: faces[0].art }} uniforms={uniforms} transparent depthWrite={false} />
       </mesh>
     </group>
   )
@@ -449,7 +448,11 @@ function Chips({ theme, sources, anisotropy, armed }: { theme: HeroTheme; source
     if (!armed) return
     let alive = true
     let made: Texture[] = []
-    Promise.all(hero.tools.map((t) => chipTexture(sources.icons[t.icon], theme, anisotropy))).then((list) => {
+    Promise.all(hero.tools.map(async (t) => {
+      const chip = await chipTexture(sources.icons[t.icon], theme, anisotropy)
+      await uploadSoon(chip)
+      return chip
+    })).then((list) => {
       if (alive) {
         made = list
         setMaps(list)

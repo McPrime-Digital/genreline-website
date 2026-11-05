@@ -185,7 +185,8 @@ export const QUALITY = [
   // 0 — modest graphics: budget phones and tablets, older integrated graphics on big screens
   { dpr: 1, pixels: 1.5e6, stars: 1800, flow: 1300, streaks: false, antialias: false, texture: 720 },
   // 1 — the middle: most laptops' integrated graphics, mid-range phones, any GPU the browser will not name
-  { dpr: 1.25, pixels: 2.6e6, stars: 3000, flow: 2400, streaks: true, antialias: true, texture: 1024 },
+  //     (no multisampling: on integrated graphics it costs more than everything else on screen)
+  { dpr: 1.25, pixels: 2.4e6, stars: 3000, flow: 2400, streaks: true, antialias: false, texture: 1024 },
   // 2 — strong graphics: Apple silicon, recent phones, discrete GPUs
   { dpr: 1.5, pixels: 3.8e6, stars: 4200, flow: 3400, streaks: true, antialias: true, texture: 1400 },
 ] as const
@@ -202,11 +203,13 @@ export const LEVELS = [
 export const LEVEL_OF_QUALITY = [2, 3, 4] as const
 
 /**
- * The governor: frames are averaged over `window` seconds (after `settle`
- * seconds to warm up). Below `slow` fps it steps down a level; at the bottom,
- * below `floor` fps twice running, the hero plays as stills. A steady frame
- * rate that is merely capped (30 Hz in a battery saver or Low Power Mode) is
- * not slowness. Stepping up needs `climb` good windows in a row, at most one
- * level above the start, and never back above a level it had to leave.
+ * The governor, judging against the display's own rate (up to 60): frames are
+ * measured over `window` seconds (after `settle` seconds to warm up). Below
+ * `slow` of that rate, or with more than `late` of its frames arriving half
+ * again too late (a stutter), it steps down a level (two, when far off the
+ * pace); at the bottom, below `floor` of the rate twice running, the hero
+ * plays as stills. Stepping up needs `climb` good windows in a row (`good` of
+ * the rate, under `lateGood` late), at most one level above the start, and
+ * never back above a level it had to leave.
  */
-export const GOVERNOR = { window: 1.2, settle: 2.5, slow: 40, floor: 25, good: 55, climb: 5 } as const
+export const GOVERNOR = { window: 1.2, settle: 2.5, slow: 0.85, late: 0.1, floor: 0.45, good: 0.95, lateGood: 0.03, climb: 5 } as const

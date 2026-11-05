@@ -97,7 +97,37 @@ function whenEngaged(fn: () => void) {
 
 const params = () => new URLSearchParams(window.location.search)
 
-type Choice = { tier: 'live'; quality: Quality } | { tier: 'poster' }
+type Choice = { tier: 'live'; quality: Quality; hz: number } | { tier: 'poster' }
+
+/**
+ * The display's own frame rate, measured before the scene starts (so nothing
+ * else is drawing): 60 on most screens, 120–144 on fast ones, 30 under a
+ * battery saver. The governor judges smoothness against it — a steady 30 fps
+ * is the most a capped display can show, but on a 60 Hz screen it is a GPU
+ * that cannot keep up.
+ */
+function displayHz(): Promise<number> {
+  return new Promise((resolve) => {
+    const gaps: number[] = []
+    let last = 0
+    const step = (now: number) => {
+      if (last) gaps.push(now - last)
+      last = now
+      if (gaps.length < 24) requestAnimationFrame(step)
+      else {
+        gaps.sort((a, b) => a - b)
+        const beat = gaps[Math.floor(gaps.length / 2)]
+        resolve(Math.min(240, Math.max(24, Math.round(1000 / beat))))
+      }
+    }
+    requestAnimationFrame(step)
+    // a hidden tab does not draw at all: assume the common screen
+    setTimeout(() => resolve(60), 1500)
+  })
+}
+
+/** Integrated graphics, by the names browsers report. */
+const INTEGRATED = /intel|iris|uhd graphics|hd graphics|radeon\(tm\) graphics|radeon graphics|radeon vega|vega \d|adreno|mali|powervr|xclipse|immortalis/i
 
 /** A renderer that draws in software (no graphics hardware): far too slow for the scene. */
 const SOFTWARE = /swiftshader|llvmpipe|softpipe|software|basic render|mesa offscreen|virtualbox|vmware svga/i
@@ -121,7 +151,7 @@ async function choose(): Promise<Choice> {
   try {
     gl = document.createElement('canvas').getContext('webgl2', { powerPreference: 'high-performance' })
   } catch {}
-  if (!gl) return asked === 'live' ? { tier: 'live', quality: forced ?? 0 } : { tier: 'poster' }
+  if (!gl) return asked === 'live' ? { tier: 'live', quality: forced ?? 0, hz: 60 } : { tier: 'poster' }
   const info = gl.getExtension('WEBGL_debug_renderer_info')
   const renderer = String((info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '')
   if (asked !== 'live' && SOFTWARE.test(renderer)) {
@@ -136,13 +166,17 @@ async function choose(): Promise<Choice> {
     const gpu = await getGPUTier({ benchmarksURL: '/detect-gpu', glContext: gl })
     if (asked !== 'live' && (gpu.type === 'BLOCKLISTED' || gpu.type === 'WEBGL_UNSUPPORTED')) return { tier: 'poster' }
     if (gpu.type === 'BENCHMARK') quality = gpu.tier >= 3 ? 2 : gpu.tier === 2 ? 1 : 0
+    // Integrated graphics (Intel, AMD's laptop chips, phones' GPUs) share the computer's memory, and
+    // benchmarks flatter them on big screens: they start in the middle, without multisampling, and
+    // the governor lets them climb if they can. Apple's GPUs are integrated too but strong.
+    if (INTEGRATED.test(renderer) && !/apple/i.test(renderer)) quality = Math.min(quality, 1) as Quality
     // FALLBACK (a GPU it cannot name — Firefox hides it, for one): the middle, and the governor decides
   } catch {
     // the benchmarks could not be read: start in the middle all the same
   } finally {
     gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
-  return { tier: 'live', quality: forced ?? quality }
+  return { tier: 'live', quality: forced ?? quality, hz: await displayHz() }
 }
 
 /** `?shot=` — hold one shot (for checking by hand, and for rendering the posters). */
@@ -157,6 +191,8 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
   const reduced = reducedPref ?? false
   const [tier, setTier] = React.useState<Tier>('pending')
   const [quality, setQuality] = React.useState<Quality>(1)
+  const [hz, setHz] = React.useState(60)
+  const [ready, setReady] = React.useState(false)
   const [visible, setVisible] = React.useState(true)
   const [stage, setStage] = React.useState<HTMLElement | null>(null)
   // The stage is the scene's event source, so the 3D answers the pointer through the words laid over it.
@@ -185,11 +221,19 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     const posters = Array.from(section.querySelectorAll<HTMLElement>('[data-poster]'))
     const faceCard = section.querySelector<HTMLElement>('[data-faces]')
     const fill = section.querySelector<HTMLElement>('[data-hero-fill]')
+    const cue = section.querySelector<HTMLElement>('.hero-cue')
+    const scrimTitle = section.querySelector<HTMLElement>('[data-scrim="title"]')
+    const scrimCaption = section.querySelector<HTMLElement>('[data-scrim="caption"]')
     const s = heroState
     const held = HELD[params().get('shot') ?? '']
 
     let shown = -1
     let painted = -1
+    // Only opacity and transform are written each frame — the compositor moves them without
+    // repainting anything, so the words cost the GPU nothing while the 3D runs.
+    const set = (el: HTMLElement | null, key: 'opacity' | 'transform', value: string) => {
+      if (el && el.style[key] !== value) el.style[key] = value
+    }
     const paint = () => {
       const p = s.current
       if (p === painted) return
@@ -201,13 +245,14 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
         const w = shotWeight(place, i)
         const leaving = place.seg.kind === 'travel' && place.seg.from === i
         const y = (1 - w) * (leaving ? -14 : 14)
-        card.style.opacity = w.toFixed(3)
-        card.style.transform = w < 1 && !s.reduced ? `translate3d(0, ${y.toFixed(1)}px, 0)` : ''
-        card.dataset.active = w > 0.5 ? 'true' : 'false'
+        set(card, 'opacity', w.toFixed(3))
+        set(card, 'transform', w < 1 && !s.reduced ? `translate3d(0, ${y.toFixed(1)}px, 0)` : '')
+        const active = w > 0.5 ? 'true' : 'false'
+        if (card.dataset.active !== active) card.dataset.active = active
         if (i !== 0) caption = Math.max(caption, w)
-        else section.style.setProperty('--hero-title', w.toFixed(3))
+        else set(scrimTitle, 'opacity', w.toFixed(3))
       })
-      section.style.setProperty('--hero-caption', caption.toFixed(3))
+      set(scrimCaption, 'opacity', caption.toFixed(3))
       const nearest = nearestShot(p)
       if (nearest !== shown) {
         shown = nearest
@@ -221,8 +266,8 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
       if (tierRef.current === 'poster') showPoster(nearest)
       const tc = timecode(p)
       for (const c of clocks) if (c.textContent !== tc) c.textContent = tc
-      if (fill) fill.style.transform = `scaleX(${p.toFixed(4)})`
-      section.style.setProperty('--hero-p', p.toFixed(4))
+      set(fill, 'transform', `scaleX(${p.toFixed(4)})`)
+      set(cue, 'opacity', Math.max(0, 1 - p * 30).toFixed(3))
       // the Client's face: back to Client whenever the station is off screen
       const clientOn = shotWeight(place, 2) > 0.5
       if (!clientOn && s.face !== 0 && !held) setFace(0, false)
@@ -421,8 +466,11 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
           if (!alive) return
           tierRef.current = c.tier
           // the choice, on the page, for anyone checking a device by hand (inspect the element)
-          layer.current?.setAttribute('data-tier', c.tier === 'live' ? `live (quality ${c.quality})` : 'stills')
-          if (c.tier === 'live') setQuality(c.quality)
+          layer.current?.setAttribute('data-tier', c.tier === 'live' ? `live (quality ${c.quality}, display ${c.hz} Hz)` : 'stills')
+          if (c.tier === 'live') {
+            setQuality(c.quality)
+            setHz(c.hz)
+          }
           setTier(c.tier)
           kickRef.current()
         })
@@ -442,9 +490,22 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     }
   }, [])
 
-  const onReady = React.useCallback(() => layer.current?.setAttribute('data-ready', 'true'), [])
+  const onReady = React.useCallback(() => {
+    layer.current?.setAttribute('data-ready', 'true')
+    setReady(true)
+  }, [])
+
+  // While the live 3D is on screen the page marks it, and nothing frosts over it (hero.css).
+  React.useEffect(() => {
+    const on = tier === 'live' && ready && visible
+    const root = document.documentElement
+    if (on) root.dataset.heroLive = 'true'
+    else delete root.dataset.heroLive
+    return () => void delete root.dataset.heroLive
+  }, [tier, ready, visible])
   const onLost = React.useCallback(() => {
     layer.current?.removeAttribute('data-ready')
+    setReady(false)
     layer.current?.setAttribute('data-tier', 'stills (the scene could not run smoothly here)')
     tierRef.current = 'poster'
     setTier('poster')
@@ -455,7 +516,7 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     <div ref={attach} aria-hidden className="hero-scene">
       {tier === 'live' && stage && reducedPref !== null && (
         <Fallback onError={onLost}>
-          <HeroCanvas sources={sources} quality={quality} reduced={reduced} visible={visible} eventSource={stage} onReady={onReady} onLost={onLost} />
+          <HeroCanvas sources={sources} quality={quality} hz={hz} reduced={reduced} visible={visible} eventSource={stage} onReady={onReady} onLost={onLost} />
         </Fallback>
       )}
     </div>

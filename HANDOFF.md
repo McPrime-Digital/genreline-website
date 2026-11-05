@@ -104,7 +104,49 @@ the hero to see its choice: `.hero-scene[data-tier]` (live or stills, and the
 starting quality) and `[data-hero-stage][data-hero-level]` (the governor's
 level and resolution).
 
-## What was built
+## Smooth on Windows (the owner's second report, 2026-11-04)
+
+The owner: *"windows is still not working … its not smooth moving at all."*
+The 3D now ran on Windows, but it stuttered. These were the likely causes,
+each about cost per frame on Windows graphics, and each one is fixed:
+
+1. **Frosted glass over a live canvas.** The header (a 24 px backdrop blur)
+   and the "Talk to sales" button (14 px) sat over the 3D, so the browser
+   re-blurred the moving scene under them every frame, which Windows
+   integrated graphics do slowly. While the live 3D is on screen
+   (`html[data-hero-live]`), neither frosts: the header lies on the hero's own
+   top shade.
+2. **Multisampling (MSAA) on integrated graphics.** On the shared memory of
+   Intel and AMD laptop chips, it cost more than the rest of the scene. On a
+   weak-GPU stand-in it alone cut the frame rate to a third. Now only quality
+   2 uses it, and integrated graphics (Intel, AMD's laptop chips, phone GPUs,
+   though not Apple's) start at quality 1.
+3. **One shader with every branch.** Chrome and Edge on Windows translate
+   shaders for Direct3D, whose compiler often flattens if/else, so every
+   screen pixel could compute all seven Suite drawings. Each kind of screen and
+   structure is now its own small program, chosen when it's built, with
+   nothing to flatten.
+4. **Pictures in bursts.** The screen pictures are now decoded and resized
+   off the main thread (`createImageBitmap`) and handed to the GPU one per
+   frame (`uploadSoon`), from the moment the scene appears, not in bursts
+   mid-journey. On a 6× slower CPU the stalls went from 4 (up to 60 ms) to 0,
+   and the frame rate from 56 to 60.
+5. **Repaints for the words' shade.** The shade behind the words was a
+   gradient repainted every frame through CSS variables. It's now fixed
+   gradients that only fade, which the compositor does without repainting.
+   The hidden closing title's running film stock is paused.
+6. **A governor fooled by a steady 30 fps.** A graphics chip that can't keep
+   up on a 60 Hz screen settles at a steady 30 fps (every second refresh). That
+   looks steady and was mistaken for a battery saver's cap. The display's own
+   rate is now measured before the scene starts, and smoothness is judged
+   against it, counting late frames as well as the average. Far off the pace,
+   the governor steps down two levels at once. A quality change no longer
+   builds a new shader mid-scroll, because the warp streaks stay loaded.
+
+Check a device by hand: `.hero-scene[data-tier]` shows the choice, the
+starting quality and the measured display rate; `[data-hero-level]` shows the
+level the governor settled on; `/?governor=off` holds the starting level.
+
 
 | File | What it does |
 |---|---|
@@ -180,7 +222,7 @@ re-exports only what R3F and the hero use.
 
 | Chunk | gzipped (-9) | When |
 |---|---|---|
-| 3D: three slim + R3F + the whole scene, shaders and governor | **216.9 KB** (was 206.8) | Engaged devices with WebGL 2 |
+| 3D: three slim + R3F + the whole scene, shaders and governor | **217.3 KB** (was 206.8) | Engaged devices with WebGL 2 |
 | GSAP core + ScrollTrigger | ~45 KB | After load, when idle |
 | detect-gpu | ~3 KB | Engaged |
 
@@ -194,7 +236,8 @@ re-exports only what R3F and the hero use.
 
 | | Performance | Accessibility | Best practices | LCP | TBT | CLS |
 |---|---|---|---|---|---|---|
-| This version (4 runs, 2026-11-04) | 94 · 90 · 90 · 90 | 100 | 100 | 3.1–3.6 s | 10 ms | 0 |
+| This version (2026-11-04, after the smoothness work) | 90 · 90 · 90 | — | — | 3.6 s | 10 ms | 0 |
+| 2026-11-04, every-device work (4 runs) | 94 · 90 · 90 · 90 | 100 | 100 | 3.1–3.6 s | 10 ms | 0 |
 | The 2026-11-03 revision (5 runs) | 85 (cold first run) · 90 · 91 · 90 · 90 | 100 | 100 | 3.5–3.6 s (4.3 cold) | 10 ms | 0 |
 | The first version | 89 · 89 · 89 | 100 | 100 | 3.5–3.6 s | 10 ms | 0 |
 | The old hero | 89 · 90 · 90 | 100 | 100 | 3.5–3.6 s | 10 ms | 0 |

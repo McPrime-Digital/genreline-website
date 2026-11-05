@@ -298,8 +298,8 @@ export async function chipTexture(svg: string | undefined, theme: HeroTheme, ani
 
 // ── THE SCREENS ─────────────────────────────────────────────────────────────
 
-/** What a screen can show, resolved on the server: its capture in each theme, and footage if the owner has added it. */
-export type ScreenSource = { light: string | null; dark: string | null; video: string | null }
+/** What a screen can show, resolved on the server: its capture in each theme (and its size), and footage if the owner has added it. */
+export type ScreenSource = { light: string | null; dark: string | null; video: string | null; width: number; height: number }
 /** Everything the scene needs from the server: each screen's pictures, and the drawings of its icons. */
 export type HeroSources = { screens: Record<string, ScreenSource>; icons: Record<string, string> }
 
@@ -343,20 +343,51 @@ export function getScreenTexture(id: string, dark: boolean, sources: HeroSources
     }
     const url = dark ? src.dark ?? src.light : src.light ?? src.dark
     if (!url) return resolve(null)
-    const img = new Image()
-    img.decoding = 'async'
-    img.src = url
-    img
-      .decode()
-      .then(() => {
-        const want = Math.min(img.naturalWidth, maxWidth)
-        if (want >= img.naturalWidth) return resolve(finish(new Texture(img), anisotropy))
-        const [c, g] = canvas(want, Math.round((img.naturalHeight * want) / img.naturalWidth))
-        g.imageSmoothingQuality = 'high'
-        g.drawImage(img, 0, 0, c.width, c.height)
-        resolve(finish(new CanvasTexture(c), anisotropy))
+    const want = Math.min(src.width || maxWidth, maxWidth)
+    const tall = Math.round((want * (src.height || 1616)) / (src.width || 2248))
+    // Decoded and resized off the main thread where the browser can (createImageBitmap), so a
+    // picture arriving mid-journey never stalls a frame; drawn through a canvas where it cannot.
+    fetch(url)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((blob) => createImageBitmap(blob, { resizeWidth: want, resizeHeight: tall, resizeQuality: 'high', imageOrientation: 'flipY' }))
+      .then((bitmap) => {
+        const t = finish(new Texture(bitmap as unknown as HTMLImageElement), anisotropy)
+        t.flipY = false // already flipped while decoding
+        resolve(t)
       })
-      .catch(() => resolve(null))
+      .catch(() => {
+        const img = new Image()
+        img.decoding = 'async'
+        img.src = url
+        img
+          .decode()
+          .then(() => {
+            const [c, g] = canvas(want, tall)
+            g.imageSmoothingQuality = 'high'
+            g.drawImage(img, 0, 0, c.width, c.height)
+            resolve(finish(new CanvasTexture(c), anisotropy))
+          })
+          .catch(() => resolve(null))
+      })
+  })
+}
+
+// ── UPLOADS, ONE A FRAME ────────────────────────────────────────────────────
+//
+// Handing a picture to the GPU (and building its mipmaps) takes a slice of a
+// frame — on some GPUs a large one. The scene's pictures queue here and the
+// Uploader (HeroScene) hands over one a frame, so no frame carries more than
+// one; the governor ignores the frames they touch.
+
+type Upload = { texture: Texture; done: () => void }
+export const uploads = { queue: [] as Upload[], wake: () => {} }
+
+/** Resolves once `texture` is on the GPU (or at once if there is none). */
+export function uploadSoon(texture: Texture | null): Promise<void> {
+  if (!texture) return Promise.resolve()
+  return new Promise((done) => {
+    uploads.queue.push({ texture, done })
+    uploads.wake()
   })
 }
 

@@ -306,7 +306,6 @@ export const STRUCTURE_VERT = /* glsl */ `
   }
 `
 export const STRUCTURE_FRAG = /* glsl */ `
-  uniform int uMode;
   uniform vec2 uSize;
   uniform vec3 uColor;
   uniform float uTime;
@@ -321,27 +320,27 @@ export const STRUCTURE_FRAG = /* glsl */ `
   void main() {
     vec2 p = (vUv - 0.5) * uSize;
     float a = 0.0;
-    if (uMode == 0) {
+    #if MODE == 0
       // the floor: minor and major lines, fading into the distance and to the sides
       float minor = max(gridLine(p.x, 2.0), gridLine(p.y, 2.0)) * 0.35;
       float major = max(gridLine(p.x, 10.0), gridLine(p.y, 10.0));
       float fade = smoothstep(uSize.y * 0.5, uSize.y * 0.08, abs(p.y + uSize.y * 0.08)) * smoothstep(uSize.x * 0.5, uSize.x * 0.12, abs(p.x));
       float sweep = exp(-pow((p.y - (fract(uTime * 0.05) - 0.5) * uSize.y) / 2.5, 2.0));
       a = max(minor, major * 0.8) * fade * (0.55 + 1.2 * sweep);
-    } else if (uMode == 1) {
+    #elif MODE == 1
       // the portal: rings opening outward from the tile
       float r = length(p);
       float rings = gridLine(r - uTime * 0.6, 2.2);
       float fade = smoothstep(uSize.x * 0.48, 3.0, r) * smoothstep(2.2, 5.0, r);
       a = rings * fade * 0.9;
-    } else {
+    #else
       // the rays: a fan of light turning slowly behind the tile
       float r = length(p);
       float ang = atan(p.y, p.x) + uTime * 0.025;
       float rays = pow(0.5 + 0.5 * cos(ang * 18.0), 14.0);
       float fade = smoothstep(uSize.x * 0.5, 4.0, r) * smoothstep(2.5, 7.0, r);
       a = rays * fade * 0.75;
-    }
+    #endif
     gl_FragColor = vec4(uColor, a * uWeight * uOpacity);
     ${OUT}
   }
@@ -350,7 +349,9 @@ export const STRUCTURE_FRAG = /* glsl */ `
 // ── THE SCREENS ─────────────────────────────────────────────────────────────
 
 /**
- * One draw per screen: the rounded screen itself (a capture, or a drawn piece
+ * One draw per screen, one small program per kind of screen (ART: 0 a
+ * capture, 1–6 a Suite tool drawn — chosen when the program is built, so no
+ * graphics compiler ever has to carry, or flatten, the others): the rounded screen itself (a capture, or a drawn piece
  * of a Suite tool at work, or — until its picture arrives — a shimmering
  * skeleton of an app), a rim of light, a sheen of glass, and its label below.
  */
@@ -366,7 +367,6 @@ export const PANEL_FRAG = /* glsl */ `
   uniform sampler2D uLabel;
   uniform float uHasMap;
   uniform float uHasLabel;
-  uniform int uArt;
   uniform vec2 uSize;
   uniform float uLabelH;
   uniform float uRadius;
@@ -394,6 +394,7 @@ export const PANEL_FRAG = /* glsl */ `
     return 1.0 - smoothstep(-0.004, 0.004, d);
   }
 
+  #if ART > 0
   // a dusk shot: the sky, the sun low, a ridge against it
   vec3 stageShot(vec2 p, vec2 a) {
     vec3 c = mix(vec3(0.95, 0.62, 0.34), vec3(0.16, 0.18, 0.36), smoothstep(0.25, 0.95, p.y));
@@ -411,7 +412,7 @@ export const PANEL_FRAG = /* glsl */ `
     vec3 dim = mix(vec3(0.22, 0.22, 0.26), vec3(0.78, 0.77, 0.74), 1.0 - uDark);
     vec3 col = base;
     float t = uTime;
-    if (uArt == 1) {
+    #if ART == 1
       // Write: a screenplay page, its lines typing in, the cursor blinking
       col = mix(vec3(0.9, 0.89, 0.86), vec3(1.0), 1.0 - uDark) * (uDark > 0.5 ? 0.86 : 1.0);
       vec3 ink = vec3(0.28, 0.27, 0.3);
@@ -430,7 +431,7 @@ export const PANEL_FRAG = /* glsl */ `
         float cursor = step(abs(uv.x - x1 - 0.008), 0.004) * step(0.5, fract(t * 1.6)) * step(idx, typed) * step(typed, idx + 1.0);
         col = mix(col, gold, cursor);
       }
-    } else if (uArt == 2) {
+    #elif ART == 2
       // Visualise: a storyboard — six sketched frames (a horizon, a figure, the lines of the shot), a gold brush stroke painting across them
       vec2 cell = vec2(3.0, 2.0);
       vec2 g = uv * cell;
@@ -456,7 +457,7 @@ export const PANEL_FRAG = /* glsl */ `
       float sy = 0.52 + 0.17 * sin(uv.x * 7.0 + 1.3) + 0.05 * sin(uv.x * 19.0);
       float stroke = smoothstep(0.03, 0.0, abs(uv.y - sy) - 0.011 * (1.0 + sin(uv.x * 30.0) * 0.3)) * step(uv.x, reveal);
       col = mix(col, gold, stroke * 0.9);
-    } else if (uArt == 3) {
+    #elif ART == 3
       // The Stage: a frame being generated — it resolves from soft blocks to a dusk shot, line by line, then holds
       float scan = clamp(fract(t * 0.12) * 1.7, 0.0, 1.0);
       vec2 coarse = (floor(uv * vec2(18.0, 10.0)) + 0.5) / vec2(18.0, 10.0);
@@ -467,7 +468,7 @@ export const PANEL_FRAG = /* glsl */ `
       col += gold * smoothstep(0.014, 0.0, abs(uv.y - (1.0 - scan))) * (1.0 - step(0.999, scan)) * 0.9;
       float bars = step(uv.y, 0.08) + step(0.92, uv.y);
       col = mix(col, vec3(0.0), bars);
-    } else if (uArt == 4) {
+    #elif ART == 4
       // Workflows: nodes joined by curves, work travelling along them
       vec2 n0 = vec2(0.14, 0.5), n1 = vec2(0.42, 0.75), n2 = vec2(0.42, 0.28), n3 = vec2(0.7, 0.55), n4 = vec2(0.88, 0.3);
       vec2 P = uv;
@@ -494,7 +495,7 @@ export const PANEL_FRAG = /* glsl */ `
         col = mix(col, mix(base, gold, 0.12), box);
         col = mix(col, gold, ring * 0.9);
       }
-    } else if (uArt == 5) {
+    #elif ART == 5
       // Sound: three voices of a waveform, moving, louder under the pointer
       float y = uv.y - 0.5;
       float loud = 1.0 + uHover * 0.8;
@@ -512,7 +513,7 @@ export const PANEL_FRAG = /* glsl */ `
       bars = step(abs(y), bh) * step(0.25, fract(uv.x * 64.0)) * 0.22;
       col = mix(base, dim, bars);
       col = mix(col, gold, w);
-    } else if (uArt == 6) {
+    #elif ART == 6
       // Edit and finish: a timeline — the ruler, four tracks of clips, the playhead
       float ruler = step(0.86, uv.y) * step(0.5, fract(uv.x * 40.0)) * step(uv.y, 0.86 + 0.04 + 0.04 * step(0.9, fract(uv.x * 8.0)));
       col = mix(base, dim, ruler * 0.8);
@@ -530,9 +531,10 @@ export const PANEL_FRAG = /* glsl */ `
       }
       float ph = fract(t * 0.08) * 0.92 + 0.04;
       col = mix(col, gold, smoothstep(0.004, 0.0, abs(uv.x - ph)));
-    }
+    #endif
     return pow(max(col, 0.0), vec3(2.2));
   }
+  #endif
 
   void main() {
     vec2 full = vec2(uSize.x, uSize.y + uLabelH);
@@ -549,9 +551,10 @@ export const PANEL_FRAG = /* glsl */ `
     float alpha = 0.0;
     if (p.y >= uLabelH) {
       alpha = 1.0 - smoothstep(-px, px, d);
-      if (uArt > 0) {
+      #if ART > 0
         col = art(uv, uSize.x / uSize.y);
-      } else if (uHasMap > 0.5) {
+      #else
+      if (uHasMap > 0.5) {
         col = picture;
       } else {
         // the skeleton of an app while the picture loads: a sidebar, a header, rows, a shimmer passing
@@ -566,6 +569,7 @@ export const PANEL_FRAG = /* glsl */ `
         float sh = exp(-pow((uv.x + uv.y * 0.3) - (fract(uTime * 0.35) * 2.0 - 0.4), 2.0) * 30.0);
         col += sh * 0.05;
       }
+      #endif
       // the glass: a light from above, a sheen that sweeps as the screen arrives, the rim
       col *= 0.9 + 0.1 * uv.y;
       float s = (uv.x + uv.y * 0.45) - uSheen;

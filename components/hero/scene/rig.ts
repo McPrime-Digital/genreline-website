@@ -46,6 +46,10 @@ export const live = {
   time: 0,
   /** The pointer over the stage, −1…1 (y up), and whether it is there at all. */
   pointer: { x: 0, y: 0, on: 0 },
+  /** Every shader is built and the first frame is up (HeroCanvas). */
+  ready: false,
+  /** Until this moment (performance.now()) a frame may carry a picture's upload: the governor looks away. */
+  busyUntil: 0,
 }
 
 export type View = { pos: Vector3; look: Vector3; fov: number; shift: [number, number] }

@@ -44,7 +44,7 @@ const pub = (p: string) => existsSync(join(process.cwd(), 'public', p))
 /** What the 3D needs from the server: every screen's capture in each theme (and footage, if the owner has added it), and its icons' drawings. */
 function heroSources(): HeroSources {
   const f = join(process.cwd(), 'public', 'captures', 'dimensions.json')
-  const dims: Record<string, { file?: string }> = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}
+  const dims: Record<string, { file?: string; w?: number; h?: number }> = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}
   const file = (id: string, theme: 'light' | 'dark') => {
     const name = dims[`${id}.${theme}`]?.file
     return name && pub(`captures/${name}`) ? `/captures/${name}` : null
@@ -53,7 +53,8 @@ function heroSources(): HeroSources {
   for (const id of HERO_CAPTURES) {
     // The owner's footage, when it exists, plays instead (textures.ts getScreenTexture).
     const video = `media/hero-${id}.mp4`
-    screens[id] = { light: file(id, 'light'), dark: file(id, 'dark'), video: pub(video) ? `/${video}` : null }
+    const size = dims[`${id}.dark`] ?? dims[`${id}.light`] ?? {}
+    screens[id] = { light: file(id, 'light'), dark: file(id, 'dark'), video: pub(video) ? `/${video}` : null, width: size.w ?? 2248, height: size.h ?? 1616 }
   }
   const drawn: HeroSources['icons'] = {}
   for (const name of HERO_ICONS) drawn[name] = icons[name] as unknown as string
@@ -170,7 +171,11 @@ export function HomeHero() {
           <Poster key={`light-${shot}`} theme="light" shot={shot} />
         ))}
         <HeroDirector sources={sources} />
-        <div aria-hidden className="hero-shade" />
+        {/* the shade: fixed gradients behind the words, faded (never repainted) as the words come and go */}
+        <div aria-hidden className="hero-shade">
+          <i data-scrim="title" className="hero-scrim hero-scrim-title" />
+          <i data-scrim="caption" className="hero-scrim hero-scrim-caption" />
+        </div>
 
         {/* THE SLATE LINE — a camera's top bar, over every shot: REC at one end,
             the scene's timecode at the other, the line itself between two gold rules. */}

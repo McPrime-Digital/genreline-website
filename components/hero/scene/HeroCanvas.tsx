@@ -23,6 +23,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { WebGLRenderer } from 'three'
 import { HeroScene } from '@/components/hero/scene/HeroScene'
 import { FOV, GOVERNOR, LEVEL_OF_QUALITY, LEVELS, QUALITY, type Quality } from '@/components/hero/scene/numbers'
+import { live } from '@/components/hero/scene/rig'
 import type { HeroSources } from '@/components/hero/scene/textures'
 
 /**
@@ -60,8 +61,12 @@ function Ready({ onReady, onFailed }: { onReady: () => void; onFailed: () => voi
         })
         if (broken) return onFailed()
         compiled.current = true
+        live.ready = true
         invalidate()
       })
+    return () => {
+      live.ready = false
+    }
   }, [get, onFailed])
   // and if the scene is not drawing within 20 s for any reason (a driver stuck building shaders), the stills
   React.useEffect(() => {
@@ -78,46 +83,53 @@ function Ready({ onReady, onFailed }: { onReady: () => void; onFailed: () => voi
   return null
 }
 
-/** The governor: measures the frame rate the device delivers and moves the level (see numbers.ts GOVERNOR). */
-function Governor({ level, start, onLevel, onTooSlow }: { level: number; start: number; onLevel: (l: number) => void; onTooSlow: () => void }) {
-  const st = React.useRef({ settle: GOVERNOR.settle as number, sum: 0, frames: 0, min: Infinity, good: 0, floorSlow: 0, cap: Math.min(LEVELS.length - 1, start + 1) })
+/**
+ * The governor: measures how the device actually runs the scene and moves the
+ * level (numbers.ts GOVERNOR). It judges against the display's own rate,
+ * measured before the scene started (`hz`): smooth is that rate, or 60 fps on
+ * a faster screen — steadily. A frame half again as long as that beat reads as
+ * a stutter even when the average looks fine, so late frames count as much as
+ * the average. Frames that carry a picture's upload are not held against it.
+ */
+function Governor({ level, start, hz, onLevel, onTooSlow }: { level: number; start: number; hz: number; onLevel: (l: number) => void; onTooSlow: () => void }) {
+  const st = React.useRef({ settle: GOVERNOR.settle as number, frames: [] as number[], sum: 0, good: 0, floorSlow: 0, cap: Math.min(LEVELS.length - 1, start + 1) })
+  // the rate that reads as smooth here: the display's, up to 60
+  const target = Math.min(hz, 60)
   useFrame((_, dt) => {
     const s = st.current
-    // a frame longer than a quarter second is a hidden tab or a stall, not the scene's pace
-    if (dt > 0.25) {
+    // a frame longer than a quarter second is a hidden tab or a stall, not the scene's pace; a frame
+    // carrying an upload is the upload's
+    if (dt > 0.25 || performance.now() < live.busyUntil) {
+      s.frames.length = 0
       s.sum = 0
-      s.frames = 0
-      s.min = Infinity
       return
     }
     if (s.settle > 0) {
       s.settle -= dt
       return
     }
+    s.frames.push(dt)
     s.sum += dt
-    s.frames++
-    s.min = Math.min(s.min, dt)
     if (s.sum < GOVERNOR.window) return
-    const avg = s.sum / s.frames
-    const fps = 1 / avg
-    // a steady rate held down by the display or a battery saver (30 Hz): not slowness
-    const capped = avg <= s.min * 1.15 && fps > 27
+    const fps = s.frames.length / s.sum
+    const late = s.frames.filter((f) => f > 1.5 / target).length / s.frames.length
+    s.frames.length = 0
     s.sum = 0
-    s.frames = 0
-    s.min = Infinity
-    if (fps < GOVERNOR.slow && !capped) {
+    if (fps < target * GOVERNOR.slow || late > GOVERNOR.late) {
       s.good = 0
       if (level > 0) {
-        s.cap = level - 1
+        // far off the pace: two steps at once
+        const to = fps < target * 0.6 ? Math.max(0, level - 2) : level - 1
+        s.cap = to
         s.settle = 1
-        onLevel(level - 1)
-      } else if (fps < GOVERNOR.floor && ++s.floorSlow >= 2) {
+        onLevel(to)
+      } else if ((fps < target * GOVERNOR.floor || late > 0.25) && ++s.floorSlow >= 2) {
         onTooSlow()
       }
       return
     }
     s.floorSlow = 0
-    if (fps >= GOVERNOR.good && level < s.cap) {
+    if (fps >= target * GOVERNOR.good && late < GOVERNOR.lateGood && level < s.cap) {
       if (++s.good >= GOVERNOR.climb) {
         s.good = 0
         s.settle = 1
@@ -149,6 +161,8 @@ function useViewport() {
 export type HeroCanvasProps = {
   sources: HeroSources
   quality: Quality
+  /** The display's own frame rate, measured before the scene started. */
+  hz: number
   reduced: boolean
   visible: boolean
   eventSource: HTMLElement
@@ -156,8 +170,10 @@ export type HeroCanvasProps = {
   onLost: () => void
 }
 
-export default function HeroCanvas({ sources, quality, reduced, visible, eventSource, onReady, onLost }: HeroCanvasProps) {
+export default function HeroCanvas({ sources, quality, hz, reduced, visible, eventSource, onReady, onLost }: HeroCanvasProps) {
   const start = LEVEL_OF_QUALITY[quality]
+  // `?governor=off` holds the starting level, for measuring a device by hand
+  const [governed] = React.useState(() => new URLSearchParams(window.location.search).get('governor') !== 'off')
   const [level, setLevel] = React.useState<number>(start)
   const { w, h } = useViewport()
   const dpr = dprFor(level, w, h)
@@ -187,7 +203,7 @@ export default function HeroCanvas({ sources, quality, reduced, visible, eventSo
       eventPrefix="client"
       style={{ position: 'absolute', inset: 0 }}
     >
-      {!reduced && visible && <Governor level={level} start={start} onLevel={setLevel} onTooSlow={onLost} />}
+      {!reduced && visible && governed && <Governor level={level} start={start} hz={hz} onLevel={setLevel} onTooSlow={onLost} />}
       <HeroScene sources={sources} quality={LEVELS[level].quality} reduced={reduced} />
       <Ready onReady={onReady} onFailed={onLost} />
     </Canvas>

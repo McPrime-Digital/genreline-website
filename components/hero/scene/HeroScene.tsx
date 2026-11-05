@@ -23,7 +23,7 @@ import {
   FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, SKY_FRAG, SKY_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
 } from '@/components/hero/scene/shaders'
 import { Station } from '@/components/hero/scene/Station'
-import { hsl, readTheme, releaseFootage, setFootagePlaying, softTexture, type HeroSources, type HeroTheme } from '@/components/hero/scene/textures'
+import { hsl, readTheme, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme } from '@/components/hero/scene/textures'
 
 /** A seeded random, so the stars lie the same way on every visit (and in the posters). */
 function seeded(seed: number) {
@@ -127,11 +127,10 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
       <points geometry={geos.stars} frustumCulled={false} renderOrder={-4}>
         <shaderMaterial ref={starMat} vertexShader={STAR_VERT} fragmentShader={STAR_FRAG} uniforms={starUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
       </points>
-      {QUALITY[quality].streaks && (
-        <lineSegments geometry={geos.streaks} frustumCulled={false} renderOrder={-3}>
-          <shaderMaterial ref={streakMat} vertexShader={STREAK_VERT} fragmentShader={STREAK_FRAG} uniforms={streakUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
-        </lineSegments>
-      )}
+      {/* always mounted (built once, up front); a quality without streaks just hides them */}
+      <lineSegments geometry={geos.streaks} frustumCulled={false} renderOrder={-3} visible={QUALITY[quality].streaks}>
+        <shaderMaterial ref={streakMat} vertexShader={STREAK_VERT} fragmentShader={STREAK_FRAG} uniforms={streakUniforms} transparent depthWrite={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
+      </lineSegments>
     </>
   )
 }
@@ -356,6 +355,33 @@ function CameraRig() {
   return null
 }
 
+// ── UPLOADS ─────────────────────────────────────────────────────────────────
+
+/** Hands the queued pictures to the GPU, one a frame, once the scene is up (textures.ts uploadSoon). */
+function Uploader() {
+  const gl = useThree((s) => s.gl)
+  const invalidate = useThree((s) => s.invalidate)
+  React.useEffect(() => {
+    uploads.wake = () => invalidate()
+    return () => {
+      uploads.wake = () => {}
+      uploads.queue.length = 0
+    }
+  }, [invalidate])
+  useFrame(() => {
+    if (!live.ready || uploads.queue.length === 0) return
+    const next = uploads.queue.shift()!
+    gl.initTexture(next.texture)
+    // a decoded bitmap's pixels now live on the GPU: let the browser free its copy
+    const img = next.texture.image as { close?: () => void } | null
+    if (typeof ImageBitmap !== 'undefined' && img instanceof ImageBitmap) img.close?.()
+    live.busyUntil = performance.now() + 150
+    next.done()
+    if (uploads.queue.length) invalidate()
+  })
+  return null
+}
+
 // ── THE WHOLE SCENE ─────────────────────────────────────────────────────────
 
 const STATIONS = ['crew', 'client', 'suite'] as const
@@ -374,18 +400,6 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
   const [startQuality] = React.useState(quality)
   const maxWidth = Math.round(Math.min(QUALITY[startQuality].texture, Math.max(640, size.width * Math.min(window.devicePixelRatio || 1, 1.5) * 0.5)))
 
-  // The screens' pictures load station by station, as the visitor nears each one.
-  const [armed, setArmed] = React.useState(1)
-  const armedRef = React.useRef(1)
-  useFrame(() => {
-    const p = live.place
-    if (!p) return
-    const reach = p.seg.kind === 'hold' ? p.seg.shot + 1 : Math.max(p.seg.from, p.seg.to) + 1
-    if (reach > armedRef.current) {
-      armedRef.current = reach
-      setArmed(reach)
-    }
-  })
 
   React.useEffect(() => {
     heroState.invalidate = () => invalidate()
@@ -410,12 +424,14 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
     <>
       <Atmosphere theme={theme} />
       <CameraRig />
+      <Uploader />
       <DeepSky theme={theme} />
       <Stars theme={theme} quality={quality} />
       <Line theme={theme} />
       <Flow theme={theme} quality={quality} />
-      {STATIONS.map((id, i) => (
-        <Station key={id} id={id} theme={theme} sources={sources} soft={soft} anisotropy={anisotropy} tall={tall} maxWidth={maxWidth} armed={armed >= i + 1} />
+      {STATIONS.map((id) => (
+        // every station's pictures start loading at once, in the order of the journey; they reach the GPU one a frame
+        <Station key={id} id={id} theme={theme} sources={sources} soft={soft} anisotropy={anisotropy} tall={tall} maxWidth={maxWidth} armed />
       ))}
     </>
   )
