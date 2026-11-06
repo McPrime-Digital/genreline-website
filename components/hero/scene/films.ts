@@ -13,7 +13,7 @@
  * frame (requestVideoFrameCallback) — 24 times a second at most, one film at a time.
  */
 import { Color, LinearFilter, SRGBColorSpace, Texture, VideoTexture } from 'three'
-import { HERO_FILMS, type HeroFilm } from '@/content/hero-films'
+import { FILM_ATLAS, HERO_FILMS, type HeroFilm } from '@/content/hero-films'
 import { heroState } from '@/components/hero/state'
 import { uploadSoon } from '@/components/hero/scene/textures'
 
@@ -121,6 +121,11 @@ export function rewindFilm(id: string) {
   const v = films.get(id)?.video
   if (v) v.currentTime = 0
 }
+/** A film plays round and round (the title's projector), or once through (its own way: content/hero-films.ts). */
+export function loopFilm(id: string, loop: boolean) {
+  const f = films.get(id)
+  if (f?.video) f.video.loop = loop || f.spec.loop
+}
 /** Whether a film is playing now. */
 export function filmPlaying(id: string) {
   const f = films.get(id)
@@ -182,6 +187,26 @@ export function directFilms() {
   }
 }
 
+/** The films' stills in one picture (4 × 4: content/hero-films.ts FILM_ATLAS), for the Suite's floor: fetched once, when first asked for. */
+export const filmAtlas = { texture: null as Texture | null, asked: false }
+export function wantAtlas() {
+  if (filmAtlas.asked) return
+  filmAtlas.asked = true
+  fetch(FILM_ATLAS)
+    .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+    .then((blob) => createImageBitmap(blob, { imageOrientation: 'flipY' }))
+    .then(async (bitmap) => {
+      const t = new Texture(bitmap as unknown as HTMLImageElement)
+      t.colorSpace = SRGBColorSpace
+      t.flipY = false
+      t.needsUpdate = true
+      await uploadSoon(t)
+      filmAtlas.texture = t
+      heroState.invalidate()
+    })
+    .catch(() => {})
+}
+
 /** The scene is going away: stop every film and let the browser drop its footage. */
 export function releaseFilms() {
   for (const f of films.values()) {
@@ -198,4 +223,7 @@ export function releaseFilms() {
     f.stillAsked = false
     f.want = 0
   }
+  filmAtlas.texture?.dispose()
+  filmAtlas.texture = null
+  filmAtlas.asked = false
 }

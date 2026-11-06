@@ -24,21 +24,61 @@ const SOFT_POINT = /* glsl */ `
  * far end of the field as it passes the near one, fading in and out at the ends so none pops.
  */
 /**
- * The far worlds are farther than any star (the stars only fill a box around the line): a star that falls
- * on one's body on screen is behind it, and hidden. Each is a disc on screen (x, y, radius in the frame's
- * half-heights; w how present it is).
+ * A change of sky, at a point of the screen (s: 0–1 across it; a: its width over its height; n: a 0–1 noise
+ * there, for the dissolve): how much of the leaving sky shows (x), of the arriving one (y), the light of the
+ * change itself (z) and its kind (w: 0 a gold rim, 1 a warm leak, 2 a cool line, 3 white). The changes that
+ * travel (push, pull, whip, spin, hyperspace) show both whole: their skies move instead (universe.ts
+ * skyMotion). Shared by the sky and the stars, so an iris, a wipe or a dissolve sweeps across both.
  */
-const BEHIND_FAR = /* glsl */ `
-  uniform vec4 uFar[4];
-  uniform float uAspect;
-  float behindFar(vec4 clip) {
-    vec2 ndc = clip.xy / clip.w;
-    float k = 1.0;
-    for (int i = 0; i < 4; i++) {
-      float d = length((ndc - uFar[i].xy) * vec2(uAspect, 1.0));
-      k *= 1.0 - uFar[i].w * smoothstep(uFar[i].z * 1.04, uFar[i].z * 0.94, d);
+const CHANGE = /* glsl */ `
+  uniform float uK;
+  uniform float uStyle;
+  uniform vec2 uDir;
+  vec4 changeAt(vec2 s, float a, float n) {
+    int st = int(uStyle + 0.5);
+    float k = uK;
+    vec2 p = (s - 0.5) * vec2(a, 1.0);
+    if (st == 4) {
+      // an iris, as the films closed a scene: it closes on the old to black, opens on the new, a gold rim round it
+      float R = 0.5 * length(vec2(a, 1.0)) * 1.02;
+      float d = length(p);
+      float r = k < 0.5 ? (1.0 - k * 2.0) * R : (k * 2.0 - 1.0) * R;
+      float inside = smoothstep(r + 0.004, r - 0.004, d);
+      float rim = exp(-pow((d - r) / 0.004, 2.0)) * smoothstep(0.0, 0.04, min(k, 1.0 - k)) * smoothstep(0.0, 0.03, abs(k - 0.5)) * 0.7;
+      return k < 0.5 ? vec4(inside, 0.0, rim, 0.0) : vec4(0.0, inside, rim, 0.0);
     }
-    return k;
+    if (st == 5) {
+      // a dissolve through a fine grain, soft-edged, a faint shimmer where the new arrives
+      float old = smoothstep(k - 0.16, k + 0.16, n);
+      return vec4(old, 1.0 - old, exp(-pow((n - k) / 0.03, 2.0)) * sin(3.14159 * k) * 0.12, 3.0);
+    }
+    if (st == 6) {
+      // a light leak, as at the end of a roll: warm light washes across, and the new is there under it
+      float x = smoothstep(0.35, 0.65, k);
+      vec2 lp = p - uDir * vec2(a * 0.5, 0.5) * (1.7 - 3.4 * k);
+      float leak = exp(-dot(lp, lp) / 0.05) + 0.5 * exp(-dot(lp * vec2(0.45, 1.3), lp * vec2(0.45, 1.3)) / 0.12);
+      return vec4(1.0 - x, x, leak * sin(3.14159 * k) * 0.32, 1.0);
+    }
+    if (st == 7) {
+      // an anamorphic wipe: a line of light sweeps across, the new behind it, its flare streaking sideways
+      float sx = uDir.x >= 0.0 ? 1.0 : -1.0;
+      float e = sx * mix(-0.56 * a, 0.56 * a, k);
+      float swept = smoothstep(-0.003, 0.003, sx * (e - p.x));
+      float line = exp(-pow((p.x - e) / 0.004, 2.0)) * 0.8 + exp(-pow(p.y / 0.005, 2.0)) * exp(-abs(p.x - e) * 4.0) * 0.45;
+      return vec4(1.0 - swept, swept, line * sin(3.14159 * k), 2.0);
+    }
+    if (st == 8) {
+      // a fade through black: the old goes, a breath of dark, the new comes
+      return vec4(1.0 - smoothstep(0.0, 0.42, k), smoothstep(0.58, 1.0, k), 0.0, 0.0);
+    }
+    if (st == 9) {
+      // hyperspace: a white flash at its height
+      return vec4(1.0, 1.0, exp(-pow((k - 0.5) / 0.09, 2.0)) * 0.22, 3.0);
+    }
+    return vec4(1.0, 1.0, 0.0, 0.0);
+  }
+  vec3 changeLight(float kind) {
+    return kind < 0.5 ? vec3(1.0, 0.82, 0.48) : kind < 1.5 ? vec3(1.0, 0.62, 0.32) : kind < 2.5 ? vec3(0.7, 0.85, 1.0) : vec3(0.95, 0.96, 1.0);
   }
 `
 const STREAM = /* glsl */ `
@@ -58,29 +98,44 @@ export const STAR_VERT = /* glsl */ `
   attribute float aTint;
   uniform float uTime;
   uniform float uPixel;
+  uniform float uAspect;
+  uniform float uRoll;
+  uniform vec2 uStars;
+  uniform vec2 uShow;
   varying float vAlpha;
   varying float vTint;
   ${STREAM}
-  ${BEHIND_FAR}
+  ${CHANGE}
+  // each sky has its own of the stars (most of them): a change shows the old sky's going, the new sky's coming
+  float own(float seed) { return step(fract(sin(aPhase * 917.3 + seed * 13.7) * 43758.5453), 0.8); }
   void main() {
     float edge;
     vec4 mv = modelViewMatrix * vec4(streamed(position, edge), 1.0);
+    // a spin turns the whole field
+    float c = cos(uRoll);
+    float s = sin(uRoll);
+    mv.xy = mat2(c, s, -s, c) * mv.xy;
     float depth = -mv.z;
     gl_Position = projectionMatrix * mv;
-    edge *= behindFar(gl_Position);
-    gl_PointSize = clamp(aSize * uPixel / max(depth, 0.1), 1.0, 7.5);
+    vec2 scr = gl_Position.xy / max(gl_Position.w, 1e-4) * 0.5 + 0.5;
+    vec4 m = changeAt(scr, uAspect, fract(aPhase * 57.31));
+    float shown = min(1.0, own(uStars.x) * uShow.x * m.x + own(uStars.y) * uShow.y * m.y);
+    // most twinkle; a few pulse, slow and deep (the owner: "some pulsating")
+    float pulsing = step(0.93, fract(aPhase * 13.71));
     float twinkle = 0.72 + 0.28 * sin(uTime * (0.6 + aPhase * 1.7) + aPhase * 40.0);
-    vAlpha = twinkle * edge * smoothstep(2.0, 9.0, depth) * smoothstep(260.0, 120.0, depth);
+    float pulse = 0.1 + 1.1 * pow(0.5 + 0.5 * sin(uTime * (0.45 + aPhase * 0.7) + aPhase * 23.0), 2.0);
+    gl_PointSize = clamp(aSize * (1.0 + 0.6 * pulsing) * uPixel / max(depth, 0.1), 1.0, 8.5);
+    vAlpha = mix(twinkle, pulse, pulsing) * shown * edge * smoothstep(2.0, 9.0, depth) * smoothstep(260.0, 120.0, depth);
     vTint = aTint;
   }
 `
 
-// ── THE DEEP SKY'S OBJECTS: DISTANT GALAXIES, AND STARS THROUGH A STAR FILTER ─
+// ── THE DEEP SKY'S BRIGHT STARS, THROUGH A STAR FILTER ──────────────────────
 
 /**
- * Small quads on the deep sky, each belonging to one of the four galaxies (aEra) and showing with it:
- * far spiral galaxies (KIND 0), and a few bright stars drawn the way a cinematographer's star filter
- * draws them, four soft spikes (KIND 1). They swell past or grow in with their galaxy on a journey.
+ * Small quads on the deep sky: a few bright stars drawn the way a cinematographer's star filter draws them,
+ * four soft spikes (KIND 1). (KIND 0, far spiral galaxies, is no longer drawn: the owner, 2026-11-06, wants
+ * nothing in the sky but stars and a subtle nebula.)
  */
 export const SKYOBJ_VERT = /* glsl */ `
   attribute vec2 aCorner;
@@ -233,7 +288,13 @@ export const FILM_FRAG = /* glsl */ `
     // the grain rides the picture's own light (added in linear light it would pepper the blacks)
     c *= 1.0 + (h2(gl_FragCoord.xy + frame * 17.0) - 0.5) * 0.16;
     c = max(c, 0.0) * uBright;
-    #ifdef LED
+    #ifdef PROJECTED
+      // thrown on the dark by the title's projector: the picture as faint light, its edges soft, the lamp's
+      // flicker through it (drawn added to the sky)
+      float soft = smoothstep(0.0, 0.05, q.x) * smoothstep(1.0, 0.95, q.x) * smoothstep(0.0, 0.07, q.y) * smoothstep(1.0, 0.93, q.y);
+      float flick = 0.93 + 0.07 * sin(uTime * 41.0) * sin(uTime * 17.0);
+      gl_FragColor = vec4(c * flick, inside * soft * uWeight);
+    #elif defined(LED)
       // the wall itself: its LEDs a fine grid, its panels' seams, dark and idle beyond the picture
       vec2 led = fract(vec2(uvF.x * uScreen, uvF.y) * 160.0) - 0.5;
       float dots = 0.8 + 0.2 * smoothstep(0.5, 0.2, length(led));
@@ -241,7 +302,9 @@ export const FILM_FRAG = /* glsl */ `
       float seam = 1.0 - 0.35 * (step(panel.x, 0.012) + step(panel.y, 0.018));
       vec3 idle = vec3(0.016, 0.018, 0.024) * (0.6 + 0.4 * smoothstep(0.0, 0.6, uvF.y));
       c = mix(idle, c, inside) * dots * seam;
-      gl_FragColor = vec4(c, uWeight);
+      // its edges feathered into the dark (no hard frame round the picture)
+      float feather = smoothstep(0.0, 0.035, uvF.x) * smoothstep(1.0, 0.965, uvF.x) * smoothstep(0.0, 0.05, uvF.y) * smoothstep(1.0, 0.95, uvF.y);
+      gl_FragColor = vec4(c, uWeight * feather);
     #elif defined(CARD)
       // the strip round the picture: black, small rounded perforations along each edge lit from behind, its
       // corners rounded (uScreen is the picture's shape; the card is taller by its edges, 0.74 : 1)
@@ -253,7 +316,9 @@ export const FILM_FRAG = /* glsl */ `
       vec2 hp = vec2((fract(cp.x / 0.085 + 0.5) - 0.5) * 0.085, 0.435 - abs(cp.y));
       vec2 hq = abs(hp) - vec2(0.021, 0.026) + 0.008;
       float perf = 1.0 - smoothstep(-aa, aa, length(max(hq, 0.0)) + min(max(hq.x, hq.y), 0.0) - 0.008);
-      vec3 strip = vec3(0.03, 0.03, 0.04) + vec3(0.9, 0.85, 0.75) * perf * 0.4;
+      // (in linear light: near black stays near black on screen, the holes a quiet glow — the strip frames the
+      // picture, it never competes with the logo)
+      vec3 strip = vec3(0.005, 0.005, 0.007) + vec3(0.9, 0.85, 0.75) * perf * 0.1;
       float pic = step(0.0, uvF.y) * step(uvF.y, 1.0);
       c = mix(strip, c, pic * inside);
       // the glass's sheen, and the burn as it leaves (from its trailing edge: uBurn below 0 burns from the
@@ -320,221 +385,67 @@ export const POOL_FRAG = /* glsl */ `
   }
 `
 
-// ── THE FAR WORLDS: FILM THINGS IN THE FORM OF PLANETS ──────────────────────
+// ── THE TITLE'S PROJECTOR ───────────────────────────────────────────────────
 
 /**
- * Three cinema things, very far off, in the form of planets (the owner, 2026-11-06: "it shouldnt be an
- * actual planet but a film or cinema thing in a form of a planet … must react to the mouse … subtle pop
- * to show or reveal something"), each drawn on one square by its own program (KIND):
- *  0 · THE REEL WORLD — a planet wound from film, banded with strips (perforations at their edges, frame
- *      lines between), lit from one side, with a ring that is a strip of film; revealed, light comes up
- *      through the wound film and the ring's frames light with stills from the tour's films.
- *  1 · THE CAN MOON — a film can seen a little from above, a pressed tin lid with a strip of tape;
- *      revealed, the lid slides off on a reel of film glowing inside.
- *  2 · THE PROJECTOR STAR — a far lamp, its shutter flickering, its faint beam crossing the sky; revealed,
- *      the beam brightens and throws a frame of film onto the dark.
- * Distance shows as haze: each mixes toward the sky's own colour, the farther the more.
+ * The one film thing left in the sky (the owner, 2026-11-06: "we keep the star that is shooting like a
+ * projector which is below the hero heading - i want that to shoot a very faded subtle medium size screen
+ * projection to above the heading"): a far lamp below the title, its faint beam, and the screen it throws
+ * above the title, a film playing on it (projector.tsx). Drawn straight in clip space — corners in the
+ * frame's own coordinates (uP0–uP3: bottom left, bottom right, top right, top left), so they sit exactly
+ * where the page's words are measured.
  */
-export const FAR_VERT = /* glsl */ `
+export const PROJ_VERT = /* glsl */ `
+  attribute vec2 aCorner;
+  uniform vec2 uP0;
+  uniform vec2 uP1;
+  uniform vec2 uP2;
+  uniform vec2 uP3;
   varying vec2 vUv;
   void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vUv = aCorner;
+    gl_Position = vec4(mix(mix(uP0, uP1, aCorner.x), mix(uP3, uP2, aCorner.x), aCorner.y), 0.0, 1.0);
   }
 `
-export const FAR_FRAG = /* glsl */ `
+/** The lamp: a star with a four-point glint, its shutter flickering while it projects. */
+export const PROJ_LAMP_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uWeight;
+  uniform float uOn;
   uniform float uTime;
-  uniform float uSpin;
-  uniform float uReveal;
-  uniform float uOpacity;
-  uniform float uHazeK;
-  uniform vec3 uHaze;
-  uniform float uAspect;
-  uniform sampler2D uAtlas;
-  uniform float uAtlasOn;
-  uniform vec3 uTint;
-  uniform float uVariant;
   varying vec2 vUv;
-  const float PI = 3.14159265;
-  const vec2 ATLAS = vec2(4.0, 4.0);
-  float h1(float n) { return fract(sin(n * 127.1) * 43758.5453); }
-  float h2(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }
-  // a frame of the tour's films (the stills atlas, 4 × 4), or warm light until it has arrived
-  vec3 still(vec2 uv, float cell) {
-    float i = mod(floor(cell), ATLAS.x * ATLAS.y);
-    vec2 a = (vec2(mod(i, ATLAS.x), floor(i / ATLAS.x)) + clamp(uv, 0.03, 0.97)) / ATLAS;
-    vec3 film = texture2D(uAtlas, vec2(a.x, 1.0 - a.y)).rgb;
-    vec3 warm = mix(vec3(1.0, 0.74, 0.4), vec3(1.0, 0.93, 0.78), uv.y) * (0.75 + 0.25 * h1(floor(cell)));
-    return mix(warm, film * 1.3, uAtlasOn);
-  }
   void main() {
-    vec3 L = normalize(vec3(-0.55, 0.5, 0.65));
-    vec3 c = vec3(0.0);
-    float a = 0.0;
-    #if KIND == 0
-      // ── the Reel World: a world in the form of a film reel — its face the reel's, six windows round
-      // the hub, turning; its metal gold; deep in each window the wound film ──
-      vec2 p = (vUv * 2.0 - 1.0) * 2.45;
-      float r2 = dot(p, p);
-      float rad = sqrt(r2);
-      float zs = sqrt(max(0.0, 1.0 - r2));
-      float aaB = max(fwidth(rad), 1e-4);
-      float onBody = smoothstep(1.0 + aaB * 0.5, 1.0 - aaB, rad);
-      vec3 n = vec3(p, zs);
-      // the reel's face, turned a little up and to the left, turning
-      vec2 fp = (p - vec2(-0.1, 0.08)) * vec2(1.0, 1.06);
-      float cs = cos(uSpin);
-      float ss = sin(uSpin);
-      vec2 fr = mat2(cs, ss, -ss, cs) * fp;
-      float rho = length(fr);
-      float sector = 2.0 * PI / (5.0 + floor(uVariant * 2.99));
-      float a6 = mod(atan(fr.y, fr.x) + sector * 0.5, sector) - sector * 0.5;
-      float dw = length(vec2(cos(a6), sin(a6)) * rho - vec2(0.5, 0.0));
-      float win = smoothstep(0.205, 0.185, dw);
-      float winRim = smoothstep(0.235, 0.205, dw) - win;
-      float hub = smoothstep(0.16, 0.14, rho);
-      float hubRim = smoothstep(0.19, 0.16, rho) - hub;
-      float spindle = smoothstep(0.055, 0.04, rho);
-      float flange = smoothstep(0.84, 0.9, rad) * smoothstep(1.0, 0.95, rad);
-      float grooves = 0.9 + 0.1 * sin(rho * 150.0);
-      vec3 metal = uTint * grooves;
-      vec3 deep = vec3(0.08, 0.05, 0.03) * (0.7 + 0.3 * sin(dw * 110.0));
-      vec3 albedo = mix(metal, deep, win);
-      albedo = mix(albedo, metal * 1.35, clamp(winRim * 0.7 + hubRim * 0.7 + flange * 0.5, 0.0, 1.0));
-      albedo = mix(albedo, vec3(0.12, 0.09, 0.07), spindle);
-      float dl = max(dot(n, L), 0.0);
-      float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 22.0) * (1.0 - win) * 0.75;
-      vec3 body = albedo * (0.05 + 1.2 * dl) + vec3(1.0, 0.88, 0.62) * spec;
-      body += vec3(1.0, 0.8, 0.5) * pow(1.0 - zs, 3.0) * 0.3 * smoothstep(-0.2, 0.5, dot(n.xy, L.xy));
-      // revealed: the windows light from within, the film in them glowing
-      body += vec3(1.0, 0.7, 0.34) * win * uReveal * (1.2 + 0.2 * sin(uTime * 3.0));
-      // the ring: a strip of film on a plane tilted nearly edge-on
-      vec3 rn = normalize(vec3(0.2, 0.86, 0.47));
-      float zr = -(rn.x * p.x + rn.y * p.y) / rn.z;
-      vec3 q = vec3(p, zr);
-      float rr = length(q);
-      vec3 e1 = normalize(cross(rn, vec3(0.0, 0.0, 1.0)));
-      vec3 e2 = cross(rn, e1);
-      float phi = atan(dot(q, e2), dot(q, e1)) / (2.0 * PI) + uSpin * 0.05;
-      float s = (rr - 1.45) / 0.87;
-      float aaR = max(fwidth(s), 1e-4);
-      float onRing = smoothstep(-aaR * 0.5, aaR, s) * smoothstep(1.0 + aaR * 0.5, 1.0 - aaR, s);
-      float cell = phi * 44.0;
-      float rh = fract(cell);
-      float row = smoothstep(0.04, 0.07, s) * smoothstep(0.19, 0.16, s) + smoothstep(0.81, 0.84, s) * smoothstep(0.96, 0.93, s);
-      float rhole = row * smoothstep(0.24, 0.32, rh) * smoothstep(0.76, 0.68, rh);
-      float pic = step(0.24, s) * step(s, 0.76);
-      float fcell = cell / 2.0;
-      vec2 fuv = vec2(fract(fcell), (s - 0.22) / 0.56);
-      float fline = smoothstep(0.06, 0.0, fuv.x) + smoothstep(0.94, 1.0, fuv.x);
-      float lit = 0.3 + 0.7 * abs(dot(rn, L));
-      // the planet's shadow across the ring
-      vec3 sh = q - dot(q, L) * L;
-      float shadow = smoothstep(1.05, 0.95, length(sh)) * step(dot(q, L), 0.0);
-      vec3 ringC = mix(vec3(0.1, 0.07, 0.05), vec3(0.42, 0.3, 0.16), pic * (1.0 - fline)) * lit;
-      ringC += vec3(1.0, 0.82, 0.55) * rhole * (0.7 + 0.7 * uReveal);
-      ringC += still(fuv, floor(fcell)) * pic * (1.0 - fline) * (0.22 + 0.85 * uReveal);
-      ringC *= 1.0 - 0.7 * shadow;
-      float ringA = onRing * 0.92;
-      // which is nearer: the ring passes in front of the body below its middle, behind it above
-      float ringFront = max(step(zs, zr), 1.0 - onBody);
-      if (ringFront > 0.5) {
-        c = ringC * ringA + body * onBody * (1.0 - ringA);
-        a = ringA + onBody * (1.0 - ringA);
-      } else {
-        c = body * onBody + ringC * ringA * (1.0 - onBody);
-        a = onBody + ringA * (1.0 - onBody);
-      }
-      c /= max(a, 1e-4);
-    #elif KIND == 1
-      // ── the Can Moon ──
-      vec2 p = (vUv * 2.0 - 1.0) * 1.3;
-      float tilt = 0.8;
-      // the can itself: its open top, its rim, its side below
-      vec2 eb = vec2(p.x, p.y / tilt);
-      float rb = length(eb);
-      float aaC = max(fwidth(rb), 1e-4);
-      float top = smoothstep(1.0 + aaC * 0.5, 1.0 - aaC, rb);
-      float yt = -tilt * sqrt(max(0.0, 1.0 - p.x * p.x));
-      float aaS = max(fwidth(p.x), 1e-4);
-      float side = smoothstep(1.0 + aaS * 0.5, 1.0 - aaS, abs(p.x)) * smoothstep(yt + aaS, yt - aaS, p.y) * smoothstep(yt - 0.22 - aaS, yt - 0.22 + aaS, p.y);
-      float sideLit = 0.3 + 0.55 * smoothstep(0.9, -0.6, p.x);
-      vec3 can = vec3(0.42, 0.43, 0.46) * sideLit * (0.85 + 0.15 * step(0.5, fract(p.x * 18.0)));
-      // inside, revealed: a reel of film wound round its hub, glowing
-      float wound = smoothstep(0.32, 0.36, rb) * smoothstep(0.92, 0.88, rb);
-      float rings = 0.75 + 0.25 * sin(rb * 160.0);
-      float ang = atan(eb.y, eb.x) + uSpin * 2.5;
-      float hub = smoothstep(0.32, 0.29, rb);
-      float window = hub * step(0.13, rb) * step(0.6, fract(ang / (2.0 * PI) * 3.0));
-      vec3 inside = vec3(0.16, 0.09, 0.05) * rings * wound + vec3(0.5, 0.5, 0.52) * hub * (1.0 - window);
-      inside += vec3(1.0, 0.72, 0.38) * (wound * 0.55 * rings + window * 1.2) * (0.7 + 0.3 * sin(uTime * 2.4));
-      vec3 rim = vec3(0.62, 0.63, 0.66) * smoothstep(0.93, 0.97, rb) * top;
-      // the lid, sliding off up and to the right as it reveals
-      vec2 pl = p - vec2(0.62, 0.42) * uReveal;
-      float tr = -0.4 * uReveal;
-      pl = mat2(cos(tr), sin(tr), -sin(tr), cos(tr)) * pl;
-      vec2 e = vec2(pl.x, pl.y / tilt);
-      float rl = length(e);
-      float aaL = max(fwidth(rl), 1e-4);
-      float lid = smoothstep(1.0 + aaL * 0.5, 1.0 - aaL, rl);
-      float la = atan(e.y, e.x);
-      float aniso = pow(max(0.0, cos(2.0 * (la - 2.35))), 6.0);
-      float brushed = 0.9 + 0.1 * h2(vec2(floor(rl * 150.0), 0.0));
-      float lip = smoothstep(0.86, 0.9, rl) * (0.6 + 0.4 * smoothstep(0.0, 0.6, -e.y));
-      float groove = smoothstep(0.025, 0.0, abs(rl - 0.72));
-      float dimple = smoothstep(0.02, 0.0, abs(rl - 0.24));
-      vec3 metal = uTint * brushed * (0.55 + 0.45 * smoothstep(0.9, -0.5, e.x - e.y * 0.6));
-      metal += vec3(0.9, 0.88, 0.84) * aniso * 0.45 + vec3(0.25) * lip;
-      metal *= (1.0 - 0.45 * groove) * (1.0 - 0.35 * dimple);
-      // a strip of tape across it, its title in grease pencil
-      vec2 te = mat2(cos(0.22), sin(0.22), -sin(0.22), cos(0.22)) * e;
-      float tape = step(abs(te.y), 0.13) * step(rl, 0.86);
-      float pencil = step(0.62, h2(floor(vec2(te.x * 22.0, te.y * 14.0)))) * step(abs(te.y), 0.06) * step(abs(te.x), 0.55);
-      vec3 tapeC = mix(vec3(0.86, 0.82, 0.7), vec3(0.18, 0.12, 0.1), pencil * 0.8);
-      metal = mix(metal, tapeC * (0.6 + 0.4 * smoothstep(0.9, -0.5, e.x)), tape);
-      vec3 body = can * side;
-      float bodyA = max(side, top);
-      body = mix(body, inside + rim, top);
-      c = mix(body, metal, lid);
-      a = max(bodyA, lid);
-    #else
-      // ── the Projector Star ──
-      vec2 p = vec2(vUv.x * uAspect, vUv.y * 2.0 - 1.0);
-      float x0 = 0.6;
-      float flick = 0.93 + 0.07 * sin(uTime * 150.0) + 0.04 * step(0.82, h1(floor(uTime * 24.0)));
-      vec2 d = p - vec2(x0, 0.0);
-      float core = exp(-dot(d, d) * 90.0) * 1.8 + exp(-length(d) * 5.0) * 0.32;
-      float streak = exp(-abs(d.y) * 55.0) * exp(-abs(d.x) * 2.2) * 0.35;
-      vec3 lamp = uTint * (core * 1.25 + streak) * flick * (1.0 + 0.6 * uReveal);
-      // the beam, widening from the lamp to the frame it throws
-      float span = uAspect - x0 - 1.3;
-      float t = (p.x - x0) / span;
-      float half_ = 0.05 + t * 0.6;
-      float beam = smoothstep(half_, half_ * 0.35, abs(p.y)) * step(0.0, t) * smoothstep(1.02, 0.96, t);
-      float dust = 0.75 + 0.25 * h2(floor(vec2(p.x * 9.0 - uTime * 2.0, p.y * 12.0)));
-      vec3 beamC = mix(uTint, vec3(0.95, 0.85, 0.66), 0.4) * beam * pow(max(1.0 - t, 0.0), 0.5) * (0.13 + 0.24 * uReveal) * dust * flick;
-      // the frame it throws onto the dark, revealed
-      vec2 fq = (p - vec2(uAspect - 0.75, 0.0)) / vec2(0.62, 0.46);
-      float inFrame = smoothstep(1.0, 0.94, max(abs(fq.x), abs(fq.y)));
-      // the short film it throws: frame after frame of the tour's films, flickering through the gate
-      vec3 frameC = still(fq * 0.5 + 0.5, floor(uTime / 0.42) + uVariant * 7.0) * inFrame * uReveal * flick * 0.9;
-      c = lamp + beamC + frameC;
-      a = 1.0;
-    #endif
-    // far off: the sky's own colour mixed into what is lit (never added where there is nothing), and the
-    // whole faded with its galaxy
-    #if KIND == 2
-      // (light added to the night: distance only dims it — never adds haze where there is nothing)
-      c *= 1.0 - uHazeK * 0.35;
-    #else
-      c = mix(c, uHaze * (0.5 + dot(c, vec3(0.3, 0.5, 0.2))), uHazeK);
-    #endif
-    gl_FragColor = vec4(c, a * uOpacity);
+    vec2 d = (vUv - 0.5) * 2.0;
+    float r2 = dot(d, d);
+    float shutter = 1.0 - 0.18 * uOn * step(0.5, fract(uTime * 24.0));
+    float core = exp(-r2 * 28.0) * 1.5 + exp(-r2 * 6.0) * (0.22 + 0.25 * uOn);
+    float glint = (exp(-abs(d.y) * 48.0) * exp(-abs(d.x) * 3.2) + exp(-abs(d.x) * 48.0) * exp(-abs(d.y) * 3.2)) * (0.35 + 0.5 * uOn);
+    gl_FragColor = vec4(uColor, clamp(core + glint, 0.0, 1.0) * shutter * uWeight);
     ${OUT}
   }
 `
-
-// ── SHOOTING STARS ──────────────────────────────────────────────────────────
+/**
+ * The beam, from the lamp (P0 = P1) to the screen's two outermost corners as the lamp sees them (P2, P3):
+ * brightest at the lamp, its edges soft, flickering faintly; uReach runs the light out to the screen as it
+ * shoots.
+ */
+export const PROJ_BEAM_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uWeight;
+  uniform float uReach;
+  uniform float uTime;
+  varying vec2 vUv;
+  void main() {
+    float t = vUv.y;
+    float across = vUv.x / max(t, 1e-3);
+    float soft = smoothstep(0.0, 0.25, across) * smoothstep(1.0, 0.75, across);
+    float lit = smoothstep(uReach, uReach - 0.06, t);
+    float flicker = 0.9 + 0.1 * sin(uTime * 37.0) * sin(uTime * 23.0);
+    float a = (0.22 + 0.78 * pow(1.0 - t, 2.0)) * smoothstep(0.0, 0.03, t) * soft * lit * flicker;
+    gl_FragColor = vec4(uColor, a * uWeight);
+    ${OUT}
+  }
+`
 
 /**
  * A few meteors, far beyond everything: screen-space streaks (so they lie at infinity, still while the
@@ -614,8 +525,8 @@ export const STREAK_VERT = /* glsl */ `
   uniform vec3 uVel;
   uniform float uStretch;
   varying float vAlpha;
+  uniform float uRoll;
   ${STREAM}
-  ${BEHIND_FAR}
   void main() {
     vec3 off = uVel * uStretch;
     float len = length(off);
@@ -623,8 +534,10 @@ export const STREAK_VERT = /* glsl */ `
     float edge;
     vec3 p = streamed(position, edge) - off * aEnd;
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    float c = cos(uRoll);
+    float s = sin(uRoll);
+    mv.xy = mat2(c, s, -s, c) * mv.xy;
     gl_Position = projectionMatrix * mv;
-    edge *= behindFar(gl_Position);
     vAlpha = edge * (1.0 - aEnd) * smoothstep(0.35, 1.8, len) * smoothstep(2.5, 10.0, -mv.z) * smoothstep(140.0, 60.0, -mv.z);
   }
 `
@@ -899,6 +812,134 @@ export const SKY_FRAG = /* glsl */ `
   }
 `
 
+// ── THE DEEP SKY: A QUIET NEBULA AND A FAINT MILKY WAY ──────────────────────
+
+/**
+ * The sky behind every space (universe.ts): a subtle nebula and, very far, a faint Milky Way — round 3's sky,
+ * which the owner preferred, advanced: twelve film stocks, each showing drawn afresh (its clouds' seed, its
+ * band's slope and place). Two skies at once during a change: the one leaving (A) and the one arriving (B),
+ * each moved by the change (uT*: offset, zoom, turn about the gaze) — computed per vertex on a fine grid, as
+ * round 3 did, so the sky stays cheap — and masked per pixel (CHANGE), so an iris, a wipe or a dissolve
+ * sweeps across it.
+ */
+export const GALAXY_VERT = /* glsl */ `
+  uniform float uTime;
+  uniform vec2 uCentre;
+  uniform float uSkyAspect;
+  uniform vec4 uSA;
+  uniform vec4 uSB;
+  uniform vec4 uTA;
+  uniform vec4 uTB;
+  uniform vec4 uPA;
+  uniform vec4 uPB;
+  varying vec3 vNebA;
+  varying vec3 vNebB;
+  varying vec3 vMilkyA;
+  varying vec3 vMilkyB;
+  varying float vDustA;
+  varying float vDustB;
+  ${NOISE}
+  // a nebula's clouds: their density, the mix of its two colours, its bright accent
+  vec3 nebula(vec2 uv, float seed, vec2 at, vec2 drift) {
+    vec2 q = uv * vec2(3.2, 2.0) + seed;
+    float n = fbm(q + drift + fbm(q * 0.7 - drift) * 1.4);
+    float m = fbm(q * 1.3 + 7.7 - drift * 1.5);
+    vec2 c = (uv - 0.5 - at) * vec2(1.0, 1.25);
+    float r = length(c) * 2.0;
+    return vec3(smoothstep(1.0, 0.05, r) * smoothstep(0.28, 0.85, n), m, smoothstep(0.58, 0.85, n) * smoothstep(0.75, 0.0, r));
+  }
+  // the Milky Way, very far: a band across the sky, its light in clouds, its core cut by lanes of dust
+  vec3 milky(vec2 uv, float seed, float slope, float width, vec2 at, vec2 drift) {
+    vec2 a = (uv - vec2(0.5, 0.52) - at) * vec2(1.69, 1.0);
+    vec2 along = normalize(vec2(1.0, slope));
+    float across = dot(a, vec2(-along.y, along.x));
+    float s = dot(a, along);
+    float warp = (fbm(vec2(s * 3.0, 4.1) + seed) - 0.5) * 0.09;
+    float w = 0.075 * width;
+    float band = exp(-pow((across + warp) / w, 2.0));
+    float clouds = fbm(vec2(s * 9.0, across * 22.0) + 2.3 + seed - drift * 0.5);
+    float lanes = smoothstep(0.5, 0.72, fbm(vec2(s * 14.0, across * 34.0) + 8.1 + seed));
+    return vec3(
+      band * smoothstep(0.3, 0.78, clouds) * smoothstep(0.95, 0.4, abs(s)),
+      exp(-pow((across + warp) / (w * 0.47), 2.0)),
+      lanes * exp(-pow((across + warp) / (w * 0.6), 2.0))
+    );
+  }
+  // a sky moved by a change: shifted, zoomed and turned about the gaze (turned in true proportion)
+  vec2 moved(vec2 uv, vec4 t) {
+    vec2 d = (uv - uCentre) * vec2(uSkyAspect, 1.0) / t.z;
+    float c = cos(t.w);
+    float s = sin(t.w);
+    d = mat2(c, s, -s, c) * d;
+    return uCentre + d / vec2(uSkyAspect, 1.0) - t.xy;
+  }
+  void main() {
+    vec2 drift = vec2(uTime * 0.006, -uTime * 0.004);
+    vec2 ua = moved(uv, uTA);
+    vec2 ub = moved(uv, uTB);
+    vNebA = nebula(ua, uSA.x, uPA.xy, drift);
+    vNebB = nebula(ub, uSB.x, uPB.xy, drift);
+    vMilkyA = milky(ua, uSA.x, uSA.y, uSA.z, uPA.zw, drift);
+    vMilkyB = milky(ub, uSB.x, uSB.y, uSB.z, uPB.zw, drift);
+    // dark nebulae: dust drifting across the bright clouds
+    vDustA = smoothstep(0.55, 0.8, fbm(ua * vec2(5.0, 3.2) + uSA.x * 1.7 + 31.0));
+    vDustB = smoothstep(0.55, 0.8, fbm(ub * vec2(5.0, 3.2) + uSB.x * 1.7 + 31.0));
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+export const GALAXY_FRAG = /* glsl */ `
+  uniform vec3 uColA[5];
+  uniform vec3 uColB[5];
+  uniform vec4 uSA;
+  uniform vec4 uSB;
+  uniform vec2 uNeb;
+  uniform float uWA;
+  uniform float uWB;
+  uniform float uStrength;
+  uniform float uMilky;
+  uniform vec2 uRes;
+  varying vec3 vNebA;
+  varying vec3 vNebB;
+  varying vec3 vMilkyA;
+  varying vec3 vMilkyB;
+  varying float vDustA;
+  varying float vDustB;
+  ${CHANGE}
+  float h21(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }
+  float vn(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), u.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
+  // one sky's light here — its colour (in display space, as round 3 drew it) and how much of it: the nebula
+  // (its two colours and accent, the dust across it) and the band's light, made of stars (a fine granular
+  // cloud, pinpoints along it, a warmer core)
+  vec4 sky(vec3 neb, vec3 mw, float dust, vec3 col[5], float nebula, float band, float granular, float pin) {
+    vec3 c = mix(col[1], col[0], neb.y) + col[2] * neb.z * 0.6;
+    float alpha = neb.x * uStrength * nebula * (1.0 - dust * 0.55);
+    float light = mw.x * granular * (1.0 - mw.z * 0.85) * uMilky * band;
+    vec3 bc = mix(col[4], col[3], clamp(mw.y * 1.3, 0.0, 1.0));
+    c = mix(c, bc, clamp(light * 2.2, 0.0, 1.0));
+    alpha = max(alpha, light * 0.34) + pin * mw.x * uMilky * band * 0.55;
+    return vec4(linearToOutputTexel(vec4(c, 1.0)).rgb, clamp(alpha, 0.0, 1.0));
+  }
+  void main() {
+    vec2 px = gl_FragCoord.xy;
+    float granular = 0.45 + 0.55 * vn(px / 2.6) * vn(px / 7.0 + 13.0);
+    float pin = step(0.9975, h21(floor(px))) * (0.4 + 0.6 * h21(floor(px) + 7.0));
+    vec2 s = px / uRes;
+    float a = uRes.x / uRes.y;
+    vec4 m = changeAt(s, a, vn(s * vec2(150.0 * a, 150.0)) * 0.55 + vn(s * vec2(23.0 * a, 23.0)) * 0.45);
+    vec4 A = sky(vNebA, vMilkyA, vDustA, uColA, uNeb.x, uSA.w, granular, pin);
+    vec4 B = sky(vNebB, vMilkyB, vDustB, uColB, uNeb.y, uSB.w, granular, pin);
+    // premultiplied, added to the dark (the colour space is done above: not again on the sum)
+    vec3 L = A.rgb * A.a * uWA * m.x + B.rgb * B.a * uWB * m.y + changeLight(m.w) * m.z;
+    L += (h21(px + 3.1) - 0.5) * (1.5 / 255.0);
+    gl_FragColor = vec4(max(L, 0.0), 1.0);
+  }
+`
+
 /**
  * Each space's floor, below it: the Crew's soundstage, the Client's cinema,
  * the Suite's light table of frames.
@@ -978,25 +1019,50 @@ export const STRUCTURE_FRAG = /* glsl */ `
       ${OUT}
       return;
     #elif MODE == 1
-      // THE CINEMA'S FLOOR (the Client, HALL_* in Station.tsx): dark under the room, so the sky doesn't show
-      // through it; two aisles of step lights running down to the screen; the film's light on the floor
-      // nearest it. Premiere night (uFace, the Stakeholders): the aisles carpeted red, their lights gold.
-      // Drawn with premultiplied alpha (rgb the light it adds, alpha the dark). (+y runs away from the camera;
-      // the screen stands at y = uRoom.y, the room is open at y = uRoom.z, its walls at x = ±uRoom.x.)
-      // (outside the room's footprint there is nothing to draw: the plane is far bigger than the room)
-      if (abs(p.x) > uRoom.x + 1.0 || p.y > uRoom.y || p.y < uRoom.z - 5.0) discard;
-      float inRoom = smoothstep(uRoom.x + 1.0, uRoom.x - 1.5, abs(p.x)) * smoothstep(uRoom.z - 5.0, uRoom.z + 1.0, p.y);
-      float lights = 0.0;
-      for (int i = 0; i < 9; i++) {
-        float y = mix(uRoom.z + 1.0, uRoom.y - 2.5, float(i) / 8.0);
-        vec2 l1 = vec2(abs(abs(p.x) - uAisle) - 0.95, p.y - y);
-        lights += exp(-dot(l1, l1) / 0.02);
+      // THE CINEMA'S FLOOR (the Client; the owner, 2026-11-06: "i like the previous floor i just needed you to
+      // improve it more"): round 3's polished floor with the gold art-deco fan inlaid in it, radiating from
+      // the foot of the screen, and two rows of aisle lights converging on it — refined: the inlay in fine
+      // gold lines, a slow gleam travelling over it, and the film's light reflected in the polish, a long soft
+      // streak in its own colour. Dark under the room, so the sky doesn't show through it. Premiere night
+      // (uFace, the Stakeholders): the aisle a red carpet, its lights gold. Drawn with premultiplied alpha (rgb
+      // the light it adds, alpha the dark). (+y runs away from the camera; the screen stands at y = uRoom.y,
+      // the room is open at y = uRoom.z, its walls at x = ±uRoom.x.)
+      if (abs(p.x) > uRoom.x + 1.0 || p.y > uRoom.y + 0.5 || p.y < uRoom.z - 9.0) discard;
+      float inRoom = smoothstep(uRoom.x + 1.0, uRoom.x - 1.5, abs(p.x)) * smoothstep(uRoom.z - 8.0, uRoom.z + 2.0, p.y) * step(p.y, uRoom.y);
+      vec2 d = p - vec2(0.0, uRoom.y);
+      float r = length(d);
+      float ang = atan(d.x, -d.y);
+      float front = step(d.y, 0.0) * smoothstep(34.0, 24.0, r);
+      // the fan: fine gold spokes and three steps of arc, inlaid
+      float arcLen = abs(fract(ang * 22.0 / 6.2832 + 0.5) - 0.5) * (6.2832 / 22.0) * r;
+      float spokes = (1.0 - smoothstep(0.0, fwidth(arcLen) * 1.2 + 0.012, arcLen)) * smoothstep(4.5, 8.0, r) * 0.5;
+      float steps = 0.0;
+      for (int i = 0; i < 3; i++) {
+        float rr = i == 0 ? 6.5 : i == 1 ? 12.0 : 18.5;
+        steps += (1.0 - smoothstep(0.0, fwidth(r) * 1.2 + 0.01, abs(r - rr))) * (1.0 - float(i) * 0.2);
       }
-      float wash = exp(-(uRoom.y - p.y) / 2.5) * step(p.y, uRoom.y) * smoothstep(uRoom.x, uRoom.x - 6.0, abs(p.x));
-      float carpet = (1.0 - smoothstep(0.75, 0.9, abs(abs(p.x) - uAisle))) * inRoom;
-      vec3 warm = mix(vec3(1.0, 0.7, 0.4), vec3(1.0, 0.84, 0.52), uFace);
-      vec3 L = uSpill * wash * 0.03 + warm * lights * (0.5 + 0.5 * uHouse) * 0.9 + vec3(0.42, 0.04, 0.06) * carpet * uFace * 0.5;
-      gl_FragColor = vec4(L * uWeight, inRoom * 0.9 * uWeight);
+      float fan = (spokes + steps * 0.8) * front;
+      // a gleam travelling slowly out over the polished inlay
+      float gleam = exp(-pow((r - mod(uTime * 2.2, 40.0)) / 2.6, 2.0));
+      // the aisle: two rows of small lights converging on the screen
+      float lights = 0.0;
+      for (int i = 0; i < 12; i++) {
+        float t = float(i) / 11.0;
+        float y = mix(uRoom.z - 6.0, uRoom.y - 4.0, t);
+        float x = mix(3.8, 1.7, t);
+        vec2 a1 = vec2(abs(p.x) - x, p.y - y);
+        lights += exp(-dot(a1, a1) / 0.04) * (0.85 + 0.15 * sin(uTime * 1.3 + t * 9.0));
+      }
+      float aisle = (1.0 - smoothstep(1.4, 2.0, abs(p.x) - (uRoom.y - p.y) * 0.025)) * step(p.y, uRoom.y - 2.0) * smoothstep(uRoom.z - 8.0, uRoom.z + 4.0, p.y);
+      // the film's light reflected in the polish: a long soft streak toward the camera, in its own colour
+      float refl = exp(-pow(p.x / (uRoom.x * 0.62), 2.0)) * exp(-(uRoom.y - p.y) / 9.0) * step(p.y, uRoom.y) * (0.85 + 0.15 * sin(p.y * 1.7 - uTime * 0.8));
+      vec3 gold = mix(uColor, vec3(1.0, 0.86, 0.6), 0.25);
+      vec3 warm = mix(vec3(1.0, 0.72, 0.42), vec3(1.0, 0.86, 0.55), uFace);
+      vec3 L = gold * fan * (0.55 + 1.1 * gleam) * 0.5
+             + uSpill * refl * 0.045
+             + warm * lights * (0.45 + 0.55 * uHouse) * 0.9
+             + vec3(0.42, 0.04, 0.06) * aisle * uFace * 0.45;
+      gl_FragColor = vec4(L * uWeight, inRoom * 0.92 * uWeight);
       ${OUT}
       return;
     #else
@@ -1140,13 +1206,13 @@ export const MOTE_FRAG = /* glsl */ `
  * back just a little bit … redesign it and make it properly advanced cinema with dim lights"). The screen spans
  * the wall at the film's own 2.39 : 1 (cinema.tsx draws the film). The room round it is dark, and its walls
  * dissolve into space the farther they are from the screen, so the sky still shows at the edges. Its lights
- * are few and dim: sconces washing the side walls up and down, fibre-optic stars in the ceiling, step lights
- * along the aisles (on the floor: STRUCTURE_FRAG mode 1), the film's own light on the wall round it and on the
- * tops of the seats. Premiere night (uFace, the Stakeholders) turns the lights gold.
+ * are few and dim: sconces washing the side walls up and down, fibre-optic stars in the ceiling, the floor's
+ * gold deco fan and its aisle lights (STRUCTURE_FRAG mode 1), the film's own light on the wall round it.
+ * No seats (the owner, 2026-11-06). Premiere night (uFace, the Stakeholders) turns the lights gold.
  *
- * One program per part (PART): 0 the screen wall, 1 the side walls, 2 the ceiling, 3 the rows of seats. Each
- * part's uv runs 0–1 across it (each part says which way). Drawn with premultiplied alpha: rgb is the light a
- * part adds, alpha how much of the sky behind it the room hides.
+ * One program per part (PART): 0 the screen wall, 1 the side walls, 2 the ceiling. Each part's uv runs 0–1
+ * across it (each part says which way). Drawn with premultiplied alpha: rgb is the light a part adds, alpha
+ * how much of the sky behind it the room hides.
  */
 export const HALL_VERT = /* glsl */ `
   varying vec2 vUv;
@@ -1222,24 +1288,6 @@ export const HALL_FRAG = /* glsl */ `
       L += mix(vec3(0.82, 0.86, 1.0), lamp * 1.8, 0.35 + 0.4 * uFace) * star * 1.6 * smoothstep(uSize.y, uSize.y * 0.4, t);
       // a cove of light where the ceiling meets the screen wall
       L += lamp * exp(-t / 0.6) * 0.3 * smoothstep(0.0, 4.0, ex);
-    #else
-      // THE ROWS OF SEATS, seen from behind (one quad a row): their backs in silhouette against the floor, the
-      // film's light along their tops, two aisles through them (uOffset.x), a step light at each row's end on
-      // the aisles
-      float ax = abs(abs(p.x) - uOffset.x);
-      float aisle = 1.0 - smoothstep(0.85, 0.95, ax);
-      float cx = (fract(p.x / 1.3 + 0.5) - 0.5) * 1.3;
-      vec2 b = vec2(cx, p.y + 0.12);
-      vec2 bq = abs(b) - vec2(0.55, 0.7) + 0.3;
-      float sd = length(max(bq, 0.0)) + min(max(bq.x, bq.y), 0.0) - 0.3;
-      float seat = (1.0 - smoothstep(-0.02, 0.02, sd)) * (1.0 - aisle);
-      float ex = uSize.x * 0.5 - abs(p.x);
-      float fade = smoothstep(0.0, 3.0, ex);
-      k = seat * 0.94 * fade;
-      float rim = exp(-pow((sd + 0.035) / 0.045, 2.0)) * smoothstep(0.0, 0.45, b.y) * (1.0 - aisle);
-      L += uSpill * rim * 0.05 * fade;
-      vec2 sl = vec2(ax - 0.95, p.y + 0.62);
-      L += lamp * exp(-dot(sl, sl) / 0.006) * 1.1 * fade;
     #endif
     gl_FragColor = vec4(L * uWeight, k * uWeight);
     ${OUT}

@@ -9,6 +9,46 @@ climbs to **the Suite**, then pulls back to the whole line for the close: *Run
 the production. Keep the record.* Each space arrives in its own light, ringed
 by its own screens and tools.
 
+## Revision 5, 2026-11-06: a quiet sky, one projector, a tour start without a stall
+
+The owner's review of round 4 asked for:
+- a different first background, and backgrounds that are calm, not busy (round 3's were "more subtle and good", only to be advanced a little);
+- many kinds of change, at random (it still looked like one push-in);
+- nothing in the sky but stars (some shooting, some pulsing) and a subtle nebula: the reel planet and the can are hated, and go;
+- the projector star under the heading kept, throwing a faint medium screen with films above the heading, 10 s on and 10 s off;
+- a tour click that feels expensive, not laggy and fake;
+- Crew: a new film, no dark edges on the screen, the screen set back a little;
+- a longer ride from Crew to Client, without Client's film showing early;
+- Client: no chairs, the previous floor back and improved, the screen set back a little, the cinema fixed;
+- Suite: a bigger screen, with the focus on the 3D icon and what surrounds it.
+
+Built H1 to H10 (`~/.claude/plans/happy-dancing-star.md`).
+
+| What | How |
+|---|---|
+| **The sky** (`scene/universe.ts`, `GALAXY_*`) | The phenomena are gone (`phenomena.ts` deleted). Round 3's sky returns: a subtle nebula and a faint Milky Way, computed per vertex on a fine grid, so it is cheap. **Advanced a little**: twelve film stocks (round 3's four and eight more in the same restraint), each showing drawn afresh (its clouds' seed, its band's slope and place), so a sky that returns is never the same picture. Holds of 40–55 s, and a shuffle bag: no sky returns within ten minutes. **The first sky is new**: a calm deep-blue night with a faint violet and teal haze and only a whisper of the Milky Way. |
+| **The changes, across the whole sky** (`CHANGE`) | Ten, dealt at random, never twice running: push, pull, whip pan, spin, iris (a gold-rimmed iris closing to black and opening on the new), a fine-grain dissolve, a light leak, an anamorphic wipe, a fade through black, hyperspace. One mask is shared by the sky and the stars, and each sky has its own stars. So an iris, a wipe or a dissolve sweeps the stars too; a spin turns the star field; a whip streaks it; push, pull and hyperspace stream it. Round 4's changes moved only the phenomenon, and the streaming stars read as a push every time. |
+| **Stars only** | The far worlds are gone (`far.tsx` deleted, with the stars' occlusion behind them). About 7% of the stars pulse, slow and deep; the shooting stars and the seven star-filter stars stay. The stills atlas the Suite's floor uses now loads from `films.ts`, as the Suite nears. |
+| **The title's projector** (`scene/projector.tsx`, `PROJ_*`) | The lamp below the heading, where the poster shows it (`heroState.posterMap`). Every 20 s it shoots: a faint beam up to a medium 16:9 screen above the heading, placed from the page's measure of the words. A film plays faintly for 10 s, then the projection goes out; 10 s later the next film plays (a Europe time-lapse, NASA, Mount Bromo, Méliès, Spring, in turn, looping while shown). It is drawn in clip space, on wide screens only (on a phone the heading sits under the logo). It is not shown under reduced motion or in posters, and goes once the tour starts. |
+| **The tour click** | **The stall**: `ScrollTrigger.refresh()` touches the root's style. The scene's theme watcher answered every touch with a new theme, so every screen's capture was refetched and re-decoded at the click: 19 decodes at once, a 133 ms hitch. It now rebuilds only on a real change of theme. Measured over the 2.5 s after the click: every frame under 17 ms, against 83 + 50 ms before; at 4× CPU, one 50 ms frame on the click itself, against twelve slow frames. **The choreography**: a crisp ring (2.6×, 560 ms) instead of a blur scaled sevenfold; the title's lines leave 50 ms apart; the camera's move is a timed 1.2 s ease-in-out (it used to chase exponentially, lurching off and then crawling); the shade behind the title goes with its words (it used to snap off after 1.1 s, darkening the Crew tile as the logo passed under it); the cue rises as the camera lands. |
+| **Crew** | **A new film**: the Artemis III launch team in Firing Room 1 (NASA, public domain), six whole shots of 4 s (the launch director at the microphone, the leads conferring, controllers at their consoles): real people, modern, 24 s. **The LED wall** is exactly as wide as its film, its edges feathered, so no dark panels idle at either end. It is set back (radius 36 → 40), taller to keep its size, and dimmed (0.5). |
+| **The ride** | The journey from Crew to Client is longer (140 → 210 vh). Every cinema shows only as its space arrives (from 62% of the way) and leaves early (`state.ts cinemaWeight`), so the ride is space and Client's film no longer previews. |
+| **Client** | **No seats.** **Round 3's floor is back, improved**: the gold deco fan in fine inlay, three steps of arc, a slow gleam travelling over the polish, aisle lights converging on the screen, and the film's light reflected in the floor; a red carpet on premiere night. The screen is set back (−22 → −26) and scaled up to keep its size. The room keeps its dim sconces, starlit ceiling and dark velour. |
+| **Suite** | The card is a big background screen: picture 14 → 26 units tall, its foot moved back (−28 → −44), dimmer (0.45). The strip is near black, its holes a quiet glow, so it frames the picture and never competes with the icon. The shooting star, the throw and the floor landing scale with it. |
+
+**Films**: Crew's is now NASA's Artemis III launch team (`films-src/nasa/fr3.mp4`, from images.nasa.gov). NASA's guidelines ask that identifiable people not be used to imply endorsement: fine for a placeholder, but replace before launch. *PARVA* is gone. The other films are unchanged.
+
+**Checking by hand.** `?sky=0–11` holds a sky. `?change=0–9` makes every change that one. `?drift=<s>` shortens the hold. `?seed=` fixes the draw.
+
+**Measured** (production build, this Mac):
+- the 3D chunk is 236.8 KB gzipped (was 243.2);
+- 60 fps at every quality, through the tour with the films playing;
+- on a software renderer at quality 0: 27–32 fps per space;
+- Lighthouse mobile, Home: performance 88–89, LCP 3.5–3.7 s, TBT 0–10 ms, CLS 0, accessibility 100, best practices 100. The title poster is 23 KB (was 41);
+- labels 26 pages, 0 failures; links 0 failures; axe 0 issues; no console errors through the tour at 1440, 1280, 768 and 390.
+
+Not tested on real Windows hardware or in Firefox.
+
 ## Revision 4, 2026-11-06: a universe that never repeats, a quiet stage for the logo, the films large behind it
 
 The owner's review of round 3 asked for:

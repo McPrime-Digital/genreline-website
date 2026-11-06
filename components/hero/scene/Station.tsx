@@ -16,12 +16,11 @@ import {
   type Group, type Mesh, type MeshBasicMaterial, type ShaderMaterial, type Sprite, type SpriteMaterial, type Texture,
 } from 'three'
 import { hero, type HeroPanel } from '@/content/home'
-import { heroState, presence, skyWeight } from '@/components/hero/state'
+import { cinemaWeight, heroState, presence, skyWeight } from '@/components/hero/state'
 import { CHIPS, FACE, NODES, PANEL, SLOTS, TALL_KEEP, TILE, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
 import { live, pointerNear } from '@/components/hero/scene/rig'
 import { FilmScreen, watching } from '@/components/hero/scene/cinema'
-import { filmPicture, filmPlaying, filmProgress, filmTone, prefetchFilm, rewindFilm, wantFilm } from '@/components/hero/scene/films'
-import { farAtlas } from '@/components/hero/scene/far'
+import { filmAtlas, filmPicture, filmPlaying, filmProgress, filmTone, loopFilm, prefetchFilm, rewindFilm, wantAtlas, wantFilm } from '@/components/hero/scene/films'
 import { DECK_FILMS, HERO_FILMS } from '@/content/hero-films'
 import {
   BEAM_FRAG, BEAM_VERT, COMET_FRAG, FILM_FRAG, FILM_VERT, MOTE_FRAG, MOTE_VERT, HALL_FRAG, HALL_VERT, PANEL_FRAG, PANEL_VERT, POOL_FRAG, PROJECTOR_FRAG, PROJECTOR_VERT, SKY_FRAG, SKY_VERT, STRUCTURE_FRAG, STRUCTURE_VERT,
@@ -136,14 +135,17 @@ function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
   useFrame((_, dt) => {
     const m = mat.current
     if (!m || !mesh.current || !live.place) return
-    const w = presence(live.place, SHOT_OF[id]) * 0.65 + skyWeight(live.place, SHOT_OF[id]) * 0.35
+    // (the Client's floor is its cinema's: it shows with the cinema, late in the journey)
+    const w = id === 'client' ? cinemaWeight(live.place, 2) : presence(live.place, SHOT_OF[id]) * 0.65 + skyWeight(live.place, SHOT_OF[id]) * 0.35
     mesh.current.visible = w > 0.002
     m.uniforms.uWeight.value = w
     m.uniforms.uTime.value = live.time
-    if (id === 'suite' && m.uniforms.uAtlas.value !== farAtlas.texture) {
+    // (the Suite's finished frames are the films' stills: fetched once it is near)
+    if (id === 'suite' && w > 0.002) wantAtlas()
+    if (id === 'suite' && m.uniforms.uAtlas.value !== filmAtlas.texture) {
       // the floor's finished frames: the films' stills, once they are here
-      m.uniforms.uAtlas.value = farAtlas.texture
-      m.uniforms.uHasAtlas.value = farAtlas.texture ? 1 : 0
+      m.uniforms.uAtlas.value = filmAtlas.texture
+      m.uniforms.uHasAtlas.value = filmAtlas.texture ? 1 : 0
     }
     if (id === 'client') {
       m.uniforms.uFace.value = damp(m.uniforms.uFace.value, heroState.face, 2.2, Math.min(dt, 0.1))
@@ -376,11 +378,16 @@ function CrewLights({ theme }: { theme: HeroTheme }) {
  * of the soundstage, a crew at work playing across it (films.ts). Large, and a little dimmed: the logo and
  * its screens are the focus; the film is the world behind them.
  */
-const VOLUME = { centre: [0, 1.5, 5] as [number, number, number], radius: 36, length: 62, height: 26 }
+const VOLUME = (() => {
+  // pushed back a little (the owner, 2026-11-06), and taller to keep its size; exactly as wide as its film,
+  // so no dark panels idle at either end of it
+  const height = 29
+  return { centre: [0, 1.5, 1] as [number, number, number], radius: 40, height, length: height * (HERO_FILMS.find((f) => f.id === 'crew')?.aspect ?? 16 / 9) }
+})()
 function LedVolume() {
   return (
     <group position={NODES.crew}>
-      <FilmScreen film="crew" era={2} station="crew" size={[VOLUME.length, VOLUME.height]} curve={VOLUME.radius} position={VOLUME.centre} weight={crewWeight} bright={0.6} renderOrder={-7} />
+      <FilmScreen film="crew" era={2} station="crew" size={[VOLUME.length, VOLUME.height]} curve={VOLUME.radius} position={VOLUME.centre} weight={crewWeight} bright={0.5} renderOrder={-7} />
     </group>
   )
 }
@@ -388,24 +395,25 @@ function LedVolume() {
 // ── THE CLIENT: THE CINEMA → PREMIERE NIGHT ─────────────────────────────────
 //
 // A modern auditorium behind the tile, its house lights down (HALL_*): the screen spanning its wall at the
-// film's own 2.39 : 1, dark walls with sconces, a ceiling of fibre-optic stars, rows of seats in silhouette,
-// the floor's aisles of step lights (STRUCTURE mode 1), the projector's beam over it all (PROJECTOR_*). The
-// owner, 2026-11-06: set back a little but not made smaller (it is scaled up to match), "properly advanced
-// cinema with dim lights". As the station turns to its Stakeholders face, premiere night: the lights turn
-// gold and the aisles are carpeted red.
+// film's own 2.39 : 1, dark walls with sconces, a ceiling of fibre-optic stars, round 3's polished floor with
+// its gold deco fan and aisle lights, refined (STRUCTURE mode 1), the projector's beam over it all
+// (PROJECTOR_*). No seats. The owner, 2026-11-06: set back a little but not made smaller (it is scaled up to
+// match), "properly advanced cinema with dim lights", "i like the previous floor i just needed you to improve
+// it more". As the station turns to its Stakeholders face, premiere night: the lights turn gold and the aisle
+// is carpeted red.
 
 const CLIENT_FILM = HERO_FILMS.find((f) => f.id === 'client')
 /** The room, in the station's frame: the screen wall at z, the room open toward the camera at z + depth. */
 const HALL = (() => {
-  const hw = 22.4
+  // set back once more (−22 → −26: the owner, 2026-11-06, "push the screen back just a little") and scaled
+  // up to keep its size
+  const hw = 24.2
   const hh = hw / (CLIENT_FILM?.aspect ?? 2.39)
   return {
-    z: -22, depth: 20, wall: hw + 3.2, floor: -10.5, ceiling: 17.2, aisle: 8.6,
-    screen: { y: 1.8, hw, hh },
+    z: -26, depth: 24, wall: hw + 3.4, floor: -10.5, ceiling: 19.2, aisle: 8.6,
+    screen: { y: 1.95, hw, hh },
     /** The projector's lamp: above and in front, off the top of the frame. */
     lamp: [0, 15, 16] as Vec3,
-    /** The rows of seats: [z, the top of their backs], nearest the screen first, the floor raked toward the back. */
-    rows: [[-17, -7.2], [-14, -7.5], [-11, -7.8], [-8, -8.1]] as const,
   }
 })()
 
@@ -449,10 +457,8 @@ function Hall({ theme }: { theme: HeroTheme }) {
     ])
     // the ceiling: u across, v from the screen's end
     const ceiling = quads([{ at: [[W, C, near], [-W, C, near], [-W, C, z], [W, C, z]], uv: [[1, 1], [0, 1], [0, 0], [1, 0]] }])
-    const rw = W - 0.6
-    const rows = quads(HALL.rows.map(([rz, top]) => ({ at: [[-rw, top - 1.35, rz], [rw, top - 1.35, rz], [rw, top + 0.25, rz], [-rw, top + 0.25, rz]], uv: [[0, 0], [1, 0], [1, 1], [0, 1]] })))
     const beam = beamGeometry(HALL.lamp, [[-screen.hw, screen.y - screen.hh, z], [screen.hw, screen.y - screen.hh, z], [screen.hw, screen.y + screen.hh, z], [-screen.hw, screen.y + screen.hh, z]])
-    return { back, sides, ceiling, rows, beam }
+    return { back, sides, ceiling, beam }
   }, [z, near, W, F, C, screen])
   React.useEffect(() => () => Object.values(geos).forEach((g) => g.dispose()), [geos])
   // one set of uniforms per part (their sizes differ; each frame sets the same light on all of them)
@@ -466,7 +472,6 @@ function Hall({ theme }: { theme: HeroTheme }) {
       { geo: geos.back, PART: 0, uniforms: part([2 * W, C - F], [0, screen.y - (F + C) / 2]) },
       { geo: geos.sides, PART: 1, uniforms: part([depth, C - F]) },
       { geo: geos.ceiling, PART: 2, uniforms: part([2 * W, depth]) },
-      { geo: geos.rows, PART: 3, uniforms: part([2 * (W - 0.6), 1.6], [HALL.aisle, 0]) },
     ]
   }, [geos, theme, W, F, C, depth, screen])
   const beamUniforms = React.useMemo(() => ({ uColor: { value: hsl(210, 40, 88) }, uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: 0.06 } }), [])
@@ -476,7 +481,7 @@ function Hall({ theme }: { theme: HeroTheme }) {
   const group = React.useRef<Group>(null)
   useFrame((_, dt) => {
     if (!live.place || !group.current) return
-    const w = skyWeight(live.place, 2)
+    const w = cinemaWeight(live.place, 2)
     group.current.visible = w > 0.002
     if (!group.current.visible) return
     const here = presence(live.place, 2)
@@ -502,7 +507,7 @@ function Hall({ theme }: { theme: HeroTheme }) {
   return (
     <group ref={group} position={c} visible={false}>
       {parts.map((p) => (
-        <mesh key={p.PART} geometry={p.geo} renderOrder={p.PART === 3 ? -2.5 : -2.8} frustumCulled={false}>
+        <mesh key={p.PART} geometry={p.geo} renderOrder={-2.8} frustumCulled={false}>
           <shaderMaterial ref={(el) => void (partMats.current[p.PART] = el)} vertexShader={HALL_VERT} fragmentShader={HALL_FRAG} defines={{ PART: p.PART }} uniforms={p.uniforms} transparent premultipliedAlpha depthWrite={false} />
         </mesh>
       ))}
@@ -531,10 +536,16 @@ function Hall({ theme }: { theme: HeroTheme }) {
 // on. Under reduced motion a card only fades, and changes only on a click.
 
 const CINEMA = {
-  /** Where its foot stands, from the station: on the floor (Structure's y), behind the screens. */
-  at: [0, -10.5, -28] as Vec3,
-  /** The picture's height (the card is taller by its strip; as wide as its film's own shape). */
-  picture: 14,
+  /** Where its foot stands, from the station: on the floor (Structure's y), far behind the screens. */
+  at: [0, -10.5, -44] as Vec3,
+  /**
+   * The picture's height (the card is taller by its strip; as wide as its film's own shape): a big screen in
+   * the background (the owner, 2026-11-06: "the suite still has a small screen … the focus and attention
+   * must be on the 3d icon and everything surrounding" — large, far back, and dim).
+   */
+  picture: 26,
+  /** How bright it plays. */
+  bright: 0.45,
   /** Seconds for each way in and out; the next card follows the last this long after it begins to leave. */
   enter: { star: 1.7, rise: 1.3, fade: 0.45 },
   leave: { throw: 1.15, star: 1.5, fall: 1.7, fade: 0.45 },
@@ -603,7 +614,8 @@ function newCard(film: string, entry: Entry, at: number): Card {
   const spec = HERO_FILMS.find((f) => f.id === film)
   // a floor frame near its foot (the floor's grid in its own frame, +y away from the camera)
   const i = Math.floor(Math.random() * 6) - 3
-  const j = 15 + Math.floor(Math.random() * 3)
+  const foot = Math.floor((STRUCTURE.suite.at[2] - CINEMA.at[2] + FLOOR_CELL.origin) / FLOOR_CELL.size[1])
+  const j = foot - 1 + Math.floor(Math.random() * 3)
   const fx = (i + 0.5) * FLOOR_CELL.size[0]
   const fy = (j + 0.5) * FLOOR_CELL.size[1] - FLOOR_CELL.origin
   const floorZ = STRUCTURE.suite.at[2]
@@ -650,7 +662,7 @@ function FloorCinema() {
   useFrame(({ camera, size }, dt) => {
     if (!live.place) return
     const d = Math.min(dt, 0.1)
-    const w = skyWeight(live.place, 3)
+    const w = cinemaWeight(live.place, 3)
     const s = st.current
     const now = live.time
     const reduced = heroState.reduced
@@ -670,8 +682,11 @@ function FloorCinema() {
         cur.phase = 'play'
         cur.at = now
       }
-      // its film plays from as the card opens
-      if (cur.phase === 'play' || (cur.phase === 'in' && now - cur.at > CINEMA.enter[cur.entry] * 0.6)) wantFilm(cur.film, w)
+      // its film plays from as the card opens, once through (the title's projector loops some of the same films)
+      if (cur.phase === 'play' || (cur.phase === 'in' && now - cur.at > CINEMA.enter[cur.entry] * 0.6)) {
+        loopFilm(cur.film, false)
+        wantFilm(cur.film, w)
+      }
       if (cur.phase === 'play') {
         prefetchFilm(bag.peek())
         const ended = filmPlaying(cur.film) ? filmProgress(cur.film) > 0.975 : now - cur.at > CINEMA.hold
@@ -718,7 +733,7 @@ function FloorCinema() {
       const W = CINEMA.picture * c.aspect
       const el = now - c.at
       const centre = tmp.centre.set(foot.x, foot.y + Hc / 2, foot.z)
-      let sx = 1, sy = 1, scale = 1, alpha = 1, bright = 0.72, burn = 0, up = 1
+      let sx = 1, sy = 1, scale = 1, alpha = 1, bright = CINEMA.bright, burn = 0, up = 1
       let px = 0, py = 0, pz = 0, rx = 0, ry = 0, rz = 0
       let star = 0, flare = 0
       const head = tmp.head
@@ -730,8 +745,8 @@ function FloorCinema() {
           if (k < 0.5) {
             // from high to one side and behind, down onto the card's middle, faster and faster
             const t = easeIn(k / 0.5)
-            head.set(centre.x + c.side * 38 * (1 - t), centre.y + 26 * (1 - t) + Math.sin(t * Math.PI) * 3, centre.z - 12 * (1 - t))
-            dir.set(-c.side * 38, -26, 12).normalize().multiplyScalar(4 + 14 * t)
+            head.set(centre.x + c.side * 54 * (1 - t), centre.y + 30 * (1 - t) + Math.sin(t * Math.PI) * 4, centre.z - 14 * (1 - t))
+            dir.set(-c.side * 54, -30, 14).normalize().multiplyScalar(6 + 18 * t)
             star = Math.min(1, k / 0.06)
             alpha = 0
             up = 0
@@ -743,7 +758,7 @@ function FloorCinema() {
             flare = 1 - u * 0.5
             sx = easeOut(clamp01(u / 0.5))
             sy = u < 0.5 ? 0.03 : 0.03 + 0.97 * easeOut((u - 0.5) / 0.5)
-            bright = 0.72 + 1.6 * (1 - u)
+            bright = CINEMA.bright + 1.4 * (1 - u)
             up = sx * sy
           }
         } else if (c.entry === 'rise') {
@@ -762,9 +777,9 @@ function FloorCinema() {
         const k = clamp01(el / CINEMA.leave[c.exit])
         if (c.exit === 'throw') {
           const t = easeIn(k)
-          px = c.side * 40 * t
-          py = (2 + c.lift * 10) * t
-          pz = 6 * t
+          px = c.side * 62 * t
+          py = (3 + c.lift * 14) * t
+          pz = 8 * t
           ry = -c.side * 1.0 * t
           rz = c.spin * 0.5 * t
           burn = c.side * clamp01((k - 0.08) / 0.92)
@@ -774,14 +789,14 @@ function FloorCinema() {
           // folded to a line, the line to a point, the point a star flying off
           sy = 1 - 0.97 * easeIn(clamp01(k / 0.36))
           sx = 1 - easeIn(clamp01((k - 0.36) / 0.22))
-          bright = 0.72 + 1.8 * clamp01(k / 0.5)
+          bright = CINEMA.bright + 1.6 * clamp01(k / 0.5)
           alpha = sx > 0.01 ? 1 : 0
           up = sx * sy
           if (k > 0.5) {
             const u = clamp01((k - 0.5) / 0.5)
             const t = easeIn(u)
-            head.set(centre.x + c.side * 34 * t, centre.y + (8 + c.lift * 10) * t, centre.z - 30 * t)
-            dir.set(c.side * 34, 8 + c.lift * 10, -30).normalize().multiplyScalar(2 + 16 * t)
+            head.set(centre.x + c.side * 48 * t, centre.y + (10 + c.lift * 14) * t, centre.z - 36 * t)
+            dir.set(c.side * 48, 10 + c.lift * 14, -36).normalize().multiplyScalar(3 + 20 * t)
             star = Math.min(1, (k - 0.5) / 0.08) * (1 - clamp01((u - 0.7) / 0.3))
             flare = 1 - u
           } else if (k > 0.4) {
@@ -832,7 +847,7 @@ function FloorCinema() {
       // the star: a quad facing the camera, along its flight on screen
       comet.visible = star > 0.002
       if (comet.visible) {
-        const wid = 1.6 * (1 + flare * 1.2)
+        const wid = 2.2 * (1 + flare * 1.2)
         const len = dir.length()
         tmp.tail.copy(head).sub(dir)
         comet.position.copy(head).add(tmp.tail).multiplyScalar(0.5)
@@ -855,7 +870,7 @@ function FloorCinema() {
     if (pool.current && pm) {
       pool.current.visible = stand > 0.01 && !!cur2
       if (cur2) {
-        pool.current.scale.set(CINEMA.picture * cur2.aspect * 1.25, 7, 1)
+        pool.current.scale.set(CINEMA.picture * cur2.aspect * 1.25, 10, 1)
         const tone = filmTone(cur2.film)
         if (tone) (pm.uniforms.uColor.value as Color).copy(tone)
       }
@@ -899,7 +914,7 @@ function FloorCinema() {
           <shaderMaterial ref={(el) => void (cometMats.current[i] = el)} vertexShader={FILM_VERT} fragmentShader={COMET_FRAG} uniforms={cometUniforms[i]} transparent depthWrite={false} blending={AdditiveBlending} />
         </mesh>
       ))}
-      <mesh ref={pool} geometry={geo} position={[foot.x, foot.y + 0.03, foot.z + 3.5]} rotation-x={-Math.PI / 2} renderOrder={-5.9} visible={false}>
+      <mesh ref={pool} geometry={geo} position={[foot.x, foot.y + 0.03, foot.z + 5]} rotation-x={-Math.PI / 2} renderOrder={-5.9} visible={false}>
         <shaderMaterial ref={poolMat} vertexShader={FILM_VERT} fragmentShader={POOL_FRAG} uniforms={poolUniforms} transparent depthWrite={false} blending={AdditiveBlending} />
       </mesh>
     </group>
@@ -1129,8 +1144,8 @@ function Chips({ theme, sources, anisotropy, armed }: { theme: HeroTheme; source
 // ── THE CINEMAS' WEIGHTS ────────────────────────────────────────────────────
 
 /** How present each space's cinema is: with its own sky (it shows on the way in, before the screens gather). */
-const crewWeight = () => (live.place ? skyWeight(live.place, 1) : 0)
-const clientWeight = () => (live.place ? skyWeight(live.place, 2) : 0)
+const crewWeight = () => (live.place ? cinemaWeight(live.place, 1) : 0)
+const clientWeight = () => (live.place ? cinemaWeight(live.place, 2) : 0)
 
 // ── THE STATION ─────────────────────────────────────────────────────────────
 

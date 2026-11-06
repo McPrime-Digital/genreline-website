@@ -44,9 +44,16 @@ type Clip = {
 
 const CLIPS: Clip[] = [
   {
-    id: 'crew', title: 'Making of PARVA', year: 2021, maker: 'P Sheshadri', licence: 'CC BY 3.0', page: 'https://commons.wikimedia.org/wiki/File:Making_of_PARVA.webm',
-    // a company at work: the read-through in the round, a costume fitted, the music rehearsed
-    from: [{ key: 'parva', start: 938, length: 8 }, { key: 'parva', start: 1112, length: 6 }, { key: 'parva', start: 1483, length: 7 }],
+    id: 'crew', title: 'Artemis III terminal countdown simulation', year: 2026, maker: 'NASA (Cory S Huston)', licence: 'public domain',
+    page: 'https://images.nasa.gov/details/KSC-20260507-MH-CSH01-0001-Artemis_III_Firing_Room_1_Launch_Sim-M20700',
+    // a crew at work, the owner's "real human modern era video a bit longer": the launch team in Firing Room 1
+    // — the launch director at the microphone, the leads conferring, controllers at their consoles — whole
+    // shots of four seconds each (the reel's own cuts at 19.5, 51.7, 69.9, 211.1, 291.6 and 340.5 s)
+    from: [
+      { key: 'nasa/fr3', ext: 'mp4', start: 20.2, length: 4 }, { key: 'nasa/fr3', ext: 'mp4', start: 52.2, length: 4 },
+      { key: 'nasa/fr3', ext: 'mp4', start: 70.6, length: 4 }, { key: 'nasa/fr3', ext: 'mp4', start: 212, length: 4 },
+      { key: 'nasa/fr3', ext: 'mp4', start: 292.2, length: 4 }, { key: 'nasa/fr3', ext: 'mp4', start: 341.2, length: 4 },
+    ],
     width: 854, loop: true,
   },
   {

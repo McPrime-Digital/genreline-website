@@ -36,7 +36,7 @@ export const heroState = {
   /**
    * How the title's poster is laid over the stage (HeroDirector places it): a point of the poster, in the
    * poster's own stage pixels (pw × ph, posters.json), lands at x0 + x·k, y0 + y·k on this stage (w × h).
-   * The title's far worlds stand by it, so the scene takes over from the poster without a jump.
+   * The title's projector lamp stands by it, so the scene takes over from the poster without a jump.
    */
   posterMap: null as null | { tall: boolean; k: number; x0: number; y0: number; w: number; h: number; pw: number; ph: number },
   /** The scene asks for one frame (demand mode); a no-op until the scene mounts. */
@@ -112,6 +112,19 @@ export function skyWeight(place: Place, shot: Shot) {
   if (seg.kind === 'hold') return seg.shot === shot ? 1 : 0
   if (seg.to === shot) return smoothstep(0.12, 0.85, t)
   if (seg.from === shot) return 1 - smoothstep(0.12, 0.8, t)
+  return 0
+}
+
+/**
+ * How much of a space's cinema shows (0–1): only as its space arrives, late in the journey, and gone early
+ * as it leaves — so the ride between spaces is space itself (the owner, 2026-11-06: the journey "even
+ * previews whats playing in the client space to early … so that we can see the outerspace during that ride").
+ */
+export function cinemaWeight(place: Place, shot: Shot) {
+  const { seg, t } = place
+  if (seg.kind === 'hold') return seg.shot === shot ? 1 : 0
+  if (seg.to === shot) return smoothstep(0.62, 0.95, t)
+  if (seg.from === shot) return 1 - smoothstep(0.04, 0.32, t)
   return 0
 }
 

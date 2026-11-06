@@ -294,7 +294,9 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
         const active = w > 0.5 ? 'true' : 'false'
         if (card.dataset.active !== active) card.dataset.active = active
         if (i !== 0) caption = Math.max(caption, w)
-        else set(scrimTitle, 'opacity', w.toFixed(3))
+        // (the shade behind the title goes with its words the moment the tour is taken — not after: the logo
+        // moves into that space as the camera readies, and must not pass under it)
+        else set(scrimTitle, 'opacity', s.tour ? '0' : w.toFixed(3))
       })
       set(scrimCaption, 'opacity', caption.toFixed(3))
       const nearest = nearestShot(p)
@@ -477,7 +479,7 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
             const m = /translate3d\(([-\d.]+)px, ([-\d.]+)px/.exec(img.style.transform)
             if (m && (Math.abs(Number(m[1]) - ox) > 2 || Math.abs(Number(m[2]) - oy) > 2)) console.warn('hero: the landing placed the poster differently', m[1], m[2], ox, oy)
           }
-          // (the scene's far worlds on the title are placed by the same scaling: heroState.posterMap — not while
+          // (the title's projector lamp is placed by the same scaling: heroState.posterMap — not while
           // a poster is being made, `?shot=`: the poster's own frame is the one they are defined in)
           if (!s.tour && !held) heroState.posterMap = { tall: shape === 'tall', k: scale, x0: at.left * st.width - pf.left * pf.width * scale, y0: at.top * st.height - pf.top * pf.height * scale, w: st.width, h: st.height, pw: pf.width, ph: pf.height }
           img.style.width = `${(pf.width * scale).toFixed(1)}px`
@@ -657,7 +659,8 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       root.dataset.tour = 'on'
       playBtn?.setAttribute('aria-expanded', 'true')
       // the lens opens, the title steps aside, the line's light runs
-      if (!s.reduced) iris?.animate([{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(7)', opacity: 0 }], { duration: 760, delay: 60, easing: EASE_OUT, fill: 'none' })
+      // (a crisp ring opening a little way and fading, not a blur scaled to seven times its size)
+      if (!s.reduced) iris?.animate([{ transform: 'scale(1)', opacity: 0.85 }, { transform: 'scale(2.6)', opacity: 0 }], { duration: 560, delay: 40, easing: EASE_OUT, fill: 'none' })
       section.dataset.launching = 'true'
       s.playHover = 1
       window.clearTimeout(launching)
@@ -763,7 +766,7 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
   // The scene starts as soon as the page has painted when the visitor is plainly there (a mouse already over
   // the page, a page restored mid-scroll), or at their first move, scroll, touch or key; failing those, once
   // the page has been quiet a few seconds. The title's poster is the scene's first frame — the same universe,
-  // the same far worlds, the logo in the same place — so whenever the scene takes over, nothing lands late
+  // the same lamp, the logo in the same place — so whenever the scene takes over, nothing lands late
   // and nothing jumps (the owner, 2026-11-06: the space objects had arrived seconds late, "like boom"): it
   // only begins to move. (Booting it during the page's own load blocked a throttled phone's main thread for
   // over half a second, and cost the page its Largest Contentful Paint.)

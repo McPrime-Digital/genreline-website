@@ -24,11 +24,11 @@ export type HeroFilm = {
 export const HERO_FILMS: readonly HeroFilm[] = [
   {
     "id": "crew",
-    "title": "Making of PARVA",
-    "year": 2021,
-    "maker": "P Sheshadri",
-    "licence": "CC BY 3.0",
-    "source": "https://commons.wikimedia.org/wiki/File:Making_of_PARVA.webm",
+    "title": "Artemis III terminal countdown simulation",
+    "year": 2026,
+    "maker": "NASA (Cory S Huston)",
+    "licence": "public domain",
+    "source": "https://images.nasa.gov/details/KSC-20260507-MH-CSH01-0001-Artemis_III_Firing_Room_1_Launch_Sim-M20700",
     "mp4": "/hero/films/crew.mp4",
     "still": "/hero/films/crew.avif",
     "aspect": 1.7792,
@@ -212,4 +212,4 @@ export const FILM_ATLAS = '/hero/films/atlas.avif'
 export const DECK_FILMS: readonly string[] = ["suite-1","suite-2","suite-3","suite-4","suite-5","suite-6","suite-7","suite-8","suite-9","suite-10","suite-11","suite-12"]
 
 // PLACEHOLDER — the credit for the placeholder films; it goes when they are replaced
-export const FILM_CREDIT = "The films shown are placeholders: excerpts of Spring (Blender Studio, 2019) and Sprite Fright (Blender Studio, 2021) under CC BY 4.0 and Making of PARVA (P Sheshadri, 2021), Tears of Steel (Blender Foundation, 2012), Cheetahs on the Edge (Gregory Wilson, 2012), Sintel (Blender Foundation, 2010), Mount Bromo time-lapse (Justin Ng, 2012), Time-Lapsing thru Europe (Tellurian Media, 2012) and Big Buck Bunny (Blender Foundation, 2008) under CC BY 3.0 (creativecommons.org/licenses); Gulliver’s Travels (Fleischer Studios, 1939) is in the public domain in the United States, STS-51, in IMAX (NASA, 1993) is in the public domain and A Trip to the Moon (Georges Méliès, 1902) is in the public domain."
+export const FILM_CREDIT = "The films shown are placeholders: excerpts of Spring (Blender Studio, 2019) and Sprite Fright (Blender Studio, 2021) under CC BY 4.0 and Tears of Steel (Blender Foundation, 2012), Cheetahs on the Edge (Gregory Wilson, 2012), Sintel (Blender Foundation, 2010), Mount Bromo time-lapse (Justin Ng, 2012), Time-Lapsing thru Europe (Tellurian Media, 2012) and Big Buck Bunny (Blender Foundation, 2008) under CC BY 3.0 (creativecommons.org/licenses); Artemis III terminal countdown simulation (NASA (Cory S Huston), 2026) is in the public domain, Gulliver’s Travels (Fleischer Studios, 1939) is in the public domain in the United States, STS-51, in IMAX (NASA, 1993) is in the public domain and A Trip to the Moon (Georges Méliès, 1902) is in the public domain."

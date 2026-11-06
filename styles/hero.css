@@ -69,7 +69,7 @@
     linear-gradient(0deg, hsl(var(--background) / 0.66) 0%, hsl(var(--background) / 0) 14%);
 }
 .hero-scrim { position: absolute; inset: 0; will-change: opacity; }
-.hero-scrim-title { background: radial-gradient(ellipse 50% 60% at 18% 52%, hsl(var(--background) / 0.74) 0%, hsl(var(--background) / 0) 100%); }
+.hero-scrim-title { background: radial-gradient(ellipse 50% 60% at 18% 52%, hsl(var(--background) / 0.74) 0%, hsl(var(--background) / 0) 100%); transition: opacity 420ms var(--ease-out) 110ms; }
 .hero-scrim-caption { opacity: 0; background: radial-gradient(ellipse 50% 54% at 15% 84%, hsl(var(--background) / 0.78) 0%, hsl(var(--background) / 0) 100%); }
 @media (max-aspect-ratio: 5/4) {
   .hero-scrim-title { background: linear-gradient(0deg, hsl(var(--background) / 0.86) 0%, hsl(var(--background) / 0.55) 34%, hsl(var(--background) / 0) 58%); }
@@ -297,9 +297,10 @@ button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--
    The hero is one screen; "Take the tour" sets html[data-tour='on'] and HeroDirector glides the page
    into the journey. Everything here is opacity and transform (the Windows smoothness rule), on the
    house's curves, as transitions — so a visitor who leaves mid-way reverses from wherever it is.
-   The sequence: the press (120 ms) · the lens opens (60 ms in, 760 ms) · the control drifts down and
-   fades (80 ms in) · the title steps aside (150 ms in) · the camera dives (200 ms in) · the track
-   draws in (450 ms in) · its marks pop in, 70 ms apart (800 ms in) · "Exit tour" (800 ms in).
+   The sequence: the press (120 ms) · a ring opens from the control (40 ms in, 560 ms) · the control
+   drifts down and fades (80 ms in) · the title steps aside line by line (110 ms in, 50 ms apart) · the
+   camera moves round on an ease-in-out (1.2 s) · the track draws in (450 ms in) · its marks pop in,
+   70 ms apart (800 ms in) · "Exit tour" (800 ms in) · the cue to scroll rises as the camera lands (950 ms in).
    Leaving is quicker: everything goes at once, in 180–200 ms, while the camera rewinds. */
 
 /* Outside the tour only the title card can be reached: the spaces' and the close's words wait for it. */
@@ -340,7 +341,7 @@ button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--
 }
 :root[data-tour='on']:not([data-tour-leaving]) .hero-begin {
   pointer-events: auto; opacity: 1; visibility: visible; transform: none;
-  transition: opacity 420ms var(--ease-out) 720ms, transform 520ms var(--ease-out) 720ms, visibility 0s;
+  transition: opacity 420ms var(--ease-out) 950ms, transform 520ms var(--ease-out) 950ms, visibility 0s;
 }
 .hero-begin-line {
   position: relative; width: 2px; height: 34px; border-radius: 2px; overflow: hidden; flex: none;
@@ -363,13 +364,17 @@ button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--
 /* on the tour the title waits off stage (the scroll's journey starts from the logo alone); it fades back on leaving */
 .hero-shot[data-shot='0'] { transition: opacity 420ms var(--ease-out); }
 
-/* the title steps aside as the lens opens (only while launching: after that the scroll owns its fade) */
+/* the title steps aside as the lens opens, line after line, 50 ms apart (only while launching: after that
+   the scroll owns its fade); it comes back all at once on leaving */
 .hero-shot-title > * { transition: opacity 360ms var(--ease-out), transform 360ms var(--ease-out); }
 [data-launching='true'] .hero-shot-title > *,
 :root[data-tour='on'] .hero-shot-title > * {
-  opacity: 0; transform: translateX(-28px);
-  transition: opacity 420ms var(--ease-out) 150ms, transform 560ms var(--ease-out) 150ms;
+  opacity: 0; transform: translateX(-24px);
+  transition: opacity 380ms var(--ease-out) calc(110ms + var(--line, 0) * 50ms), transform 520ms var(--ease-out) calc(110ms + var(--line, 0) * 50ms);
 }
+.hero-shot-title > :nth-child(2) { --line: 1; }
+.hero-shot-title > :nth-child(3) { --line: 2; }
+.hero-shot-title > :nth-child(4) { --line: 3; }
 
 /* the track draws in from the left, then its marks pop in one after another */
 .hero-track { transition: opacity 200ms var(--ease-out), visibility 0s linear 200ms; }

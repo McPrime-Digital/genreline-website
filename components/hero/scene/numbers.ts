@@ -163,7 +163,9 @@ export const STORY: readonly Segment[] = [
   { kind: 'hold', shot: 0, vh: 14 },
   { kind: 'travel', from: 0, to: 1, vh: 85 },
   { kind: 'hold', shot: 1, vh: 90 },
-  { kind: 'travel', from: 1, to: 2, vh: 140 },
+  // a little longer than the rest (the owner, 2026-11-06: "the journey can be longer a little so that we can
+  // see the outerspace during that short ride")
+  { kind: 'travel', from: 1, to: 2, vh: 210 },
   { kind: 'hold', shot: 2, vh: 110 },
   { kind: 'travel', from: 2, to: 3, vh: 150 },
   { kind: 'hold', shot: 3, vh: 90 },
