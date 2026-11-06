@@ -3,8 +3,8 @@
  * manifest (content/media.ts). Server-only: it checks at BUILD time whether
  * the file exists.
  *
- *  · a capture renders a theme-paired pair (light/dark), so the screenshot
- *    follows the visitor's theme (S-W §8 "in both themes");
+ *  · a capture renders its dark screenshot (the site is dark only — owner,
+ *    2026-11-06), or its light one if no dark one was captured;
  *  · an upload renders the owner's image, or a poster-first video that plays
  *    on request (S-B: nothing decorative moves on its own);
  *  · a missing file renders a labelled placeholder that says exactly what
@@ -115,26 +115,16 @@ export function Media({
       warnMissing([id])
       return null
     }
-    const light = f.light ?? f.dark!
-    const dark = f.dark ?? f.light!
-    const dim = (src: string) => DIMS[src.replace(/^\/captures\//, '').replace(/(\.[0-9a-f]{10})?\.webp$/, '')] ?? { w: s.width * 2, h: s.height * 2 }
-    const [dl, dd] = [dim(light), dim(dark)]
+    const src = f.dark ?? f.light!
+    const d = DIMS[src.replace(/^\/captures\//, '').replace(/(\.[0-9a-f]{10})?\.webp$/, '')] ?? { w: s.width * 2, h: s.height * 2 }
     if (priority) {
-      // The hero is usually the largest paint. Preload ONLY the image for the
-      // visitor's colour scheme — a media-scoped preload is skipped by the
-      // browser when it does not match, so the pair never costs two downloads.
-      for (const [src, d, scheme] of [[light, dl, 'light'], [dark, dd, 'dark']] as const) {
-        const { srcSet } = getImageProps({ src, alt: '', width: d.w, height: d.h, sizes }).props
-        if (srcSet) preload(src, { as: 'image', imageSrcSet: srcSet, imageSizes: sizes, fetchPriority: 'high', media: `(prefers-color-scheme: ${scheme})` } as Parameters<typeof preload>[1])
-      }
+      // The hero is usually the largest paint: announce it in the <head>.
+      const { srcSet } = getImageProps({ src, alt: '', width: d.w, height: d.h, sizes }).props
+      if (srcSet) preload(src, { as: 'image', imageSrcSet: srcSet, imageSizes: sizes, fetchPriority: 'high' } as Parameters<typeof preload>[1])
     }
     return (
       <div className={cn(frameCls, className)}>
-        {/* A theme pair is never preloaded: `priority` would fetch BOTH images on
-            every visit. Lazy loading skips the display:none twin entirely;
-            fetchPriority lifts the visible one when it is the hero. */}
-        <Image src={light} alt={s.alt} width={dl.w} height={dl.h} sizes={sizes} quality={quality} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-light h-auto w-full" />
-        <Image src={dark} alt={s.alt} width={dd.w} height={dd.h} sizes={sizes} quality={quality} loading="lazy" fetchPriority={priority ? 'high' : 'auto'} className="theme-dark h-auto w-full" />
+        <Image src={src} alt={s.alt} width={d.w} height={d.h} sizes={sizes} quality={quality} loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : 'auto'} className="h-auto w-full" />
       </div>
     )
   }

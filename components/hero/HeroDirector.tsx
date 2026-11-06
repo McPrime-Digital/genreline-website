@@ -33,8 +33,10 @@
 import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { cut, heroState, nearestShot, SHOT_AT, shotWeight, storyAt, timecode } from '@/components/hero/state'
-import { FACE, SCROLL_DAMPING, type Quality, type Shot } from '@/components/hero/scene/numbers'
+import { FACE, FOV, SCROLL_DAMPING, type Quality, type Shot } from '@/components/hero/scene/numbers'
+import { logoOnStage } from '@/components/hero/frame'
 import type { HeroSources } from '@/components/hero/scene/textures'
+import type { PosterFrames } from '@/components/hero/HomeHero'
 import { useReducedMotion } from '@/lib/motion'
 
 const HeroCanvas = dynamic(() => import('@/components/hero/scene/HeroCanvas'), { ssr: false, loading: () => null })
@@ -96,6 +98,46 @@ function whenEngaged(fn: () => void) {
 }
 
 const params = () => new URLSearchParams(window.location.search)
+
+/** A CSS cubic-bezier as a function of time (0–1), solved exactly, for motion driven from script. */
+function bezier(x1: number, y1: number, x2: number, y2: number) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by
+  const sx = (t: number) => ((ax * t + bx) * t + cx) * t
+  const sy = (t: number) => ((ay * t + by) * t + cy) * t
+  const dx = (t: number) => (3 * ax * t + 2 * bx) * t + cx
+  return (x: number) => {
+    if (x <= 0) return 0
+    if (x >= 1) return 1
+    let t = x
+    for (let i = 0; i < 8; i++) {
+      const e = sx(t) - x
+      const d = dx(t)
+      if (Math.abs(e) < 1e-6 || Math.abs(d) < 1e-6) break
+      t -= e / d
+    }
+    // Newton's step can wander on steep curves: settle it by halving
+    if (t < 0 || t > 1 || Math.abs(sx(t) - x) > 1e-4) {
+      let lo = 0
+      let hi = 1
+      t = x
+      for (let i = 0; i < 30; i++) {
+        if (sx(t) < x) lo = t
+        else hi = t
+        t = (lo + hi) / 2
+      }
+    }
+    return sy(t)
+  }
+}
+/** The house's on-screen curve (tokens.css --ease-in-out), for the tour's glide. */
+const EASE_IN_OUT = bezier(0.77, 0, 0.175, 1)
+/** The house's entering curve (tokens.css --ease-out): for the play control's iris, and for the dive. */
+const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
+const EASE_OUT_FN = bezier(0.23, 1, 0.32, 1)
+
+/** The gap between the logo's lowest point (its halo included) and the play control, in pixels. */
+const PLAY_GAP = 18
 
 type Choice = { tier: 'live'; quality: Quality; hz: number } | { tier: 'poster' }
 
@@ -185,7 +227,7 @@ const HELD: Record<string, { shot: Shot; face: 0 | 1 }> = {
   stakeholders: { shot: 2, face: 1 }, suite: { shot: 3, face: 0 }, close: { shot: 4, face: 0 },
 }
 
-export function HeroDirector({ sources }: { sources: HeroSources }) {
+export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; posterFrames: PosterFrames }) {
   const layer = React.useRef<HTMLDivElement>(null)
   const reducedPref = useReducedMotion()
   const reduced = reducedPref ?? false
@@ -201,6 +243,8 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     setStage(el?.closest<HTMLElement>('[data-hero-stage]') ?? null)
   }, [])
   const kickRef = React.useRef<() => void>(() => {})
+  // fixed for the page's life (written at build time), read by the measure in the effect below
+  const framesRef = React.useRef(posterFrames)
   const tierRef = React.useRef<Tier>('pending')
 
   React.useEffect(() => {
@@ -332,7 +376,6 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
       const range = section.offsetHeight - window.innerHeight
       window.scrollTo({ top: top + range * SHOT_AT[shot], behavior })
     }
-    s.goToShot = (shot: number) => scrollToShot(shot, s.reduced ? 'instant' : 'smooth')
 
     // Keyboard: focusing something in a shot that is not on screen brings that shot up.
     const onFocus = (e: FocusEvent) => {
@@ -351,6 +394,7 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     const shotsEl = section.querySelector<HTMLElement>('.hero-shots')
     const slateEl = section.querySelector<HTMLElement>('.hero-top')
     const trackEl = section.querySelector<HTMLElement>('.hero-track')
+    const playWrap = section.querySelector<HTMLElement>('[data-hero-play-wrap]')
     const card = (n: number) => section.querySelector<HTMLElement>(`[data-shot="${n}"]`)
     const measure = () => {
       if (!stageEl || !shotsEl) return
@@ -366,28 +410,80 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
         const top = sh.top + el.offsetTop
         // the widest line of the card, not the card's own box
         let right = left
-        for (const child of Array.from(el.querySelectorAll<HTMLElement>('h1 > span, h2 > span, h2, p, .hero-ctas > a'))) {
+        for (const child of Array.from(el.querySelectorAll<HTMLElement>('h1 > span, h2 > span, h2, p, li, .hero-ctas > a'))) {
           const r = child.getBoundingClientRect()
           if (r.width) right = Math.max(right, r.right)
         }
-        return { top: fy(top), right: fx(right) }
+        return { left: fx(left), top: fy(top), right: fx(right) }
       }
       const title = edges(card(0))
       const caption = edges(card(1))
       const close = edges(card(4))
       const pad = 10 / st.height
+      const playH = playWrap?.offsetHeight ?? 0
+      const exitEl = section.querySelector<HTMLElement>('[data-hero-exit]')
+      const under = Math.max(slateEl?.getBoundingClientRect().bottom ?? 0, s.tour && exitEl ? exitEl.getBoundingClientRect().bottom : 0)
       s.layout = {
-        top: slateEl ? fy(slateEl.getBoundingClientRect().bottom) + pad : 0.15,
+        top: under ? fy(under) + pad : 0.15,
+        slate: slateEl ? fy(slateEl.getBoundingClientRect().bottom) : 0.12,
         bottom: trackEl ? fy(trackEl.getBoundingClientRect().top) - pad * 2.4 : 0.93,
-        titleRight: title?.right ?? 0.42,
+        titleRight: title?.right ?? 0.5,
         titleTop: title?.top ?? 0.6,
+        edge: title?.left ?? 0.03,
+        // the control, and the gap above it and below it
+        play: playH ? (playH + PLAY_GAP * 2) / st.height : 0,
         captionTop: caption?.top ?? 0.74,
         captionRight: caption?.right ?? 0.42,
+        // each space's own caption: they differ in length, and each shot leaves room for its own
+        captions: [1, 2, 3].map((n) => {
+          const e = edges(card(n))
+          return { top: e?.top ?? 0.74, right: e?.right ?? 0.42 }
+        }),
         closeTop: close?.top ?? 0.74,
         closeRight: close?.right ?? 0.5,
       }
+      // The play control, just under the logo (the owner, 2026-11-06: "right under the 3d logo not
+      // exactly on it"): the logo's middle and its lowest point, from the camera's own framing.
+      if (playWrap) {
+        const aspect = st.width / st.height
+        const at = logoOnStage(aspect < FOV.tallBelowAspect, aspect, s.layout)
+        const w = playWrap.offsetWidth
+        const edgePx = s.layout.edge * st.width
+        const x = Math.min(st.width - edgePx - w, Math.max(edgePx, at.centerX * st.width - w / 2))
+        const y = at.bottom * st.height + PLAY_GAP
+        playWrap.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`
+        playWrap.dataset.placed = 'true'
+        // the title's poster, scaled and placed so its logo is where the camera puts it (and only then shown)
+        const img = section.querySelector<HTMLImageElement>('[data-poster="title"] img')
+        const box = img?.parentElement?.getBoundingClientRect()
+        const shape = img && /-tall\./.test(img.currentSrc || img.src) ? 'tall' : 'wide'
+        const pf = framesRef.current[shape]
+        if (img && box && pf && img.complete !== false) {
+          const scale = ((at.right - at.left) * st.width) / ((pf.right - pf.left) * pf.width)
+          const ox = at.left * st.width - pf.left * pf.width * scale - (box.left - st.left)
+          const oy = at.top * st.height - pf.top * pf.height * scale - (box.top - st.top)
+          img.style.width = `${(pf.width * scale).toFixed(1)}px`
+          img.style.height = `${(pf.height * scale).toFixed(1)}px`
+          img.style.transform = `translate3d(${ox.toFixed(1)}px, ${oy.toFixed(1)}px, 0)`
+          img.dataset.aligned = 'true'
+        }
+        // the posters are rendered from the held title shot: where its logo is, for the script
+        if (held) stageEl.dataset.logo = JSON.stringify({ ...at, width: st.width, height: st.height })
+      }
       s.invalidate()
     }
+    // The play control's hover quickens the line's light (HeroScene Line).
+    const playBtn = section.querySelector<HTMLElement>('[data-hero-play]')
+    const playOn = () => void (s.playHover = 1)
+    const playOff = () => void (s.playHover = 0)
+    playBtn?.addEventListener('pointerenter', playOn)
+    playBtn?.addEventListener('pointerleave', playOff)
+    playBtn?.addEventListener('focus', playOn)
+    playBtn?.addEventListener('blur', playOff)
+
+    const titleImg = section.querySelector<HTMLImageElement>('[data-poster="title"] img')
+    titleImg?.addEventListener('load', measure)
+
     measure()
     const ro = new ResizeObserver(measure)
     if (stageEl) ro.observe(stageEl)
@@ -408,26 +504,168 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
       setFace(s.face ? 0 : 1)
     }, FACE.every)
 
-    // GSAP ScrollTrigger maps the scroll to progress, after first paint.
+    // GSAP ScrollTrigger maps the scroll to progress, after first paint (or at once, if the visitor takes
+    // the tour before then).
     let revert = () => {}
     let cancelled = false
-    const stopWaiting = afterFirstPaint(async () => {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
-      if (cancelled) return
-      gsap.registerPlugin(ScrollTrigger)
-      const ctx = gsap.context(() => {
-        // The scroll's progress through the hero — read on every scroll and on every refresh, so a
-        // page restored mid-hero (a reload, the back button) starts where it is.
-        const follow = (self: { progress: number }) => {
-          if (held) return
-          s.target = self.progress
-          kick()
+    let refresh = () => {}
+    let loading: Promise<void> | null = null
+    const loadScroll = () =>
+      (loading ??= (async () => {
+        const [{ gsap }, { ScrollTrigger }] = await Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
+        if (cancelled) return
+        gsap.registerPlugin(ScrollTrigger)
+        const ctx = gsap.context(() => {
+          // The scroll's progress through the hero — read on every scroll and on every refresh, so a
+          // page restored mid-hero (a reload, the back button) starts where it is.
+          const follow = (self: { progress: number }) => {
+            // one screen at the title until the visitor takes the tour
+            if (held || !s.tour) return
+            s.target = self.progress
+            kick()
+          }
+          ScrollTrigger.create({ trigger: section, start: 'top top', end: 'bottom bottom', onUpdate: follow, onRefresh: follow })
+        }, section)
+        ScrollTrigger.refresh()
+        refresh = () => ScrollTrigger.refresh()
+        revert = () => ctx.revert()
+      })())
+    const stopWaiting = afterFirstPaint(() => void loadScroll())
+
+    // ── THE TOUR (the owner, 2026-11-06) ─────────────────────────────────────
+    // The hero is one screen. "Take the tour" grows it to the journey's length and glides the page to
+    // the Crew space, so the camera dives at once; the track draws in and "Exit tour" appears. Exit (or
+    // Escape) rewinds to the title and the hero is one screen again. The page's motion is CSS on
+    // html[data-tour] (hero.css); the glide is the scroll itself, on the house's on-screen curve, and
+    // the visitor takes it over the moment they wheel, touch or press a key.
+    const root = document.documentElement
+    const exitBtn = section.querySelector<HTMLButtonElement>('[data-hero-exit]')
+    const iris = section.querySelector<HTMLElement>('.hero-play-iris')
+    const heroTop = () => section.getBoundingClientRect().top + window.scrollY
+    const shotTop = (shot: number) => heroTop() + (section.offsetHeight - window.innerHeight) * SHOT_AT[shot]
+    let glideRaf = 0
+    let glideDone: (() => void) | null = null
+    const stopGlide = () => {
+      if (glideRaf) cancelAnimationFrame(glideRaf)
+      glideRaf = 0
+      glideDone = null
+    }
+    const glide = (to: number, done?: () => void, curve = EASE_IN_OUT) => {
+      stopGlide()
+      const from = window.scrollY
+      const distance = Math.abs(to - from)
+      if (s.reduced || distance < 2) {
+        window.scrollTo({ top: to, behavior: 'instant' })
+        done?.()
+        return
+      }
+      // a dive of a screen or two takes about 1.6 s; a rewind from the far end of the journey, no more than 2.6 s
+      const ms = Math.min(2600, 1100 + (distance / window.innerHeight) * 260)
+      const t0 = performance.now()
+      glideDone = done ?? null
+      const step = (now: number) => {
+        const k = Math.min(1, (now - t0) / ms)
+        window.scrollTo({ top: from + (to - from) * curve(k), behavior: 'instant' })
+        if (k < 1) glideRaf = requestAnimationFrame(step)
+        else {
+          glideRaf = 0
+          const d = glideDone
+          glideDone = null
+          d?.()
         }
-        ScrollTrigger.create({ trigger: section, start: 'top top', end: 'bottom bottom', onUpdate: follow, onRefresh: follow })
-      }, section)
-      ScrollTrigger.refresh()
-      revert = () => ctx.revert()
-    })
+      }
+      glideRaf = requestAnimationFrame(step)
+    }
+    // The visitor takes over the glide. Interrupting the rewind keeps the tour where they are — ending it
+    // there would fold the hero under them and throw the page.
+    const takeOver = (e: Event) => {
+      if (!glideRaf) return
+      if (e.type === 'keydown' && (e as KeyboardEvent).key === 'Escape') return
+      stopGlide()
+      if (leaving) {
+        leaving = false
+        delete root.dataset.tourLeaving
+        exitBtn?.focus({ preventScroll: true })
+      }
+    }
+    const TAKE = ['wheel', 'touchstart', 'keydown'] as const
+    for (const t of TAKE) window.addEventListener(t, takeOver, { passive: true })
+
+    /** The scene is up (or the stills are playing), or four seconds have passed. */
+    const settled = () =>
+      new Promise<void>((resolve) => {
+        const t0 = performance.now()
+        const check = () =>
+          tierRef.current === 'poster' || layer.current?.dataset.ready === 'true' || performance.now() - t0 > 4000 ? resolve() : window.setTimeout(check, 80)
+        check()
+      })
+
+    let leaving = false
+    let launching = 0
+    const launch = async (to: Shot = 1) => {
+      if (s.tour) return glide(shotTop(to))
+      // on a phone the tap is also what wakes the scene: the control waits, turning, until it is there
+      if (tierRef.current === 'pending' || (tierRef.current === 'live' && layer.current?.dataset.ready !== 'true')) {
+        playBtn?.setAttribute('data-waiting', 'true')
+        await settled()
+        playBtn?.removeAttribute('data-waiting')
+      }
+      await loadScroll()
+      if (cancelled || s.tour) return
+      s.tour = true
+      leaving = false
+      root.dataset.tour = 'on'
+      playBtn?.setAttribute('aria-expanded', 'true')
+      // the lens opens, the title steps aside, the line's light runs
+      if (!s.reduced) iris?.animate([{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(7)', opacity: 0 }], { duration: 760, delay: 60, easing: EASE_OUT, fill: 'none' })
+      section.dataset.launching = 'true'
+      s.playHover = 1
+      window.clearTimeout(launching)
+      launching = window.setTimeout(() => {
+        delete section.dataset.launching
+        s.playHover = 0
+      }, 1100)
+      refresh()
+      measure()
+      // The camera dives as the lens opens. The scroll leaves on the entering curve: the camera's own path
+      // from the whole logo into the space already eases in and out, and the two eased together would
+      // hold the frame still for half the dive.
+      window.setTimeout(() => s.tour && glide(shotTop(to), undefined, EASE_OUT_FN), s.reduced ? 0 : 120)
+      window.setTimeout(() => exitBtn?.focus({ preventScroll: true }), s.reduced ? 0 : 900)
+    }
+    const end = () => {
+      leaving = false
+      s.tour = false
+      delete root.dataset.tour
+      delete root.dataset.tourLeaving
+      s.target = 0
+      kick()
+      refresh()
+      measure()
+      playBtn?.setAttribute('aria-expanded', 'false')
+      playBtn?.focus({ preventScroll: true })
+    }
+    const leave = () => {
+      if (!s.tour || leaving) return
+      leaving = true
+      root.dataset.tourLeaving = 'true'
+      // rewind to the title, then the hero is one screen again
+      glide(heroTop(), end)
+    }
+    s.goToShot = (shot: number) => (s.tour ? glide(shotTop(shot)) : void launch(shot as Shot))
+    const onPlay = () => void launch(1)
+    const onExit = () => leave()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && s.tour && onScreen) leave()
+    }
+    const onMark = (e: MouseEvent) => {
+      const go = (e.target as HTMLElement).closest<HTMLElement>('[data-hero-go]')
+      if (go && s.tour) glide(shotTop(Number(go.dataset.heroGo)))
+    }
+    playBtn?.addEventListener('click', onPlay)
+    exitBtn?.addEventListener('click', onExit)
+    trackEl?.addEventListener('click', onMark)
+    window.addEventListener('keydown', onKey)
 
     if (held) {
       s.target = s.current = SHOT_AT[held.shot]
@@ -437,11 +675,26 @@ export function HeroDirector({ sources }: { sources: HeroSources }) {
     return () => {
       cancelled = true
       stopWaiting()
+      stopGlide()
       revert()
+      window.clearTimeout(launching)
+      for (const t of TAKE) window.removeEventListener(t, takeOver)
+      playBtn?.removeEventListener('click', onPlay)
+      exitBtn?.removeEventListener('click', onExit)
+      trackEl?.removeEventListener('click', onMark)
+      window.removeEventListener('keydown', onKey)
+      delete root.dataset.tour
+      delete root.dataset.tourLeaving
+      s.tour = false
       io.disconnect()
       ro.disconnect()
       window.clearInterval(turn)
       section.removeEventListener('focusin', onFocus)
+      titleImg?.removeEventListener('load', measure)
+      playBtn?.removeEventListener('pointerenter', playOn)
+      playBtn?.removeEventListener('pointerleave', playOff)
+      playBtn?.removeEventListener('focus', playOn)
+      playBtn?.removeEventListener('blur', playOff)
       cancelAnimationFrame(raf)
       s.goToShot = () => {}
       kickRef.current = () => {}

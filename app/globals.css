@@ -265,12 +265,6 @@
   :root[data-live='true'] .film-line { animation: none; }
 }
 
-/* Theme-paired images: one of the pair shows, by theme class. */
-.theme-light { display: block; }
-.theme-dark { display: none; }
-.dark .theme-light { display: none; }
-.dark .theme-dark { display: block; }
-
 /* Press feedback lives on the press, and it is instant (apple-design §1). */
 @media (hover: hover) and (pointer: fine) {
   .pressable:hover { filter: brightness(1.03); }

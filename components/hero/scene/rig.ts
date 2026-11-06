@@ -14,7 +14,8 @@
  * visitor can stop, reverse or jump anywhere.
  */
 import { CatmullRomCurve3, Vector3 } from 'three'
-import { CHIPS, FOV, LINE_POINTS, LOGO_BOX, NODES, NODE_SAMPLE, PANEL, RINGS, SLOTS, TALL_KEEP, TILE, VIEW, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
+import { CHIPS, FOV, LINE_POINTS, NODES, NODE_SAMPLE, PANEL, RINGS, SLOTS, TALL_KEEP, TILE, VIEW, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
+import { clampBand, distanceFor, LOGO_Z, wholeFrame, type Band, type Box } from '@/components/hero/frame'
 import { heroState, smoothstep, type Place } from '@/components/hero/state'
 
 export const v3 = (p: Vec3) => new Vector3(p[0], p[1], p[2])
@@ -67,25 +68,7 @@ const tmp2 = new Vector3()
 // sits in it. So every shot fits whatever the screen's size and shape, its
 // text size, or how the page's words wrap.
 
-type Box = { xMin: number; xMax: number; yMin: number; yMax: number }
-type Band = { x0: number; x1: number; y0: number; y1: number }
-
-/** The whole logo: the line's extent. */
-const LINE_BOX: Box = (() => {
-  const xs = LINE_POINTS.map((p) => p[0])
-  const ys = LINE_POINTS.map((p) => p[1])
-  return { xMin: Math.min(...xs), xMax: Math.max(...xs), yMin: Math.min(...ys), yMax: Math.max(...ys) }
-})()
-const grow = (b: Box, m: number): Box => ({ xMin: b.xMin - m, xMax: b.xMax + m, yMin: b.yMin - m, yMax: b.yMax + m })
-/** Room for a tile at the line's ends: the tiles are drawn larger the farther the camera stands (TILE.minScreen). */
-const tileRoom = (d: number) => Math.max(TILE.size, d * TILE.minScreen) / 2 + 0.8
-/** The distance at which the logo, its tiles included, fills a band (the tiles' size depends on that distance: settled in three passes). */
-function logoDistance(band: Band, aspect: number, tanH: number) {
-  let d = 60
-  for (let i = 0; i < 3; i++) d = distanceFor(grow(LINE_BOX, tileRoom(d)), band, aspect, tanH)
-  return d
-}
-const LOGO_Z = LOGO_BOX.center[2]
+// The line's extent and the logo's framing live in frame.ts (no three.js), shared with the page.
 
 /** A station's extent: its ring of screens with their labels, the tile, its rings (and the Suite's chips). */
 function stationBox(id: keyof typeof NODES, tall: boolean): Box {
@@ -111,13 +94,6 @@ const STATION_BOX = {
   suite: { wide: stationBox('suite', false), tall: stationBox('suite', true) },
 }
 
-/** How far back the camera stands for `box` to fill `band`. */
-function distanceFor(box: Box, band: Band, aspect: number, tanH: number) {
-  const bw = Math.max(0.12, band.x1 - band.x0)
-  const bh = Math.max(0.12, band.y1 - band.y0)
-  return Math.max((box.yMax - box.yMin) / (2 * tanH * bh), (box.xMax - box.xMin) / (2 * tanH * aspect * bw))
-}
-
 /** The camera for `box` (around the point x, y, z) in `band`, `creep` 0–1 moving it in by VIEW.creep. */
 function fit(box: Box, band: Band, x: number, y: number, z: number, tall: boolean, aspect: number, creep: number, out: View) {
   const fov = tall ? FOV.tall : FOV.wide
@@ -132,62 +108,31 @@ function fit(box: Box, band: Band, x: number, y: number, z: number, tall: boolea
   out.shift[1] = 0.5 - (band.y0 + band.y1) / 2
 }
 
-const clampBand = (b: Band): Band => ({ x0: b.x0, x1: Math.max(b.x1, b.x0 + 0.12), y0: b.y0, y1: Math.max(b.y1, b.y0 + 0.12) })
-
 /** A station, straight on, its ring of screens in the room the caption leaves. */
 function stationView(shot: 1 | 2 | 3, tall: boolean, aspect: number, creep: number, out: View) {
   const id = STATION_OF[shot]
   const c = NODES[id]
   const L = heroState.layout
+  const cap = L.captions[shot - 1] ?? { top: L.captionTop, right: L.captionRight }
   const box = STATION_BOX[id][tall ? 'tall' : 'wide']
   let band: Band
-  if (tall) band = { x0: 0.03, x1: 0.97, y0: L.top, y1: L.captionTop - 0.025 }
+  if (tall) band = { x0: 0.03, x1: 0.97, y0: L.top, y1: cap.top - 0.025 }
   else {
     // the ring leaves its lower left open for the caption: shift the ring right just enough that the
     // nearest screen to the caption (the bottom one) clears the caption's widest line
     const bottomLeft = Math.min(...SLOTS[id].wide.filter((p) => p[1] < 0).map((p) => p[0] - (id === 'suite' ? PANEL.toolWidth : PANEL.width) / 2))
     const r = (bottomLeft - box.xMin) / (box.xMax - box.xMin)
     const x1 = 0.97
-    const x0 = Math.min(0.35, Math.max(0.04, (L.captionRight + 0.015 - r * x1) / (1 - r)))
+    const x0 = Math.min(0.38, Math.max(0.04, (cap.right + 0.015 - r * x1) / (1 - r)))
     band = { x0, x1, y0: L.top, y1: L.bottom }
   }
   fit(box, clampBand(band), c[0], c[1], c[2], tall, aspect, creep, out)
 }
 
-/**
- * The whole line, the logo — for the title and the close. Two places are
- * tried — beside the words and above them — and the one that shows the logo
- * larger, clear of the words, is used.
- */
+/** The whole line, the logo — for the title and the close (frame.ts wholeFrame picks the band). */
 function wholeView(kind: 'title' | 'close', tall: boolean, aspect: number, creep: number, out: View) {
-  const L = heroState.layout
-  const fov = tall ? FOV.tall : FOV.wide
-  const tanH = Math.tan(((fov / 2) * Math.PI) / 180)
-  const wordsTop = kind === 'title' ? L.titleTop : L.closeTop
-  const above: Band = { x0: 0.04, x1: 0.96, y0: L.top, y1: wordsTop - 0.03 }
-  const bands: Band[] = [above]
-  if (!tall) {
-    if (kind === 'title') bands.push({ x0: L.titleRight + 0.03, x1: 0.97, y0: L.top, y1: L.bottom })
-    else {
-      // the close sits in the room the logo leaves below Crew: the whole frame, if the words stay clear of
-      // the valley (right of 41% of the logo's width) and below Crew's tile (61% of its height)
-      const full: Band = { x0: 0.05, x1: 0.96, y0: L.top, y1: L.bottom }
-      const clearX = full.x0 + 0.41 * (full.x1 - full.x0)
-      const clearY = full.y0 + 0.61 * (full.y1 - full.y0)
-      if (L.closeRight <= clearX && L.closeTop >= clearY) bands.push(full)
-    }
-  }
-  let best = clampBand(bands[0])
-  let bestD = logoDistance(best, aspect, tanH)
-  for (const b of bands.slice(1)) {
-    const band = clampBand(b)
-    const d = logoDistance(band, aspect, tanH)
-    if (d < bestD) {
-      best = band
-      bestD = d
-    }
-  }
-  fit(grow(LINE_BOX, tileRoom(bestD)), best, 0, 0, LOGO_Z, tall, aspect, creep * 0.6, out)
+  const { band, box } = wholeFrame(kind, tall, aspect, heroState.layout)
+  fit(box, band, 0, 0, LOGO_Z, tall, aspect, creep * 0.6, out)
 }
 
 function shotView(shot: Shot, tall: boolean, aspect: number, creep: number, out: View) {

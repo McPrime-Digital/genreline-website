@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Schibsted_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { ThemeProvider } from '@/components/ThemeProvider'
 import { LiveSwitch } from '@/components/cinema/LiveSwitch'
 import { PillLight } from '@/components/site/PillLight'
 import { SiteHeader, type HeaderNav } from '@/components/site/SiteHeader'
@@ -30,12 +29,10 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, email: false, address: false },
 }
 
+// The site is dark only (owner, 2026-11-06: "i need the website to only be in dark mode").
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F7F9FB' },
-    { media: '(prefers-color-scheme: dark)', color: '#0B0A1F' },
-  ],
-  colorScheme: 'light dark',
+  themeColor: '#000000',
+  colorScheme: 'dark',
 }
 
 // Resolved HERE, on the server: each network item's badge, from the label
@@ -52,19 +49,17 @@ const nav: HeaderNav = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
       <body className={`${geist.variable} ${schibsted.variable} site-canvas min-h-dvh font-body antialiased`}>
         <a href="#main" className="sr-only z-[100] rounded-lg bg-popover px-4 py-2 text-sm font-medium text-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:ring-2 focus:ring-ring">
           Skip to content
         </a>
         <div id="top-sentinel" aria-hidden className="absolute left-0 top-0 h-px w-px" />
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem value={{ light: 'light', dark: 'dark', matte: 'dark' }} disableTransitionOnChange>
-          <SiteHeader nav={nav} />
-          <main id="main" tabIndex={-1} className="outline-none">{children}</main>
-          <SiteFooter />
-          <LiveSwitch />
-          <PillLight />
-        </ThemeProvider>
+        <SiteHeader nav={nav} />
+        <main id="main" tabIndex={-1} className="outline-none">{children}</main>
+        <SiteFooter />
+        <LiveSwitch />
+        <PillLight />
         {/* Cookieless (Vercel's docs: "does not use cookies"; visitors are a
             daily-reset request hash) — W-9 confirmed at Item 0. Rendered only
             on the production site, never on a preview. */}

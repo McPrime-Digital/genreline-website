@@ -154,7 +154,8 @@ export type Shot = 0 | 1 | 2 | 3 | 4
 export type Segment = { kind: 'hold'; shot: Shot; vh: number } | { kind: 'travel'; from: Shot; to: Shot; vh: number }
 
 export const STORY: readonly Segment[] = [
-  { kind: 'hold', shot: 0, vh: 30 },
+  // short: the visitor has already seen the title on the one-screen hero, and the dive should start at once
+  { kind: 'hold', shot: 0, vh: 8 },
   { kind: 'travel', from: 0, to: 1, vh: 85 },
   { kind: 'hold', shot: 1, vh: 90 },
   { kind: 'travel', from: 1, to: 2, vh: 140 },

@@ -21,8 +21,11 @@
  *  · the closing title: the site's tagline (lib/site.ts);
  *  · the spaces index at the foot of the home page: the hero this replaced,
  *    with its lede's last sentence as the index's line.
- * Nothing here is a placeholder. If one is ever added it carries
- * `// PLACEHOLDER` on its own line (HANDOFF.md keeps that list).
+ * Two exceptions, both the owner's own (2026-11-06): the subtext, which the
+ * owner chose from drafts ("go with the first one"), and the tour's controls,
+ * named in the owner's words ("take the tour"). Nothing here is a placeholder.
+ * If one is ever added it carries `// PLACEHOLDER` on its own line (HANDOFF.md
+ * keeps that list).
  */
 import { APP, TAGLINE } from '@/lib/site'
 import type { IconName } from '@/components/Icon'
@@ -33,6 +36,9 @@ export type HeroFace = 'client' | 'stakeholders'
 
 /** The tagline, split into the closing title card's two lines (each keeps its full stop). */
 const [closingLine1, closingLine2] = TAGLINE.split(/\.\s+/).map((s) => (s.endsWith('.') ? s : `${s}.`))
+
+/** One capability in a space's caption: a feature of the register (content/features.ts), its icon and the site's words for it. */
+export type HeroItem = { id: string; icon: IconName; text: string }
 
 /** A screen in the 3D: a real product capture (content/media.ts id) and the words under it. */
 export type HeroPanel = { capture: string; icon: IconName; label: string }
@@ -56,20 +62,64 @@ export const hero = {
   /** The title card. */
   headlineLine1: 'Every space of production.',
   headlineLine2: 'One operating system.',
-  /** The one line under the title (the old lede's first clause). */
-  subtext: 'Genreline runs AI and hybrid film production end to end.',
+  /** The one line under the title — new copy the owner chose, 2026-11-06. */
+  subtext: 'Make the film, run the crew and take every client from first cut to approval, signature and payment — in one place.',
   primaryButton: { label: 'Open Studio OS account', href: APP.signup },
   secondaryButton: { label: 'Talk to sales', href: '/contact?topic=sales' },
+  /** The tour (the owner, 2026-11-06): the hero is one screen; the journey is a tour the visitor chooses. */
+  tour: { play: 'Take the tour', exit: 'Exit tour' },
 
-  /** The three spaces on the line, in the logo's order, each with its shot's timecode and its part of the old lede. */
+  /**
+   * The three spaces on the line, in the logo's order: each with its shot's timecode, what it is (the
+   * site's own fuller line — the owner, 2026-11-06: the tour must say "in proper details but well
+   * succinct" what each space does) and four of its capabilities, each a feature of the register.
+   * Crew and Client: the Spaces section (SpacesBento), word for word. The Suite: its line, and the
+   * production cycle's own words for four of its stages (app/page.tsx REEL), labelled honestly.
+   */
   nodes: [
-    { id: 'crew', timecode: '00:00:04:00', label: 'Crew space', line: 'Where your team works.' },
-    { id: 'client', timecode: '00:00:08:00', label: 'Client space', line: 'A portal in your brand where clients review, approve, sign and pay.' },
-    { id: 'suite', timecode: '00:00:12:00', label: 'The Suite', line: 'Where the work is written, boarded, generated, edited and finished.' },
-  ] as const satisfies readonly { id: HeroNodeId; timecode: string; label: string; line: string }[],
+    {
+      id: 'crew', timecode: '00:00:04:00', label: 'Crew space',
+      line: 'Your producers, editors, artists and freelancers — who is on the job, what they are doing and exactly what they may see.',
+      items: [
+        { id: 'CRW-02', icon: 'Contact', text: 'A directory with skills, rates and availability' },
+        { id: 'CRW-04', icon: 'ListChecks', text: 'Tasks across your team and the client’s' },
+        { id: 'MSG-02', icon: 'MessagesSquare', text: 'Internal rooms, threads and calls' },
+        { id: 'IDN-04', icon: 'KeyRound', text: 'Roles, project roles, grants and denials' },
+      ],
+    },
+    {
+      id: 'client', timecode: '00:00:08:00', label: 'Client space',
+      line: 'Every client company with its projects, its team and one shared room — the cuts, the approvals, the contracts and the invoices in one place.',
+      items: [
+        { id: 'MSG-01', icon: 'MessagesSquare', text: 'One room per client company' },
+        { id: 'APR-02', icon: 'ScanEye', text: 'Approvals with a certificate' },
+        { id: 'DOC-05', icon: 'FileSignature', text: 'Contracts, sealed and certified' },
+        { id: 'MON-01', icon: 'Receipt', text: 'Invoices and payment details' },
+      ],
+    },
+    {
+      id: 'suite', timecode: '00:00:12:00', label: 'The Suite',
+      line: 'Where the work is written, boarded, generated, edited and finished.',
+      items: [
+        { id: 'SWR-01', icon: 'PenTool', text: 'Written and co-edited live in Script Design.' },
+        { id: 'SWR-09', icon: 'Brush', text: 'Storyboards shot by shot, prompts on every frame.' },
+        { id: 'STG-01', icon: 'Camera', text: 'The Stage — every major image and video model, one gate.' },
+        { id: 'PST-01', icon: 'Scissors', text: 'Build the cut from takes and generations.' },
+      ],
+    },
+  ] as const satisfies readonly { id: HeroNodeId; timecode: string; label: string; line: string; items: readonly HeroItem[] }[],
 
-  /** The Client station's other face. */
-  stakeholders: { label: 'Stakeholders space', line: 'A portal per department — marketing, legal, the exec office — to review and approve.' },
+  /** The Client station's other face: the In-house segment's words (content/segments.ts), and its portal's screens. */
+  stakeholders: {
+    label: 'Stakeholders space',
+    line: 'A portal per department — marketing, legal, the exec office — to review and approve.',
+    items: [
+      { id: 'APR-14', icon: 'ScanEye', text: 'Frame-accurate review and notes' },
+      { id: 'APR-02', icon: 'BadgeCheck', text: 'Printable certificate' },
+      { id: 'DOC-04', icon: 'PenLine', text: 'Consent, then signature' },
+      { id: 'MTG-04', icon: 'CalendarClock', text: 'Booking from your availability' },
+    ],
+  } as const satisfies { label: string; line: string; items: readonly HeroItem[] },
 
   /** The screens around each station. Crew and the Client's two faces show real product captures. */
   panels: {

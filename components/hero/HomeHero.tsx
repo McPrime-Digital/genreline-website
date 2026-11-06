@@ -21,13 +21,15 @@ import 'server-only'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import localFont from 'next/font/local'
-import { preload } from 'react-dom'
 import * as icons from 'lucide-static'
 import { HeroDirector } from '@/components/hero/HeroDirector'
 import { SHOT_AT } from '@/components/hero/state'
 import { SCROLL_VH } from '@/components/hero/scene/numbers'
 import type { HeroSources } from '@/components/hero/scene/textures'
-import { hero, HERO_CAPTURES, HERO_ICONS } from '@/content/home'
+import { hero, HERO_CAPTURES, HERO_ICONS, type HeroItem } from '@/content/home'
+import { Icon } from '@/components/Icon'
+import { Feature, FeatureLabel } from '@/components/FeatureLabel'
+import { siteLabel } from '@/content/features'
 
 // The title card's face: Cinzel, cut to the capitals a title uses (fonts/README.md).
 const title = localFont({
@@ -61,24 +63,31 @@ function heroSources(): HeroSources {
   return { screens, icons: drawn }
 }
 
+/**
+ * Where the logo's line sits in each title poster (fractions of the image), written by
+ * scripts/make-hero-poster.ts. The page scales and places the title poster so its logo lands where
+ * the camera will put it at this screen's size — so the first paint, the play control under the logo
+ * and the live scene all agree.
+ */
+export type PosterFrames = Partial<Record<'wide' | 'tall', { left: number; right: number; top: number; bottom: number; width: number; height: number }>>
+function posterFrames(): PosterFrames {
+  const f = join(process.cwd(), 'public', 'hero', 'posters.json')
+  return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}
+}
+
 /** The shots the stills are made of (scripts/make-hero-poster.ts renders each). */
 const POSTERS = ['title', 'crew', 'client', 'stakeholders', 'suite', 'close'] as const
 
-/** One shot's poster, per theme and frame shape. The title's is the first paint; the rest load only if the stills play. */
-function Poster({ theme, shot }: { theme: 'dark' | 'light'; shot: (typeof POSTERS)[number] }) {
-  const base = `hero/poster-${theme}-${shot}`
+/** One shot's poster, per frame shape. The title's is the first paint; the rest load only if the stills play. */
+function Poster({ shot }: { shot: (typeof POSTERS)[number] }) {
+  const base = `hero/poster-dark-${shot}`
   if (!pub(`${base}-wide.avif`)) return null
   const has = (shape: string, ext: string) => pub(`${base}-${shape}.${ext}`)
-  // Dark is the site's default theme, so its title poster is fetched first, at
-  // high priority, announced in the <head> for each shape.
+  // The title's poster fades up once it is placed (HeroDirector): the words are the first paint, so the
+  // poster loads alongside them rather than ahead of them.
   const first = shot === 'title'
-  const eager = first && theme === 'dark'
-  if (eager) {
-    if (has('tall', 'avif')) preload(`/${base}-tall.avif`, { as: 'image', type: 'image/avif', media: '(max-aspect-ratio: 4/5)', fetchPriority: 'high' })
-    preload(`/${base}-wide.avif`, { as: 'image', type: 'image/avif', media: has('tall', 'avif') ? '(min-aspect-ratio: 4/5)' : undefined, fetchPriority: 'high' })
-  }
   return (
-    <picture className={`hero-poster theme-${theme}`} data-poster={shot} data-on={first ? 'true' : 'false'} data-want={first ? 'true' : 'false'}>
+    <picture className="hero-poster" data-poster={shot} data-on={first ? 'true' : 'false'} data-want={first ? 'true' : 'false'}>
       {has('tall', 'avif') && <source media="(max-aspect-ratio: 4/5)" srcSet={`/${base}-tall.avif`} type="image/avif" />}
       {has('tall', 'webp') && <source media="(max-aspect-ratio: 4/5)" srcSet={`/${base}-tall.webp`} type="image/webp" />}
       <source srcSet={`/${base}-wide.avif`} type="image/avif" />
@@ -89,8 +98,8 @@ function Poster({ theme, shot }: { theme: 'dark' | 'light'; shot: (typeof POSTER
         width={1920}
         height={1080}
         decoding="async"
-        loading={eager ? 'eager' : 'lazy'}
-        fetchPriority={eager ? 'high' : 'auto'}
+        loading={first ? 'eager' : 'lazy'}
+        fetchPriority="auto"
       />
     </picture>
   )
@@ -137,6 +146,27 @@ function Glyph({ id }: { id: 'crew' | 'client' | 'suite' | 'stakeholders' }) {
   )
 }
 
+/** A space's words in the tour: its name, what it is, and four things it does (each a feature of the register, labelled if not yet live). */
+function NodeWords({ label, line, items }: { label: string; line: string; items: readonly HeroItem[] }) {
+  return (
+    <>
+      <h2 className="hero-node-title">{label}</h2>
+      <p className="hero-node-line">{line}</p>
+      <ul className="hero-node-items">
+        {items.map((it) => (
+          <Feature key={it.id} id={it.id} as="li" className="hero-node-item">
+            <Icon name={it.icon} className="hero-node-icon" />
+            <span>
+              {it.text}
+              {siteLabel(it.id) === 'Coming' && <FeatureLabel id={it.id} className="ml-2 align-middle" />}
+            </span>
+          </Feature>
+        ))}
+      </ul>
+    </>
+  )
+}
+
 /** A line of a title card: the words in film stock, the full stop painted solid. */
 function FilmLine({ text, metal }: { text: string; metal: 'silver' | 'gold' }) {
   const words = text.replace(/\.$/, '')
@@ -163,14 +193,13 @@ export function HomeHero() {
       className={`${title.variable} hero relative -mt-16`}
       style={{ ['--hero-scroll' as string]: `${SCROLL_VH}vh` }}
     >
+      {/* without scripts the title's poster cannot be placed: show it as it is */}
+      <noscript><style>{`.hero-poster[data-poster='title'] img { opacity: 1 !important; }`}</style></noscript>
       <div data-hero-stage className="hero-stage">
         {POSTERS.map((shot) => (
-          <Poster key={`dark-${shot}`} theme="dark" shot={shot} />
+          <Poster key={shot} shot={shot} />
         ))}
-        {POSTERS.map((shot) => (
-          <Poster key={`light-${shot}`} theme="light" shot={shot} />
-        ))}
-        <HeroDirector sources={sources} />
+        <HeroDirector sources={sources} posterFrames={posterFrames()} />
         {/* the shade: fixed gradients behind the words, faded (never repainted) as the words come and go */}
         <div aria-hidden className="hero-shade">
           <i data-scrim="title" className="hero-scrim hero-scrim-title" />
@@ -179,7 +208,7 @@ export function HomeHero() {
 
         {/* THE SLATE LINE — a camera's top bar, over every shot: REC at one end,
             the scene's timecode at the other, the line itself between two gold rules. */}
-        <div className="hero-top container-wide">
+        <div className="hero-top hero-inset">
           <div className="slate-line">
             <span className="slate-side">
               <span aria-hidden className="slate-end hidden lg:inline-flex">
@@ -198,7 +227,7 @@ export function HomeHero() {
           </div>
         </div>
 
-        <div className="hero-shots container-wide">
+        <div className="hero-shots hero-inset">
           {/* 0 — THE TITLE CARD */}
           <div data-shot="0" data-active="true" className="hero-shot hero-shot-title">
             <h1 id="hero-title" className="film-title hero-title">
@@ -216,7 +245,7 @@ export function HomeHero() {
             </div>
           </div>
 
-          {/* 1–3 — THE THREE SPACES, each with its part of the line under the title */}
+          {/* 1–3 — THE THREE SPACES: each says what it is and four things it does */}
           {hero.nodes.map((n, i) =>
             n.id === 'client' ? (
               <div key={n.id} data-shot={i + 1} data-faces data-showing="client" className="hero-shot hero-shot-node">
@@ -227,14 +256,10 @@ export function HomeHero() {
                   </span>
                   {n.timecode}
                 </p>
-                <h2 className="hero-node-title hero-faces">
-                  <span className="hero-face" data-face="client">{n.label}</span>
-                  <span className="hero-face" data-face="stakeholders">{hero.stakeholders.label}</span>
-                </h2>
-                <p className="hero-node-line hero-faces">
-                  <span className="hero-face" data-face="client">{n.line}</span>
-                  <span className="hero-face" data-face="stakeholders">{hero.stakeholders.line}</span>
-                </p>
+                <div className="hero-faces">
+                  <div className="hero-face" data-face="client"><NodeWords label={n.label} line={n.line} items={n.items} /></div>
+                  <div className="hero-face" data-face="stakeholders"><NodeWords label={hero.stakeholders.label} line={hero.stakeholders.line} items={hero.stakeholders.items} /></div>
+                </div>
               </div>
             ) : (
               <div key={n.id} data-shot={i + 1} className="hero-shot hero-shot-node">
@@ -242,40 +267,77 @@ export function HomeHero() {
                   <Glyph id={n.id} />
                   {n.timecode}
                 </p>
-                <h2 className="hero-node-title">{n.label}</h2>
-                <p className="hero-node-line">{n.line}</p>
+                <NodeWords label={n.label} line={n.line} items={n.items} />
               </div>
             ),
           )}
 
-          {/* 4 — THE CLOSE: the tagline, alone */}
+          {/* 4 — THE CLOSE: the tagline, and the way in */}
           <div data-shot="4" className="hero-shot hero-shot-close">
             <p aria-hidden className="hero-tc">{hero.closing.timecode}</p>
             <h2 className="film-title hero-close-title">
               <FilmLine text={hero.closing.line1} metal="silver" />
               <FilmLine text={hero.closing.line2} metal="gold" />
             </h2>
+            <div className="hero-ctas">
+              <a href={hero.primaryButton.href} className="liquid-pill-gold liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {hero.primaryButton.label}
+              </a>
+              <a href={hero.secondaryButton.href} className="liquid-pill liquid-pill-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {hero.secondaryButton.label}
+              </a>
+            </div>
           </div>
         </div>
 
-        {/* THE TRACK — the scene's sixteen seconds, the three spaces marked where the camera holds on them. */}
-        <div aria-hidden className="hero-track container-wide">
+        {/* THE TOUR'S PLAY CONTROL — just under the 3D logo, placed by HeroDirector with the camera's own
+            framing (frame.ts). The hero is one screen; the journey is the tour the visitor chooses. */}
+        <div data-hero-play-wrap className="hero-play-wrap">
+          <button type="button" data-hero-play aria-expanded="false" aria-controls="hero-tour" className="hero-play">
+            <span aria-hidden className="hero-play-ring">
+              <span className="hero-play-iris" />
+              <span className="hero-play-wait" />
+              <svg viewBox="0 0 24 24" className="hero-play-glyph"><path d="M8 5.6v12.8a.8.8 0 0 0 1.2.7l10.1-6.4a.8.8 0 0 0 0-1.4L9.2 4.9a.8.8 0 0 0-1.2.7Z" fill="currentColor" /></svg>
+            </span>
+            <span className="hero-play-label">{hero.tour.play}</span>
+          </button>
+        </div>
+
+        {/* LEAVING THE TOUR — top right of the stage, only on the tour (Escape does the same). */}
+        <button type="button" data-hero-exit className="hero-exit">
+          {hero.tour.exit}
+          <svg aria-hidden viewBox="0 0 24 24" className="size-3.5"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        </button>
+
+        {/* THE TRACK — the tour's sixteen seconds, the three spaces marked where the camera holds on them.
+            Only on the tour; each space's mark takes the visitor there. */}
+        <nav id="hero-tour" aria-label={hero.tour.play} className="hero-track hero-inset">
           <div className="hero-rail">
-            <i data-hero-fill className="hero-fill" />
-            {marks.map((m, i) => (
-              <span key={m.tc} data-hero-mark={i} data-reached={i === 0 ? 'true' : 'false'} data-current={i === 0 ? 'true' : 'false'} className="hero-mark" style={{ left: `${(SHOT_AT[i] * 100).toFixed(2)}%` }}>
-                <span className="hero-mark-dot" />
-                {m.label && (
+            <i aria-hidden data-hero-fill className="hero-fill" />
+            {marks.map((m, i) => {
+              const props = {
+                'data-hero-mark': i,
+                'data-reached': i === 0 ? 'true' : 'false',
+                'data-current': i === 0 ? 'true' : 'false',
+                className: 'hero-mark',
+                style: { left: `${(SHOT_AT[i] * 100).toFixed(2)}%`, ['--i' as string]: i },
+              }
+              const dot = <span aria-hidden className="hero-mark-dot" />
+              return m.label ? (
+                <button key={m.tc} type="button" {...props} data-hero-go={i} aria-label={m.label}>
+                  {dot}
                   <span className="hero-mark-label">
                     <span className="hero-mark-name">{m.label}</span>
-                    <span className="hero-mark-tc">{m.tc}</span>
+                    <span aria-hidden className="hero-mark-tc">{m.tc}</span>
                   </span>
-                )}
-              </span>
-            ))}
+                </button>
+              ) : (
+                <span key={m.tc} aria-hidden {...props}>{dot}</span>
+              )
+            })}
           </div>
-          <span className="hero-cue" />
-        </div>
+          <span aria-hidden className="hero-cue" />
+        </nav>
       </div>
     </section>
   )

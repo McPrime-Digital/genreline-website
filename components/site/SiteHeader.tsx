@@ -2,13 +2,14 @@
 
 /**
  * The header (S-W §5.1). Sticky glass; the menus as a disclosure navigation
- * (MegaMenu.tsx); the theme switch; and the two calls to action as liquid
+ * (MegaMenu.tsx); and the two calls to action as liquid
  * pills in capitals (owner, 2026-10-01: "sign in and open studio os must be
  * caps and have a proper pill or small card liquid form"; 2026-10-02: the label
  * is OPEN STUDIO OS ACCOUNT, and both pills "must react when mouse hover" — the
  * hover lives on the pill classes in globals.css, so every pill on the site
  * answers the same way). There is no search in the header (owner, 2026-10-01:
- * "remove the search at the top").
+ * "remove the search at the top"). There is no theme switch: the site is dark
+ * only (owner, 2026-11-06).
  *
  * ONE GOLD PER VIEW (S-B). OPEN STUDIO OS ACCOUNT is the gold pill only when no other
  * primary call to action is on screen; every primary CTA on a page carries
@@ -20,7 +21,6 @@ import { usePathname } from 'next/navigation'
 import { ProductMark } from '@/components/ProductMark'
 import { MobileNav } from '@/components/site/MobileNav'
 import { MegaMenu } from '@/components/site/MegaMenu'
-import { ThemeToggle } from '@/components/site/ThemeToggle'
 import { cx as cn } from '@/lib/cx'
 import { APP } from '@/lib/site'
 import type { NavColumn, NavLink, NavLinkWithBadge } from '@/content/nav'
@@ -77,8 +77,6 @@ export function SiteHeader({ nav }: { nav: HeaderNav }) {
           <MegaMenu nav={nav} />
 
           <div className="ml-auto flex items-center gap-2">
-            {/* The Motion button lives where the 3D hero is (batch W-3D-1 §4). */}
-            <ThemeToggle compact />
             <a href={APP.login} className="liquid-pill hidden outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex">
               Sign in
             </a>

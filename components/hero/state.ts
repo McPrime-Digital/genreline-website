@@ -5,6 +5,7 @@
  * three.js here: this ships with the page.
  */
 import { SCROLL_VH, STORY, TIMECODE, type Segment, type Shot } from '@/components/hero/scene/numbers'
+import type { Layout } from '@/components/hero/frame'
 
 export const heroState = {
   /** Scroll progress through the hero, 0–1, as ScrollTrigger reports it. */
@@ -13,6 +14,10 @@ export const heroState = {
   current: 0,
   /** How fast `current` is moving (progress per second) — the particles stream harder with it. */
   speed: 0,
+  /** The visitor has taken the tour: the hero runs its journey with the scroll. Off, it is one screen at the title. */
+  tour: false,
+  /** The pointer is on the play control: the line's light quickens. */
+  playHover: 0,
   /** The visitor's system asks for reduced motion: cuts instead of flights, nothing drifting on its own. */
   reduced: false,
   /** The Client station's face: 0 Client, 1 Stakeholders — and when it last turned (performance.now()). */
@@ -23,10 +28,11 @@ export const heroState = {
   /**
    * Where the words sit on the stage, measured from the page (fractions of the stage, 0 = top or
    * left): the camera fits every shot into the room they leave, at any screen size, shape or text
-   * size (rig.ts). `top` is under the slate line, `bottom` above the track; the rest are the edges
-   * of the title card, a space's caption and the close.
+   * size (rig.ts, frame.ts). `top` is under the slate line, `bottom` above the track; `edge` the
+   * margin the words keep (the logo keeps it on the right); `play` the room the play control takes
+   * under the logo; the rest are the edges of the title card, a space's caption and the close.
    */
-  layout: { top: 0.15, bottom: 0.93, titleRight: 0.42, titleTop: 0.6, captionTop: 0.74, captionRight: 0.42, closeTop: 0.74, closeRight: 0.5 },
+  layout: { top: 0.15, bottom: 0.93, slate: 0.12, titleRight: 0.5, titleTop: 0.6, edge: 0.03, play: 0.1, captionTop: 0.74, captionRight: 0.42, captions: [], closeTop: 0.74, closeRight: 0.5 } as Layout,
   /** The scene asks for one frame (demand mode); a no-op until the scene mounts. */
   invalidate: () => {},
   /** Scroll the page to a shot (0–4); set by the director. */

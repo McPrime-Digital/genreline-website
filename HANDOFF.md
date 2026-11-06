@@ -9,6 +9,41 @@ climbs to **the Suite**, then pulls back to the whole line for the close: *Run
 the production. Keep the record.* Each space arrives in its own light, ringed
 by its own screens and tools.
 
+## Revision, 2026-11-06: a one-screen hero, the tour, dark only, a century of cinema
+
+An audit found the hero held the page for 9.5 screens before a buyer saw
+anything else. The owner's response: *"i love the take a tour idea. really love
+it."* The plan was approved, then built feature by feature, each one
+researched, built and checked before the next
+(`~/.claude/plans/happy-dancing-star.md`).
+
+| What | How |
+|---|---|
+| **Dark only** (*"i need the website to only be in dark mode"*) | `<html class="dark">` comes from the server: no theme script, no flash, no switch. `next-themes`, `ThemeProvider` and `ThemeToggle` are deleted. Captures and the mark render their dark image. The 12 light posters are deleted. `check-a11y` asks for light and stores "light" to prove neither is honoured. |
+| **One screen** | `.hero` is `100svh`. Scrolling goes straight to the page. The journey's scroll length applies only under `html[data-tour='on']`. |
+| **The title** | Each line holds on one line (`white-space: nowrap`, sized for line 1's 17.06 em). One `--hero-edge` sets the words' left margin, and `frame.ts` gives the logo the same margin on the right. |
+| **The subtext** | The owner's choice of drafts (new copy): *"Make the film, run the crew and take every client from first cut to approval, signature and payment — in one place."* |
+| **Take the tour** | A real button *just under* the 3D logo (*"not exactly on it"*). It is placed from the camera's own framing (`frame.ts logoOnStage`), and the logo's frame leaves it room. The click is choreographed, transform and opacity only, on the house curves: press 120 ms, the gold ring opens like an iris (760 ms), the title steps aside, the camera dives (a scripted glide on `--ease-out`), the track draws in, its marks pop in 70 ms apart, and *Exit tour* appears. Exit or Escape rewinds. A wheel, touch or key takes over the glide; interrupting the rewind keeps the tour on. On a phone the control spins until the scene is ready. Reduced motion uses fades and cuts. |
+| **The first paint** | The title poster is scaled and placed so its logo lands where the camera puts it at this screen's size (`public/hero/posters.json`, written by the poster script). It fades in once placed, so the logo never jumps when the 3D takes over. The subtext is now the Largest Contentful Paint. |
+| **The track and the marks** | Only on the tour. Each space's mark is a button that glides there. The Spaces section is hidden while the tour is on, so the tour never runs into the same three spaces (*what follows the tour is still to be decided with the owner*). |
+| **Each space's words** | Its name, the site's own fuller line (SpacesBento, the In-house segment), and four items, each a feature of the register: `Feature` and `FeatureLabel`, "Coming" where not live. The camera measures each space's caption separately. |
+| **Words before light** | The gold line steps back where it passes behind a caption, the close, the track or the slate line (a soft screen-space mask in the line's shader). |
+| **The universe** | Shooting stars: three screen-space slots, irregular, worked out on the GPU. Stars ease aside and brighten near the pointer. A Milky Way: a band with dust lanes and granular star dust, per vertex plus a per-pixel hash. A slow **era drift** of the deep sky through film stock, about two minutes round: today; silver nitrate; silent-era amber tint; three-strip Technicolor. Far off and faint: a planet ringed by a strip of 35 mm film, its moon a film reel, and a small cool planet. |
+| **Crew — the studio era** | The floor the owner loves, made into a soundstage deck: board seams, warm pools under three tungsten beams angled in through haze (haze per vertex), dust in the light, spike tape, a dolly track, the tile's reflection. A 35 mm reel turns behind the tile. |
+| **Client — the picture palace** | The concentric rings and the gyroscope are gone. The deco floor has a gold fan and aisle lights converging on a great 2.39:1 silver screen, with film grain and the shutter's breath. Its arched gilded proscenium has a sunburst crown, fans at its corners and velvet curtains, and its light spills into space like an eclipse's corona. A projector beam crosses over the audience, and a deco sunburst rings the tile. **Stakeholders — premiere night:** searchlights sweep the sky behind the screen, the light turns gold, and the aisle becomes a red carpet. |
+| **Suite — the modern lens** | The fan of rays and the gyroscope are gone. A cine lens sits behind the tile: a nine-bladed iris that opens as you arrive, a focus ring with engraved distances pulling focus, and coated-glass reflections. An anamorphic flare crosses through the tile. The floor is an edit timeline running to the horizon, its playhead sweeping. |
+
+**Checking by hand.** `?era=0–3` holds one era. `?shot=`, `?hero=`, `?quality=` and `?governor=off` work as before.
+
+**Measured** (production build, this Mac):
+- the 3D chunk is 222.0 KB gzipped (budget 250);
+- 60 fps at every quality, idle and through the dive, Client and Suite (95th-percentile frame 16.8 ms; 2–4 late frames at the click itself, when the hero grows);
+- on a software renderer at quality 0: 38–46 fps per station, above the governor's 25 fps floor;
+- Lighthouse mobile, Home: 93, 93 and 88 (the old hero: 90, 90, 90), CLS 0, TBT 10 ms;
+- the label check: 26 pages, 0 failures; the link check: 0 failures; axe: 0 issues.
+
+**Not done here.** The Suite's six drawn tool cards (the script, boards, a dusk shot and so on) are unchanged. What comes after the hero and the tour is the owner's next decision.
+
 ## The owner's review, and what changed
 
 The first version was rejected (*"what you have built for the hero is just

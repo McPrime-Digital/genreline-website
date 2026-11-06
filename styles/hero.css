@@ -9,7 +9,12 @@
    Built on the site's tokens; no new colours.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.hero { height: calc(var(--hero-scroll, 850vh) + 100vh); height: calc(var(--hero-scroll, 850vh) + 100svh); }
+/* One screen (the owner, 2026-11-06): the journey runs only once the visitor takes the tour.
+   --hero-edge is the margin the words keep on the left; the camera gives the logo the same margin on
+   the right (frame.ts), so the frame is balanced at every size. */
+.hero { --hero-edge: clamp(20px, 3vw, 56px); height: 100vh; height: 100svh; }
+:root[data-tour='on'] .hero { height: calc(var(--hero-scroll, 850vh) + 100vh); height: calc(var(--hero-scroll, 850vh) + 100svh); }
+.hero-inset { padding-inline: var(--hero-edge); }
 .hero-stage {
   position: sticky; top: 0;
   height: 100vh; height: 100svh;
@@ -27,7 +32,18 @@
 .hero-stage .hero-poster[data-want='false'] { display: none; }
 .hero-poster[data-on='true'] { opacity: 1; }
 .hero-poster img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
-.dark .hero-poster.theme-light, :root:not(.dark) .hero-poster.theme-dark { display: none; }
+/* The title's poster is shown only once HeroDirector has scaled and placed it so its logo sits where the
+   camera will put it at this screen's size (posters.json) — it fades up from black, and the logo never
+   jumps when the live scene takes over. */
+.hero-poster[data-poster='title'] img { opacity: 0; transition: opacity 900ms var(--ease-out); will-change: opacity; }
+.hero-poster[data-poster='title'] img[data-aligned='true'] {
+  opacity: 1; max-width: none; object-fit: fill;
+  /* placed, it may not reach every edge of the stage: its own edges feather into the black */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 92%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent), linear-gradient(180deg, transparent, #000 6%, #000 92%, transparent);
+  mask-composite: intersect;
+}
 .hero-scene { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 900ms var(--ease-out); }
 .hero-scene[data-ready='true'] { opacity: 1; }
 
@@ -41,11 +57,11 @@
     linear-gradient(0deg, hsl(var(--background) / 0.66) 0%, hsl(var(--background) / 0) 14%);
 }
 .hero-scrim { position: absolute; inset: 0; will-change: opacity; }
-.hero-scrim-title { background: radial-gradient(ellipse 44% 58% at 16% 52%, hsl(var(--background) / 0.74) 0%, hsl(var(--background) / 0) 100%); }
-.hero-scrim-caption { opacity: 0; background: radial-gradient(ellipse 46% 40% at 14% 88%, hsl(var(--background) / 0.7) 0%, hsl(var(--background) / 0) 100%); }
+.hero-scrim-title { background: radial-gradient(ellipse 50% 60% at 18% 52%, hsl(var(--background) / 0.74) 0%, hsl(var(--background) / 0) 100%); }
+.hero-scrim-caption { opacity: 0; background: radial-gradient(ellipse 50% 54% at 15% 84%, hsl(var(--background) / 0.78) 0%, hsl(var(--background) / 0) 100%); }
 @media (max-aspect-ratio: 5/4) {
   .hero-scrim-title { background: linear-gradient(0deg, hsl(var(--background) / 0.86) 0%, hsl(var(--background) / 0.55) 34%, hsl(var(--background) / 0) 58%); }
-  .hero-scrim-caption { background: linear-gradient(0deg, hsl(var(--background) / 0.8) 0%, hsl(var(--background) / 0) 36%); }
+  .hero-scrim-caption { background: linear-gradient(0deg, hsl(var(--background) / 0.9) 0%, hsl(var(--background) / 0.72) 26%, hsl(var(--background) / 0) 44%); }
 }
 
 /* While the live 3D is on screen nothing frosts over it. A backdrop blur over a canvas that changes
@@ -70,18 +86,20 @@
 .hero-shot:not([data-shot='0']) { opacity: 0; }
 .hero-shot[data-active='true'] :is(a, button) { pointer-events: auto; }
 
-/* the title card: smaller, on the left, so the line in space carries the frame */
-.hero-shot-title { align-self: center; max-width: 520px; }
-.hero-title { font-size: clamp(22px, min(2.7vw, 4.9svh), 40px); }
+/* the title card, on the left: each line of the title holds on one line (the owner, 2026-11-06),
+   sized so the longer one — EVERY SPACE OF PRODUCTION., 17.06 em of Cinzel capitals — always fits */
+.hero-shot-title { align-self: center; }
+.hero-title { font-size: clamp(20px, min(2.75vw, 5svh), 44px); }
+.hero .film-line { white-space: nowrap; width: fit-content; }
 .hero-sub {
-  margin-top: 1.15rem; max-width: 38ch;
+  margin-top: 1.15rem; max-width: 52ch;
   font-size: clamp(14.5px, min(1.08vw, 2svh), 17px); line-height: 1.55;
   color: hsl(var(--muted-foreground));
 }
 .hero-ctas { margin-top: 1.6rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 
-/* each space: a lower third — its timecode, its name, its part of the line */
-.hero-shot-node { align-self: end; max-width: 440px; }
+/* each space: a lower third — its timecode, its name, what it is, and four things it does */
+.hero-shot-node { align-self: end; max-width: 500px; }
 .hero-tc {
   display: flex; align-items: center; gap: 0.65rem;
   font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
@@ -97,10 +115,20 @@
   color: hsl(var(--foreground));
 }
 .hero-node-line {
-  margin-top: 0.6rem; max-width: 36ch;
-  font-size: clamp(14.5px, min(1.12vw, 2.1svh), 17px); line-height: 1.5;
+  margin-top: 0.6rem; max-width: 46ch;
+  font-size: clamp(14px, min(1.05vw, 2svh), 16px); line-height: 1.5;
   color: hsl(var(--muted-foreground));
 }
+.hero-node-items {
+  margin-top: 0.95rem; max-width: 500px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1.25rem;
+}
+.hero-node-item {
+  display: flex; align-items: flex-start; gap: 0.55rem;
+  font-size: clamp(13px, min(0.95vw, 1.8svh), 14px); line-height: 1.38;
+  color: hsl(var(--foreground) / 0.88);
+}
+.hero-node-icon { width: 15px; height: 15px; flex: none; margin-top: 0.12em; color: hsl(var(--primary)); }
 
 /* the Client's two faces, one cell, cross-fading as the station turns */
 .hero-faces { display: grid; }
@@ -113,9 +141,59 @@
 .hero-shot-close { align-self: end; max-width: 620px; }
 .hero-close-title { margin-top: 0.75rem; font-size: clamp(24px, min(3.1vw, 5.4svh), 46px); }
 
-/* 5 · the track: the sixteen seconds, the three spaces marked */
+/* 4b · the tour's play control, just under the 3D logo (placed by HeroDirector, frame.ts). A real
+   button: a ring of gold glass with ▶, and the words beside it. No backdrop blur over the canvas. */
+.hero-play-wrap {
+  position: absolute; left: 0; top: 0; z-index: 4;
+  opacity: 0; transition: opacity 700ms var(--ease-out);
+  pointer-events: none; will-change: transform, opacity;
+}
+.hero-play-wrap[data-placed='true'] { opacity: 1; }
+.hero-play {
+  pointer-events: auto; position: relative;
+  display: inline-flex; align-items: center; gap: 0.9rem;
+  padding: 4px 18px 4px 4px; border-radius: 999px;
+  color: hsl(var(--foreground)); outline: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.hero-play-ring {
+  position: relative; display: grid; place-items: center; flex: none;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, hsl(var(--primary) / 0.26), hsl(var(--background) / 0.82) 72%);
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.8), 0 0 26px hsl(var(--primary) / 0.22);
+  transition: transform 180ms var(--ease-out), box-shadow 320ms var(--ease-out);
+}
+/* the idle invitation: a ring of light leaves the control now and then */
+.hero-play-ring::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.7);
+  opacity: 0; animation: hero-play-pulse 3.2s var(--ease-out) 1.2s infinite;
+}
+@keyframes hero-play-pulse { 0% { transform: scale(1); opacity: 0.75; } 60%, 100% { transform: scale(1.75); opacity: 0; } }
+.hero-play-glyph { width: 20px; height: 20px; margin-left: 3px; color: hsl(var(--primary)); transition: transform 180ms var(--ease-out); }
+.hero-play-label {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
+  text-shadow: 0 1px 12px hsl(var(--background));
+}
+@media (hover: hover) and (pointer: fine) {
+  .hero-play:hover .hero-play-ring { transform: scale(1.06); box-shadow: inset 0 0 0 1px hsl(var(--primary)), 0 0 38px hsl(var(--primary) / 0.42); }
+  .hero-play:hover .hero-play-glyph { transform: translateX(1.5px); }
+}
+.hero-play:active .hero-play-ring { transform: scale(0.94); transition-duration: 80ms; }
+.hero-play:focus-visible .hero-play-ring { box-shadow: inset 0 0 0 1px hsl(var(--primary)), 0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--ring)); }
+
+/* 5 · the track: the sixteen seconds, the three spaces marked — only on the tour */
 .hero-track { position: absolute; left: 0; right: 0; bottom: 32px; z-index: 3; pointer-events: none; }
-.hero-rail { position: relative; height: 1px; background: hsl(var(--foreground) / 0.14); }
+.hero-rail { position: relative; height: 1px; }
+.hero-rail::before { content: ''; position: absolute; inset: 0; background: hsl(var(--foreground) / 0.14); transform-origin: left; }
+button.hero-mark { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; pointer-events: auto; outline: none; }
+/* a hit area a finger can find, round a seven-pixel mark */
+button.hero-mark::before { content: ''; position: absolute; inset: -18px -16px; }
+button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--ring)); }
+@media (hover: hover) and (pointer: fine) {
+  button.hero-mark:hover .hero-mark-label { color: hsl(var(--foreground)); }
+}
 .hero-fill {
   position: absolute; inset: 0; transform-origin: left; transform: scaleX(0);
   background: linear-gradient(90deg, hsl(var(--primary) / 0.35), hsl(var(--primary)));
@@ -161,16 +239,20 @@
   .hero-shots { top: calc(64px + 44px); bottom: 56px; }
   .hero-shot-title, .hero-shot-close { align-self: end; }
   .hero-track { bottom: 24px; }
-  .hero-title { font-size: clamp(22px, min(6.6vw, 4.4svh), 34px); }
+  .hero-title { font-size: min(40px, 4.4svh, calc((100vw - 2 * var(--hero-edge)) / 17.3)); }
   .hero-sub { margin-top: 0.85rem; font-size: clamp(14px, 1.9svh, 16px); }
   .hero-ctas { margin-top: 1.2rem; }
-  .hero-node-title { font-size: clamp(26px, min(8vw, 4.8svh), 38px); }
+  .hero-node-title { font-size: clamp(24px, min(7.4vw, 4.2svh), 36px); }
+  .hero-node-line { margin-top: 0.45rem; font-size: clamp(13.5px, 1.8svh, 15px); }
+  .hero-node-items { margin-top: 0.7rem; grid-template-columns: minmax(0, 1fr); gap: 0.32rem; }
+  .hero-node-item { font-size: 13px; }
   .hero-close-title { font-size: clamp(22px, min(6.6vw, 4.4svh), 34px); }
 }
 /* A near-square frame (a tablet, a small window): the title and the close move to the foot of the
    frame, and the camera puts the whole line above them (rig.ts picks whichever shows it larger). */
 @media (min-aspect-ratio: 4/5) and (max-aspect-ratio: 5/4) {
   .hero-shot-title, .hero-shot-close { align-self: end; }
+  .hero-title { font-size: min(44px, 5svh, calc((100vw - 2 * var(--hero-edge)) / 17.3)); }
 }
 /* A short landscape screen (a phone on its side): everything steps down so the title card still fits. */
 @media (max-height: 560px) and (min-aspect-ratio: 4/5) {
@@ -185,7 +267,91 @@
 /* Reduced motion: the words cut with the camera, and nothing on the hero runs on its own. */
 @media (prefers-reduced-motion: reduce) {
   .hero-scene, .hero-poster, .hero-faces > .hero-face, .hero-mark-dot, .hero-mark-label { transition: none; }
-  .hero-cue::after { animation: none; }
+  .hero-cue::after, .hero-play-ring::after { animation: none; }
+}
+
+/* ── THE TOUR (the owner, 2026-11-06) ───────────────────────────────────────
+   The hero is one screen; "Take the tour" sets html[data-tour='on'] and HeroDirector glides the page
+   into the journey. Everything here is opacity and transform (the Windows smoothness rule), on the
+   house's curves, as transitions — so a visitor who leaves mid-way reverses from wherever it is.
+   The sequence: the press (120 ms) · the lens opens (60 ms in, 760 ms) · the control drifts down and
+   fades (80 ms in) · the title steps aside (150 ms in) · the camera dives (200 ms in) · the track
+   draws in (450 ms in) · its marks pop in, 70 ms apart (800 ms in) · "Exit tour" (800 ms in).
+   Leaving is quicker: everything goes at once, in 180–200 ms, while the camera rewinds. */
+
+/* Outside the tour only the title card can be reached: the spaces' and the close's words wait for it. */
+:root:not([data-tour='on']) .hero-shot:not([data-shot='0']) { visibility: hidden; }
+/* Taking the tour runs straight from the close into what follows — never into the same three spaces
+   again (the owner: "the tour should not end then the next section is the same 3 spaces"). */
+:root[data-tour='on'] #spaces { display: none; }
+
+/* the play control: the lens opens round it, it drifts down and fades; it comes back on leaving */
+.hero-play-iris {
+  position: absolute; inset: 0; border-radius: 50%; opacity: 0; pointer-events: none;
+  box-shadow: 0 0 0 1.5px hsl(var(--primary)), 0 0 28px hsl(var(--primary) / 0.5);
+}
+.hero-play-wait {
+  position: absolute; inset: -5px; border-radius: 50%; opacity: 0; pointer-events: none;
+  border: 1.5px solid transparent; border-top-color: hsl(var(--primary)); border-right-color: hsl(var(--primary) / 0.4);
+  transition: opacity var(--dur-pop) var(--ease-out);
+}
+.hero-play[data-waiting='true'] .hero-play-wait { opacity: 1; animation: hero-spin 900ms linear infinite; }
+@keyframes hero-spin { to { transform: rotate(360deg); } }
+.hero-play-wrap { transition: opacity 360ms var(--ease-out), visibility 0s; }
+.hero-play { transition: transform 360ms var(--ease-out); }
+:root[data-tour='on'] .hero-play-wrap { opacity: 0; visibility: hidden; transition: opacity 320ms var(--ease-out) 80ms, visibility 0s linear 420ms; }
+:root[data-tour='on'] .hero-play { transform: translateY(10px); transition: transform 380ms var(--ease-out) 80ms; }
+
+/* the title steps aside as the lens opens (only while launching: after that the scroll owns its fade) */
+.hero-shot-title > * { transition: opacity 360ms var(--ease-out), transform 360ms var(--ease-out); }
+[data-launching='true'] .hero-shot-title > * {
+  opacity: 0; transform: translateX(-28px);
+  transition: opacity 420ms var(--ease-out) 150ms, transform 560ms var(--ease-out) 150ms;
+}
+
+/* the track draws in from the left, then its marks pop in one after another */
+.hero-track { transition: opacity 200ms var(--ease-out), visibility 0s linear 200ms; }
+:root:not([data-tour='on']) .hero-track, :root[data-tour-leaving] .hero-track { opacity: 0; visibility: hidden; }
+:root[data-tour='on']:not([data-tour-leaving]) .hero-track { transition: opacity 300ms var(--ease-out) 400ms, visibility 0s; }
+.hero-rail::before { transform: scaleX(0); transition: transform 200ms var(--ease-out); }
+:root[data-tour='on']:not([data-tour-leaving]) .hero-rail::before { transform: scaleX(1); transition: transform 560ms var(--ease-out) 450ms; }
+.hero-mark { opacity: 0; scale: 0.6; transition: opacity 160ms var(--ease-out), scale 160ms var(--ease-out); }
+:root[data-tour='on']:not([data-tour-leaving]) .hero-mark {
+  opacity: 1; scale: 1;
+  transition: opacity 240ms var(--ease-out) calc(800ms + var(--i, 0) * 70ms), scale 420ms var(--ease-pop) calc(800ms + var(--i, 0) * 70ms);
+}
+
+/* leaving the tour: top right of the stage, under the slate line */
+.hero-exit {
+  position: absolute; z-index: 5; top: calc(64px + 52px); right: var(--hero-edge);
+  display: inline-flex; align-items: center; gap: 0.55rem; height: 34px; padding: 0 14px 0 16px; border-radius: 999px;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: hsl(var(--foreground)); background: hsl(var(--card) / 0.92); box-shadow: inset 0 0 0 1px hsl(var(--border));
+  outline: none; -webkit-tap-highlight-color: transparent;
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out), visibility 0s linear 180ms;
+}
+:root[data-tour='on']:not([data-tour-leaving]) .hero-exit {
+  opacity: 1; visibility: visible; transform: none;
+  transition: opacity 260ms var(--ease-out) 800ms, transform 320ms var(--ease-out) 800ms, visibility 0s;
+}
+.hero-exit:active { transform: scale(0.97); transition-duration: var(--dur-press); }
+.hero-exit:focus-visible { box-shadow: inset 0 0 0 1px hsl(var(--border)), 0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--ring)); }
+@media (hover: hover) and (pointer: fine) {
+  .hero-exit:hover { background: hsl(var(--secondary)); }
+}
+@media (max-aspect-ratio: 4/5) {
+  .hero-exit { top: calc(64px + 40px); }
+}
+
+/* Reduced motion: the same states, by fades alone — nothing travels, scales or opens. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-play-iris, .hero-play-ring::after { display: none; }
+  :root[data-tour='on'] .hero-play, [data-launching='true'] .hero-shot-title > *, .hero-exit, :root[data-tour='on'] .hero-exit { transform: none; }
+  .hero-rail::before, :root[data-tour='on'] .hero-rail::before { transform: none; }
+  .hero-mark, :root[data-tour='on'] .hero-mark { scale: none; }
+  .hero-play[data-waiting='true'] .hero-play-wait { animation-duration: 2.4s; }
 }
 
 /* ── THE SPACES INDEX, at the foot of the home page (out of the hero, so its

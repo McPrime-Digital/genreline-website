@@ -107,6 +107,358 @@ export function softTexture() {
   return t
 }
 
+// ── THE FAR WORLDS ──────────────────────────────────────────────────────────
+//
+// Very far off, behind everything, faint as a matte painting (the owner, 2026-11-06: "distant milkyway
+// planets in a very distant with film related things around it"): a planet whose ring is a strip of
+// 35 mm film, its moon a film reel, and a small cool planet beyond. Drawn once, on canvases.
+
+/** A planet lit from the upper left: its night side falls into the sky, its rim keeps a thread of light. */
+function drawPlanet(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, day: string, night: string, rim: string) {
+  const body = g.createRadialGradient(cx - r * 0.45, cy - r * 0.5, r * 0.05, cx, cy, r)
+  body.addColorStop(0, day)
+  body.addColorStop(0.55, night)
+  body.addColorStop(1, 'rgba(4,5,12,1)')
+  g.fillStyle = body
+  g.beginPath()
+  g.arc(cx, cy, r, 0, Math.PI * 2)
+  g.fill()
+  // bands of weather, faint
+  g.save()
+  g.beginPath()
+  g.arc(cx, cy, r, 0, Math.PI * 2)
+  g.clip()
+  g.globalAlpha = 0.12
+  for (let i = -4; i <= 4; i++) {
+    g.fillStyle = i % 2 ? 'rgba(255,230,190,1)' : 'rgba(0,0,0,1)'
+    g.fillRect(cx - r, cy + i * r * 0.2 - r * 0.04, r * 2, r * 0.07)
+  }
+  g.restore()
+  // the terminator's rim light
+  g.strokeStyle = rim
+  g.lineWidth = r * 0.03
+  g.beginPath()
+  g.arc(cx, cy, r * 0.985, Math.PI * 0.85, Math.PI * 1.6)
+  g.stroke()
+}
+
+/** The ringed planet: its ring a strip of film — perforations along both edges, frames between them. */
+export function filmPlanetTexture() {
+  const W = 1024
+  const H = 640
+  const [c, g] = canvas(W, H)
+  const cx = W / 2
+  const cy = H / 2
+  const r = 140
+  const tilt = 0.34
+  const ring = (front: boolean) => {
+    g.save()
+    g.translate(cx, cy)
+    g.rotate(-0.22)
+    g.scale(1, tilt)
+    const R0 = 268
+    const R1 = 396
+    const from = front ? 0 : Math.PI
+    const to = front ? Math.PI : Math.PI * 2
+    // the film: a dark strip (the back half fainter, behind the planet)
+    g.globalAlpha = front ? 1 : 0.55
+    g.beginPath()
+    g.arc(0, 0, R1, from, to)
+    g.arc(0, 0, R0, to, from, true)
+    g.closePath()
+    g.fillStyle = 'rgba(34,24,16,0.9)'
+    g.fill()
+    // the picture area between the perforations, warmer, and its frame lines
+    g.beginPath()
+    g.arc(0, 0, R1 - 30, from, to)
+    g.arc(0, 0, R0 + 30, to, from, true)
+    g.closePath()
+    g.fillStyle = 'rgba(120,80,40,0.55)'
+    g.fill()
+    const n = 56
+    for (let i = 0; i < n; i++) {
+      const a = from + ((i + 0.5) / n) * (to - from)
+      const ca = Math.cos(a)
+      const sa = Math.sin(a)
+      // the perforations, lit as if a projector's lamp shone through them
+      for (const R of [R0 + 15, R1 - 15]) {
+        g.save()
+        g.translate(ca * R, sa * R)
+        g.rotate(a + Math.PI / 2)
+        g.fillStyle = 'rgba(255,214,150,0.85)'
+        g.beginPath()
+        g.roundRect(-8, -6, 16, 12, 3)
+        g.fill()
+        g.restore()
+      }
+      if (i % 3 === 0) {
+        const b = from + (i / n) * (to - from)
+        g.strokeStyle = 'rgba(20,12,6,0.85)'
+        g.lineWidth = 3
+        g.beginPath()
+        g.moveTo(Math.cos(b) * (R0 + 30), Math.sin(b) * (R0 + 30))
+        g.lineTo(Math.cos(b) * (R1 - 30), Math.sin(b) * (R1 - 30))
+        g.stroke()
+      }
+    }
+    // a thread of light along its outer edge
+    g.strokeStyle = 'rgba(255,214,150,0.6)'
+    g.lineWidth = 3
+    g.beginPath()
+    g.arc(0, 0, R1, from, to)
+    g.stroke()
+    g.restore()
+  }
+  ring(false)
+  drawPlanet(g, cx, cy, r, 'rgba(196,150,108,1)', 'rgba(52,38,64,1)', 'rgba(255,220,170,0.55)')
+  ring(true)
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
+/** A film reel, its moon: the rim, five windows round the hub. */
+export function reelTexture() {
+  const [c, g] = canvas(256, 256)
+  const cx = 128
+  const r = 118
+  const grd = g.createRadialGradient(cx - 40, cx - 46, 8, cx, cx, r)
+  grd.addColorStop(0, 'rgba(226,220,206,1)')
+  grd.addColorStop(1, 'rgba(92,90,98,1)')
+  g.fillStyle = grd
+  g.beginPath()
+  g.arc(cx, cx, r, 0, Math.PI * 2)
+  g.fill()
+  g.globalCompositeOperation = 'destination-out'
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 - Math.PI / 2
+    g.beginPath()
+    g.arc(cx + Math.cos(a) * r * 0.55, cx + Math.sin(a) * r * 0.55, r * 0.26, 0, Math.PI * 2)
+    g.fill()
+  }
+  g.beginPath()
+  g.arc(cx, cx, r * 0.1, 0, Math.PI * 2)
+  g.fill()
+  g.globalCompositeOperation = 'source-over'
+  g.strokeStyle = 'rgba(255,240,215,0.6)'
+  g.lineWidth = 3
+  g.beginPath()
+  g.arc(cx, cx, r - 2, Math.PI * 0.95, Math.PI * 1.55)
+  g.stroke()
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
+/** A small cool planet, beyond. */
+export function farPlanetTexture() {
+  const [c, g] = canvas(256, 256)
+  drawPlanet(g, 128, 128, 112, 'rgba(150,182,214,1)', 'rgba(28,40,70,1)', 'rgba(200,225,255,0.5)')
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
+// ── THE CREW'S REEL ─────────────────────────────────────────────────────────
+
+/**
+ * A 35 mm reel in gold, behind the Crew's tile (in place of the rings that read as science — the owner,
+ * 2026-11-06): its flange with six windows round the hub, the spokes between them, a bright rim. The
+ * tile covers the hub; what shows round it is the reel turning.
+ */
+export function crewReelTexture(theme: HeroTheme) {
+  const S = 1024
+  const [c, g] = canvas(S, S)
+  const m = S / 2
+  const R = S * 0.47
+  // the flange: brushed gold, translucent
+  const plate = g.createRadialGradient(m - R * 0.3, m - R * 0.35, R * 0.1, m, m, R)
+  plate.addColorStop(0, theme.css.goldTop)
+  plate.addColorStop(1, theme.css.goldBottom)
+  g.globalAlpha = 0.16
+  g.fillStyle = plate
+  g.beginPath()
+  g.arc(m, m, R, 0, Math.PI * 2)
+  g.fill()
+  g.globalAlpha = 1
+  // the windows, cut through
+  const windows = (draw: () => void) => {
+    for (let i = 0; i < 6; i++) {
+      const a0 = (i / 6) * Math.PI * 2 + 0.16
+      const a1 = a0 + (Math.PI * 2) / 6 - 0.32
+      g.beginPath()
+      g.arc(m, m, R * 0.86, a0, a1)
+      g.arc(m, m, R * 0.36, a1, a0, true)
+      g.closePath()
+      draw()
+    }
+  }
+  g.globalCompositeOperation = 'destination-out'
+  windows(() => g.fill())
+  g.globalCompositeOperation = 'source-over'
+  // their edges, the rim, the hub: lines of light
+  g.strokeStyle = theme.css.goldTop
+  g.lineWidth = 3
+  windows(() => g.stroke())
+  g.lineWidth = 6
+  g.beginPath()
+  g.arc(m, m, R - 3, 0, Math.PI * 2)
+  g.stroke()
+  g.lineWidth = 2
+  g.globalAlpha = 0.6
+  g.beginPath()
+  g.arc(m, m, R * 0.93, 0, Math.PI * 2)
+  g.stroke()
+  // the rim's knurling: fine ticks round the edge, the way a reel's flange is pressed
+  g.globalAlpha = 0.5
+  g.lineWidth = 2
+  for (let i = 0; i < 120; i++) {
+    const a = (i / 120) * Math.PI * 2
+    g.beginPath()
+    g.moveTo(m + Math.cos(a) * R * 0.94, m + Math.sin(a) * R * 0.94)
+    g.lineTo(m + Math.cos(a) * R * 0.975, m + Math.sin(a) * R * 0.975)
+    g.stroke()
+  }
+  g.globalAlpha = 1
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
+// ── THE CLIENT'S HALO ───────────────────────────────────────────────────────
+
+/**
+ * An art-deco sunburst in gold, round the Client's tile (in place of the rings): fine rays between two
+ * stepped circles, a diamond at each quarter — the ornament of a picture palace's ceiling.
+ */
+export function decoHaloTexture(theme: HeroTheme) {
+  const S = 1024
+  const [c, g] = canvas(S, S)
+  const m = S / 2
+  g.strokeStyle = theme.css.goldTop
+  g.fillStyle = theme.css.goldTop
+  // the rays, long and short in turn
+  for (let i = 0; i < 72; i++) {
+    const a = (i / 72) * Math.PI * 2
+    const long = i % 2 === 0
+    g.globalAlpha = long ? 0.75 : 0.4
+    g.lineWidth = long ? 3 : 2
+    g.beginPath()
+    g.moveTo(m + Math.cos(a) * S * 0.3, m + Math.sin(a) * S * 0.3)
+    g.lineTo(m + Math.cos(a) * S * (long ? 0.46 : 0.41), m + Math.sin(a) * S * (long ? 0.46 : 0.41))
+    g.stroke()
+  }
+  // the stepped circles
+  g.globalAlpha = 0.9
+  for (const [r, w] of [[0.29, 4], [0.275, 1.5], [0.47, 3], [0.485, 1.5]] as const) {
+    g.lineWidth = w
+    g.beginPath()
+    g.arc(m, m, S * r, 0, Math.PI * 2)
+    g.stroke()
+  }
+  // a diamond at each quarter
+  g.globalAlpha = 1
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2
+    const x = m + Math.cos(a) * S * 0.47
+    const y = m + Math.sin(a) * S * 0.47
+    g.beginPath()
+    g.moveTo(x, y - 18)
+    g.lineTo(x + 12, y)
+    g.lineTo(x, y + 18)
+    g.lineTo(x - 12, y)
+    g.closePath()
+    g.fill()
+  }
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
+// ── THE SUITE'S LENS ────────────────────────────────────────────────────────
+
+/**
+ * A cine lens's focus ring, seen face on: the distance scale engraved round it (feet, ∞ to 3), fine ticks
+ * between, and the witness mark the focus puller reads. It turns back and forth round the iris — a focus
+ * pull — so the numbers pass the mark.
+ */
+export function focusRingTexture(theme: HeroTheme) {
+  const S = 1024
+  const [c, g] = canvas(S, S)
+  const m = S / 2
+  const R0 = S * 0.4
+  const R1 = S * 0.49
+  // the ring itself: a dark band with a bright edge either side
+  g.fillStyle = 'rgba(12,12,18,0.55)'
+  g.beginPath()
+  g.arc(m, m, R1, 0, Math.PI * 2)
+  g.arc(m, m, R0, 0, Math.PI * 2, true)
+  g.fill()
+  g.strokeStyle = theme.css.goldTop
+  for (const [r, w, a] of [[R0, 2.5, 0.8], [R1 - 2, 3, 0.9]] as const) {
+    g.globalAlpha = a
+    g.lineWidth = w
+    g.beginPath()
+    g.arc(m, m, r, 0, Math.PI * 2)
+    g.stroke()
+  }
+  // the scale: ticks all round, longer at each engraved distance
+  const marks = ['∞', '30', '15', '10', '7', '5', '4', '3']
+  const span = Math.PI * 1.25
+  const start = -Math.PI / 2 - span / 2
+  g.globalAlpha = 0.75
+  g.lineWidth = 2
+  for (let i = 0; i <= 56; i++) {
+    const a = start + (i / 56) * span
+    const long = i % 8 === 0
+    g.beginPath()
+    g.moveTo(m + Math.cos(a) * (R1 - 8), m + Math.sin(a) * (R1 - 8))
+    g.lineTo(m + Math.cos(a) * (R1 - (long ? 26 : 16)), m + Math.sin(a) * (R1 - (long ? 26 : 16)))
+    g.stroke()
+  }
+  g.globalAlpha = 0.9
+  g.fillStyle = theme.css.goldTop
+  g.font = `600 ${Math.round(S * 0.03)}px ${getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'ui-sans-serif, system-ui, sans-serif'}`
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  marks.forEach((t, i) => {
+    const a = start + (i / (marks.length - 1)) * span
+    const rr = (R0 + R1) / 2 - 6
+    g.save()
+    g.translate(m + Math.cos(a) * rr, m + Math.sin(a) * rr)
+    g.rotate(a + Math.PI / 2)
+    g.fillText(t, 0, 0)
+    g.restore()
+  })
+  g.globalAlpha = 1
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
+/** An anamorphic flare: a long, thin horizontal streak, blue-white at its heart. */
+export function anamorphicTexture() {
+  const [c, g] = canvas(1024, 64)
+  const v = g.createLinearGradient(0, 0, 0, 64)
+  v.addColorStop(0, 'rgba(120,170,255,0)')
+  v.addColorStop(0.5, 'rgba(190,220,255,1)')
+  v.addColorStop(1, 'rgba(120,170,255,0)')
+  g.fillStyle = v
+  g.fillRect(0, 0, 1024, 64)
+  g.globalCompositeOperation = 'destination-in'
+  const h = g.createLinearGradient(0, 0, 1024, 0)
+  h.addColorStop(0, 'rgba(0,0,0,0)')
+  h.addColorStop(0.35, 'rgba(0,0,0,0.5)')
+  h.addColorStop(0.5, 'rgba(0,0,0,1)')
+  h.addColorStop(0.65, 'rgba(0,0,0,0.5)')
+  h.addColorStop(1, 'rgba(0,0,0,0)')
+  g.fillStyle = h
+  g.fillRect(0, 0, 1024, 64)
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  return t
+}
+
 // ── THE TILES: THE LOGO'S GLYPHS ────────────────────────────────────────────
 //
 // Drawn as vectors at 512 px so a tile stays sharp in a close shot. Every

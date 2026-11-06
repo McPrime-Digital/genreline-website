@@ -14,16 +14,18 @@ import * as React from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, NearestFilter, NormalBlending, PerspectiveCamera,
-  PlaneGeometry, RGBAFormat, TubeGeometry, Vector3, type ShaderMaterial,
+  PlaneGeometry, RGBAFormat, TubeGeometry, Vector2, Vector3, Vector4, type Color, type ShaderMaterial, type Sprite, type SpriteMaterial,
 } from 'three'
-import { heroState, storyAt } from '@/components/hero/state'
+import { heroState, shotWeight, storyAt } from '@/components/hero/state'
 import { FLOW, FOV, LOGO_BOX, QUALITY, STARS, TUBE, VIEW, type Quality } from '@/components/hero/scene/numbers'
 import { cameraAt, LINE, LINE_LENGTH, live, makeView } from '@/components/hero/scene/rig'
 import {
-  FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, SKY_FRAG, SKY_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
+  FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, METEOR_FRAG, METEOR_VERT, SKY_FRAG, SKY_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
 } from '@/components/hero/scene/shaders'
 import { Station } from '@/components/hero/scene/Station'
-import { hsl, readTheme, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme } from '@/components/hero/scene/textures'
+import {
+  farPlanetTexture, filmPlanetTexture, hsl, readTheme, reelTexture, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme,
+} from '@/components/hero/scene/textures'
 
 /** A seeded random, so the stars lie the same way on every visit (and in the posters). */
 function seeded(seed: number) {
@@ -106,6 +108,7 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
     () => ({
       uTime: { value: 0 }, uPixel: { value: 600 }, uWarm: { value: hsl(38, 90, 78) }, uCool: { value: hsl(212, 70, 80) },
       uInk: { value: theme.ink.clone() }, uDark: { value: theme.dark ? 1 : 0 }, uOpacity: { value: theme.dark ? 0.95 : 0.4 },
+      uPointer: { value: [0, 0] }, uPointerOn: { value: 0 }, uAspect: { value: 1 },
     }),
     [theme],
   )
@@ -117,8 +120,13 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   const streakMat = React.useRef<ShaderMaterial>(null)
   useFrame(({ size, viewport, camera }) => {
     if (starMat.current) {
-      starMat.current.uniforms.uTime.value = live.time
-      starMat.current.uniforms.uPixel.value = pixelScale(size.height, viewport.dpr, (camera as PerspectiveCamera).fov)
+      const u = starMat.current.uniforms
+      u.uTime.value = live.time
+      u.uPixel.value = pixelScale(size.height, viewport.dpr, (camera as PerspectiveCamera).fov)
+      // the stars answer the pointer, subtly (HeroScene's flow does the same, harder)
+      u.uPointer.value = [live.pointer.x, live.pointer.y]
+      u.uPointerOn.value = heroState.reduced ? 0 : live.pointer.on
+      u.uAspect.value = size.width / size.height
     }
     if (streakMat.current) (streakMat.current.uniforms.uVel.value as Vector3).copy(live.velocity)
   })
@@ -137,28 +145,151 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
 
 // ── THE DEEP SKY: THE SPACE BEHIND EVERY SPACE ──────────────────────────────
 
+/**
+ * The universe's slow change of era (the owner, 2026-11-06: "at times there should be universe era change
+ * subtle"): the deep sky's grade drifts through a century of film stock — today's deep blue and amber,
+ * held longest; then silver nitrate, the first films' black and white; the silent era's amber tint; and
+ * three-strip Technicolor's red against teal — each crossfading over eight seconds, about two minutes
+ * round. [hue, saturation, lightness] for the nebula's two colours, its accent, and the Milky Way.
+ */
+const ERAS = [
+  // today: the deep blue night, a cream-gold galaxy with blue edges
+  { a: [226, 52, 13], b: [252, 40, 7], accent: [36, 55, 20], band: [40, 55, 84], edge: [218, 45, 62], hold: 40 },
+  // silver nitrate: the first films' black and white
+  { a: [220, 8, 15], b: [230, 6, 6], accent: [40, 6, 32], band: [40, 8, 86], edge: [220, 6, 58], hold: 16 },
+  // the silent era's tinting: amber
+  { a: [32, 52, 14], b: [20, 44, 6], accent: [38, 66, 28], band: [36, 78, 74], edge: [24, 60, 46], hold: 16 },
+  // three-strip Technicolor: red against teal
+  { a: [352, 52, 15], b: [190, 58, 8], accent: [44, 74, 30], band: [350, 62, 76], edge: [186, 58, 52], hold: 16 },
+] as const
+const ERA_FADE = 8
+const c3 = (v: readonly number[]) => hsl(v[0], v[1], v[2])
+const ERA_COLORS = ERAS.map((e) => ({ a: c3(e.a), b: c3(e.b), accent: c3(e.accent), band: c3(e.band), edge: c3(e.edge) }))
+const ERA_CYCLE = ERAS.reduce((t, e) => t + e.hold + ERA_FADE, 0)
+/** The era at a moment: which two eras, and how far from the first to the second. */
+function eraAt(t: number) {
+  let x = ((t % ERA_CYCLE) + ERA_CYCLE) % ERA_CYCLE
+  for (let i = 0; i < ERAS.length; i++) {
+    if (x < ERAS[i].hold) return { i, j: i, k: 0 }
+    x -= ERAS[i].hold
+    if (x < ERA_FADE) {
+      const k = x / ERA_FADE
+      return { i, j: (i + 1) % ERAS.length, k: k * k * (3 - 2 * k) }
+    }
+    x -= ERA_FADE
+  }
+  return { i: 0, j: 0, k: 0 }
+}
+
 function DeepSky({ theme }: { theme: HeroTheme }) {
-  const geo = React.useMemo(() => new PlaneGeometry(1, 1, 96, 60), [])
+  // `?era=0–3` holds one era, for checking by hand
+  const [held] = React.useState(() => {
+    const e = Number(new URLSearchParams(window.location.search).get('era'))
+    return Number.isInteger(e) && e >= 0 && e < ERAS.length && new URLSearchParams(window.location.search).has('era') ? e : -1
+  })
+  const geo = React.useMemo(() => new PlaneGeometry(1, 1, 128, 76), [])
   React.useEffect(() => () => geo.dispose(), [geo])
   const mat = React.useRef<ShaderMaterial>(null)
   const uniforms = React.useMemo(() => {
-    const a = theme.dark ? hsl(226, 52, 13) : hsl(40, 70, 92)
-    const b = theme.dark ? hsl(252, 40, 7) : hsl(214, 50, 94)
+    const e = ERA_COLORS[0]
     return {
-      uA: { value: a }, uB: { value: b }, uA2: { value: a }, uB2: { value: b }, uAccent: { value: theme.dark ? hsl(36, 55, 20) : hsl(40, 80, 86) },
+      uA: { value: e.a.clone() }, uB: { value: e.b.clone() }, uA2: { value: e.a.clone() }, uB2: { value: e.b.clone() }, uAccent: { value: e.accent.clone() },
       uFace: { value: 0 }, uWeight: { value: 1 }, uStrength: { value: theme.dark ? 0.6 : 0.5 }, uTime: { value: 0 }, uSeed: { value: 3.3 },
+      uBand: { value: e.band.clone() }, uBandEdge: { value: e.edge.clone() }, uMilky: { value: 0.85 },
     }
   }, [theme])
   useFrame(() => {
-    if (mat.current) mat.current.uniforms.uTime.value = live.time
+    const m = mat.current
+    if (!m) return
+    const u = m.uniforms
+    u.uTime.value = live.time
+    // the era, drifting (still under reduced motion: live.time stands)
+    const { i, j, k } = held >= 0 ? { i: held, j: held, k: 0 } : eraAt(live.time + 6)
+    const A = ERA_COLORS[i]
+    const B = ERA_COLORS[j]
+    ;(u.uA.value as Color).lerpColors(A.a, B.a, k)
+    ;(u.uA2.value as Color).copy(u.uA.value as Color)
+    ;(u.uB.value as Color).lerpColors(A.b, B.b, k)
+    ;(u.uB2.value as Color).copy(u.uB.value as Color)
+    ;(u.uAccent.value as Color).lerpColors(A.accent, B.accent, k)
+    ;(u.uBand.value as Color).lerpColors(A.band, B.band, k)
+    ;(u.uBandEdge.value as Color).lerpColors(A.edge, B.edge, k)
   })
   const [x, y, z] = LOGO_BOX.center
   return (
     <mesh geometry={geo} position={[x, y, z - 160]} scale={[640, 380, 1]} renderOrder={-20} frustumCulled={false}>
-      <shaderMaterial ref={mat} vertexShader={SKY_VERT} fragmentShader={SKY_FRAG} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
+      <shaderMaterial ref={mat} vertexShader={SKY_VERT} fragmentShader={SKY_FRAG} defines={{ MILKY: 1 }} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
     </mesh>
   )
 }
+
+// ── SHOOTING STARS ──────────────────────────────────────────────────────────
+
+/** A few meteors at infinity (shaders.ts METEOR_*): three slots, each on its own irregular rhythm. */
+function Meteors() {
+  const geo = React.useMemo(() => {
+    const n = 3
+    const corner = new Float32Array(n * 4 * 2)
+    const slot = new Float32Array(n * 4)
+    const index: number[] = []
+    const C = [[0, -1], [1, -1], [1, 1], [0, 1]]
+    for (let i = 0; i < n; i++) {
+      for (let v = 0; v < 4; v++) {
+        corner.set(C[v], (i * 4 + v) * 2)
+        slot[i * 4 + v] = i
+      }
+      index.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3)
+    }
+    const g = new BufferGeometry()
+    g.setAttribute('position', new BufferAttribute(new Float32Array(n * 4 * 3), 3))
+    g.setAttribute('aCorner', new BufferAttribute(corner, 2))
+    g.setAttribute('aSlot', new BufferAttribute(slot, 1))
+    g.setIndex(index)
+    return g
+  }, [])
+  React.useEffect(() => () => geo.dispose(), [geo])
+  const mat = React.useRef<ShaderMaterial>(null)
+  const uniforms = React.useMemo(() => ({ uTime: { value: 0 }, uAspect: { value: 1 }, uOn: { value: 1 }, uColor: { value: hsl(44, 80, 90) }, uOpacity: { value: 0.85 } }), [])
+  useFrame(({ size }) => {
+    const m = mat.current
+    if (!m) return
+    m.uniforms.uTime.value = live.time
+    m.uniforms.uAspect.value = size.width / size.height
+    m.uniforms.uOn.value = heroState.reduced ? 0 : 1
+  })
+  return (
+    <mesh geometry={geo} frustumCulled={false} renderOrder={-12}>
+      <shaderMaterial ref={mat} vertexShader={METEOR_VERT} fragmentShader={METEOR_FRAG} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
+    </mesh>
+  )
+}
+
+// ── THE FAR WORLDS ──────────────────────────────────────────────────────────
+
+/** Very far off, behind everything and faint: the film-ringed planet, its reel moon turning, and a small cool planet beyond. */
+function FarWorlds() {
+  const maps = React.useMemo(() => ({ planet: filmPlanetTexture(), reel: reelTexture(), far: farPlanetTexture() }), [])
+  React.useEffect(() => () => Object.values(maps).forEach((t) => t.dispose()), [maps])
+  const reel = React.useRef<Sprite>(null)
+  useFrame(() => {
+    const r = reel.current
+    if (!r) return
+    ;(r.material as SpriteMaterial).rotation = live.time * 0.06
+    // its slow orbit round the planet
+    const a = live.time * 0.012 + 2.2
+    r.position.set(FAR.planet[0] + Math.cos(a) * 46, FAR.planet[1] + Math.sin(a) * 13, FAR.planet[2] + Math.sin(a) * 8)
+  })
+  const sprite = (map: typeof maps.planet, opacity: number) => <spriteMaterial map={map} transparent opacity={opacity} depthWrite={false} depthTest={false} />
+  return (
+    <group>
+      <sprite position={FAR.planet} scale={[88, 55, 1]} renderOrder={-16}>{sprite(maps.planet, 0.38)}</sprite>
+      <sprite ref={reel} position={FAR.planet} scale={8} renderOrder={-15}>{sprite(maps.reel, 0.36)}</sprite>
+      <sprite position={FAR.far} scale={11} renderOrder={-16}>{sprite(maps.far, 0.3)}</sprite>
+    </group>
+  )
+}
+/** Where the far worlds hang: high in the sky, far behind the line. */
+const FAR = { planet: [-170, 78, -250] as [number, number, number], far: [150, 52, -280] as [number, number, number] }
 
 // ── THE LINE ────────────────────────────────────────────────────────────────
 
@@ -172,7 +303,10 @@ function Line({ theme }: { theme: HeroTheme }) {
   )
   React.useEffect(() => () => { geos.core.dispose(); geos.halo.dispose() }, [geos])
   const light = React.useMemo(
-    () => ({ uTime: { value: 0 }, uLength: { value: LINE_LENGTH }, uSpacing: { value: TUBE.pulse.spacing }, uSpeed: { value: TUBE.pulse.speed }, uHead: { value: 0 }, uHeadOn: { value: 0 } }),
+    () => ({
+      uTime: { value: 0 }, uLength: { value: LINE_LENGTH }, uSpacing: { value: TUBE.pulse.spacing }, uSpeed: { value: TUBE.pulse.speed }, uHead: { value: 0 }, uHeadOn: { value: 0 },
+      uMask: { value: new Vector4() }, uMaskOn: { value: 0 }, uTrackY: { value: 0.95 }, uTrackOn: { value: 0 }, uTopY: { value: 0.12 }, uRes: { value: new Vector2(1, 1) },
+    }),
     [],
   )
   const coreUniforms = React.useMemo(
@@ -185,10 +319,36 @@ function Line({ theme }: { theme: HeroTheme }) {
   )
   const core = React.useRef<ShaderMaterial>(null)
   const halo = React.useRef<ShaderMaterial>(null)
-  useFrame((_, dt) => {
+  // the line's own clock: it runs faster while the pointer is on the play control
+  const clock = React.useRef({ t: 0, boost: 0 })
+  useFrame(({ gl }, dt) => {
+    const c = clock.current
+    const d = heroState.reduced ? 0 : Math.min(dt, 0.1)
+    c.boost = damp(c.boost, heroState.playHover, 5, Math.min(dt, 0.1))
+    c.t += d * (1 + c.boost * 2.2)
+    // behind the words on screen the line steps back: the caption of the space on screen, or the close
+    // (the core and the halo share these uniforms: written once, through the core's material)
+    const u = core.current?.uniforms
+    if (live.place && u) {
+      const L = heroState.layout
+      let on = 0
+      const m = u.uMask.value as Vector4
+      for (const shot of [1, 2, 3, 4] as const) {
+        const w = shotWeight(live.place, shot)
+        if (w <= on) continue
+        on = w
+        const cap = shot === 4 ? { top: L.closeTop, right: L.closeRight } : (L.captions[shot - 1] ?? { top: L.captionTop, right: L.captionRight })
+        m.set(Math.max(0, L.edge - 0.01), cap.top - 0.01, cap.right + 0.01, 1)
+      }
+      u.uMaskOn.value = on
+      u.uTrackY.value = L.bottom + 0.012
+      u.uTopY.value = L.slate + 0.008
+      u.uTrackOn.value = damp(u.uTrackOn.value as number, heroState.tour ? 1 : 0, 4, Math.min(dt, 0.1))
+      gl.getDrawingBufferSize(u.uRes.value as Vector2)
+    }
     for (const m of [core.current, halo.current]) {
       if (!m) continue
-      m.uniforms.uTime.value = live.time
+      m.uniforms.uTime.value = c.t
       m.uniforms.uHead.value = live.head
       m.uniforms.uHeadOn.value = damp(m.uniforms.uHeadOn.value, live.headOn, 6, Math.min(dt, 0.1))
     }
@@ -426,6 +586,8 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
       <CameraRig />
       <Uploader />
       <DeepSky theme={theme} />
+      <FarWorlds />
+      <Meteors />
       <Stars theme={theme} quality={quality} />
       <Line theme={theme} />
       <Flow theme={theme} quality={quality} />
