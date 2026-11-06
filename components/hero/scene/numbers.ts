@@ -91,7 +91,7 @@ export const TUBE = {
 export const TILE = { size: 3.4, glow: 9, minScreen: 0.07 } as const
 
 /** Particles streaming along the line, and the stars around it (the most any quality draws; QUALITY sets how many). */
-export const FLOW = { count: 3400, radius: 2.6, size: 0.075, speed: [0.006, 0.016] as const } as const
+export const FLOW = { count: 5000, radius: 2.6, size: 0.075, speed: [0.006, 0.016] as const } as const
 export const STARS = { count: 4200, box: { min: [-70, -60, -110] as Vec3, max: [135, 60, 40] as Vec3 }, size: 0.16, streaks: 900 } as const
 
 // ── THE STATIONS ────────────────────────────────────────────────────────────
@@ -189,12 +189,12 @@ export type Quality = 0 | 1 | 2
 
 export const QUALITY = [
   // 0 — modest graphics: budget phones and tablets, older integrated graphics on big screens
-  { dpr: 1, pixels: 1.5e6, stars: 1800, flow: 1300, streaks: false, antialias: false, texture: 720 },
+  { dpr: 1, pixels: 1.5e6, stars: 1800, flow: 1900, streaks: false, antialias: false, texture: 720 },
   // 1 — the middle: most laptops' integrated graphics, mid-range phones, any GPU the browser will not name
   //     (no multisampling: on integrated graphics it costs more than everything else on screen)
-  { dpr: 1.25, pixels: 2.4e6, stars: 3000, flow: 2400, streaks: true, antialias: false, texture: 1024 },
+  { dpr: 1.25, pixels: 2.4e6, stars: 3000, flow: 3500, streaks: true, antialias: false, texture: 1024 },
   // 2 — strong graphics: Apple silicon, recent phones, discrete GPUs
-  { dpr: 1.5, pixels: 3.8e6, stars: 4200, flow: 3400, streaks: true, antialias: true, texture: 1400 },
+  { dpr: 1.5, pixels: 3.8e6, stars: 4200, flow: 5000, streaks: true, antialias: true, texture: 1400 },
 ] as const
 
 /** The governor's ladder, lowest first: quality 0 at reduced resolution, then each quality at full. */

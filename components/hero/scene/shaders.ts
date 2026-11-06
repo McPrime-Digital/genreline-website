@@ -141,62 +141,6 @@ export const SKYOBJ_FRAG = /* glsl */ `
   }
 `
 
-// ── THE CLAPPERBOARD'S CHALK DUST ───────────────────────────────────────────
-
-/** A puff of chalk dust as the sticks clap shut: out from the sticks, slowing, settling, gone in a second and a half. */
-export const PUFF_VERT = /* glsl */ `
-  attribute vec3 aDir;
-  uniform float uAge;
-  uniform float uPixel;
-  varying float vA;
-  void main() {
-    float t = max(uAge, 0.0);
-    vec3 p = position + aDir * (1.0 - exp(-t * 3.2)) * 1.7 + vec3(0.0, -0.35 * t * t, 0.0);
-    vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    gl_Position = projectionMatrix * mv;
-    gl_PointSize = clamp(0.1 * uPixel / max(-mv.z, 0.1), 1.0, 6.0);
-    vA = smoothstep(1.5, 0.05, t) * step(0.0, uAge);
-  }
-`
-export const PUFF_FRAG = /* glsl */ `
-  uniform vec3 uColor;
-  uniform float uOpacity;
-  varying float vA;
-  ${SOFT_POINT}
-  void main() {
-    gl_FragColor = vec4(uColor, softPoint(gl_PointCoord) * vA * uOpacity);
-    ${OUT}
-  }
-`
-
-// ── THE CLIENT'S TICKET AND THE STAKEHOLDERS' PASS ──────────────────────────
-
-/** A face of the ticket (or the pass): a span of its texture (uU), its foil catching a sheen that sweeps across under the hand. */
-export const TICKET_VERT = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-export const TICKET_FRAG = /* glsl */ `
-  uniform sampler2D uMap;
-  uniform vec2 uU;
-  uniform float uSheen;
-  uniform float uOpacity;
-  varying vec2 vUv;
-  void main() {
-    vec2 uv = vec2(mix(uU.x, uU.y, vUv.x), vUv.y);
-    vec4 t = texture2D(uMap, uv);
-    // the foil: the bright gold of the print
-    float foil = smoothstep(0.45, 0.75, max(t.r, t.g)) * smoothstep(0.1, 0.4, t.r - t.b);
-    float band = exp(-pow((uv.x + uv.y * 0.35 - uSheen) * 7.0, 2.0));
-    vec3 c = t.rgb + vec3(1.0, 0.95, 0.85) * band * (0.25 + foil * 0.9);
-    gl_FragColor = vec4(c, t.a * uOpacity);
-    ${OUT}
-  }
-`
-
 // ── THE FILMS: EACH CINEMA'S PICTURE, IN ITS ERA'S LOOK ─────────────────────
 
 /**
@@ -242,6 +186,10 @@ export const FILM_FRAG = /* glsl */ `
   #endif
   void main() {
     vec2 uvF = vUv;
+    #ifdef LED
+      // a curved LED wall, seen from inside its curve: its columns run the other way
+      uvF.x = 1.0 - uvF.x;
+    #endif
     #ifdef CARD
       // a card of film: the picture between two rows of perforations, the strip's black edge round it
       uvF = vec2(vUv.x, (vUv.y - 0.13) / 0.74);
@@ -285,31 +233,89 @@ export const FILM_FRAG = /* glsl */ `
     // the grain rides the picture's own light (added in linear light it would pepper the blacks)
     c *= 1.0 + (h2(gl_FragCoord.xy + frame * 17.0) - 0.5) * 0.16;
     c = max(c, 0.0) * uBright;
-    #ifdef CARD
-      // the strip round the picture: black, its perforations lit from behind, its corners rounded
-      vec2 cp = (vUv - 0.5) * vec2(uScreen / 0.74, 1.0);
-      vec2 cb = abs(cp) - vec2(uScreen / 0.74 * 0.5 - 0.06, 0.44);
-      float card = 1.0 - smoothstep(-0.004, 0.004, length(max(cb, 0.0)) + min(max(cb.x, cb.y), 0.0) - 0.06);
-      float perfRow = step(0.025, vUv.y) * step(vUv.y, 0.1) + step(0.9, vUv.y) * step(vUv.y, 0.975);
-      float perf = perfRow * step(0.32, fract(vUv.x * uScreen * 3.4)) * step(fract(vUv.x * uScreen * 3.4), 0.68);
-      vec3 strip = vec3(0.035, 0.035, 0.045) + vec3(0.9, 0.85, 0.75) * perf * 0.55;
+    #ifdef LED
+      // the wall itself: its LEDs a fine grid, its panels' seams, dark and idle beyond the picture
+      vec2 led = fract(vec2(uvF.x * uScreen, uvF.y) * 160.0) - 0.5;
+      float dots = 0.8 + 0.2 * smoothstep(0.5, 0.2, length(led));
+      vec2 panel = fract(vec2(uvF.x * uScreen, uvF.y) * 6.0);
+      float seam = 1.0 - 0.35 * (step(panel.x, 0.012) + step(panel.y, 0.018));
+      vec3 idle = vec3(0.016, 0.018, 0.024) * (0.6 + 0.4 * smoothstep(0.0, 0.6, uvF.y));
+      c = mix(idle, c, inside) * dots * seam;
+      gl_FragColor = vec4(c, uWeight);
+    #elif defined(CARD)
+      // the strip round the picture: black, small rounded perforations along each edge lit from behind, its
+      // corners rounded (uScreen is the picture's shape; the card is taller by its edges, 0.74 : 1)
+      float ca = uScreen * 0.74;
+      vec2 cp = (vUv - 0.5) * vec2(ca, 1.0);
+      float aa = fwidth(cp.y) * 1.5;
+      vec2 cb = abs(cp) - vec2(ca * 0.5, 0.5) + 0.03;
+      float card = 1.0 - smoothstep(-aa, aa, length(max(cb, 0.0)) + min(max(cb.x, cb.y), 0.0) - 0.03);
+      vec2 hp = vec2((fract(cp.x / 0.085 + 0.5) - 0.5) * 0.085, 0.435 - abs(cp.y));
+      vec2 hq = abs(hp) - vec2(0.021, 0.026) + 0.008;
+      float perf = 1.0 - smoothstep(-aa, aa, length(max(hq, 0.0)) + min(max(hq.x, hq.y), 0.0) - 0.008);
+      vec3 strip = vec3(0.03, 0.03, 0.04) + vec3(0.9, 0.85, 0.75) * perf * 0.4;
       float pic = step(0.0, uvF.y) * step(uvF.y, 1.0);
       c = mix(strip, c, pic * inside);
-      // the glass's sheen, and the burn as it leaves (from its trailing edge, a glowing rim at the front of it)
+      // the glass's sheen, and the burn as it leaves (from its trailing edge: uBurn below 0 burns from the
+      // right, as a card thrown to the left; a glowing rim at the front of it)
       c += vec3(1.0) * exp(-pow((vUv.x + vUv.y * 0.3 - uSheen) * 9.0, 2.0)) * 0.12;
       vec2 nb = vUv * vec2(uScreen * 2.2, 2.4);
-      float n = (vn(nb) * 0.6 + vn(nb * 2.7 + 7.1) * 0.4) * 0.38 + vUv.x * 0.62;
-      float th = uBurn * 1.12;
+      float n = (vn(nb) * 0.6 + vn(nb * 2.7 + 7.1) * 0.4) * 0.38 + (uBurn < 0.0 ? 1.0 - vUv.x : vUv.x) * 0.62;
+      float burn = abs(uBurn);
+      float th = burn * 1.12;
       float keep = smoothstep(th - 0.012, th + 0.012, n);
       // the burning edge: a thin line of fire, a scorched brown band behind it
-      float rim = (1.0 - smoothstep(0.0, 0.03, abs(n - th))) * step(0.001, uBurn);
-      float scorch = (1.0 - smoothstep(0.0, 0.09, n - th)) * step(0.001, uBurn);
+      float rim = (1.0 - smoothstep(0.0, 0.03, abs(n - th))) * step(0.001, burn);
+      float scorch = (1.0 - smoothstep(0.0, 0.09, n - th)) * step(0.001, burn);
       c = mix(c, c * vec3(0.45, 0.28, 0.14), scorch * 0.8);
       c += vec3(1.0, 0.56, 0.2) * rim * 2.6;
       gl_FragColor = vec4(c, card * keep * uWeight);
     #else
       gl_FragColor = vec4(c, inside * uWeight);
     #endif
+    ${OUT}
+  }
+`
+
+/**
+ * The Suite's shooting star (Station.tsx FloorCinema): a card arriving as a star, or leaving as one. One quad
+ * facing the camera, stretched along the star's flight (uLen × uWid scene units, uv.x 0 at the tail's end, 1
+ * at the head): a white-hot head with a four-point glint, a tail thinning and fading behind it. uFlare swells
+ * the head (the burst as it opens into a card).
+ */
+export const COMET_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uWeight;
+  uniform float uLen;
+  uniform float uWid;
+  uniform float uFlare;
+  varying vec2 vUv;
+  void main() {
+    float x = vUv.x * uLen;
+    float y = (vUv.y - 0.5) * uWid;
+    float hx = uLen - uWid * 0.5;
+    vec2 d = vec2(x - hx, y) / (uWid * 0.5);
+    float r2 = dot(d, d);
+    float head = exp(-r2 * 30.0 / (1.0 + uFlare * 3.0)) + 0.3 * exp(-r2 * 5.0 / (1.0 + uFlare));
+    float glint = (exp(-abs(d.y) * 40.0) * exp(-abs(d.x) * 2.6) + exp(-abs(d.x) * 40.0) * exp(-abs(d.y) * 2.6)) * (0.5 + uFlare);
+    float along = clamp(x / hx, 0.0, 1.0);
+    float tail = exp(-y * y / (uWid * uWid * 0.012 * (0.15 + along))) * pow(along, 1.8) * step(x, hx);
+    gl_FragColor = vec4(uColor, clamp(head + glint * 0.6 + tail * 0.7, 0.0, 1.0) * uWeight);
+    ${OUT}
+  }
+`
+/**
+ * The light a Suite card throws on the floor at its foot: lying on the floor in front of the card (uv.y 1 at
+ * the foot, 0 toward the camera), in the film's colour, fading away from the card and toward its sides.
+ */
+export const POOL_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uWeight;
+  varying vec2 vUv;
+  void main() {
+    float across = smoothstep(0.0, 0.2, vUv.x) * smoothstep(1.0, 0.8, vUv.x);
+    float a = exp(-(1.0 - vUv.y) * 3.4) * across * 0.34;
+    gl_FragColor = vec4(uColor, a * uWeight);
     ${OUT}
   }
 `
@@ -346,14 +352,17 @@ export const FAR_FRAG = /* glsl */ `
   uniform float uAspect;
   uniform sampler2D uAtlas;
   uniform float uAtlasOn;
+  uniform vec3 uTint;
+  uniform float uVariant;
   varying vec2 vUv;
   const float PI = 3.14159265;
+  const vec2 ATLAS = vec2(4.0, 4.0);
   float h1(float n) { return fract(sin(n * 127.1) * 43758.5453); }
   float h2(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }
-  // a frame of the tour's films (the stills atlas, 4 × 2), or warm light until it has arrived
+  // a frame of the tour's films (the stills atlas, 4 × 4), or warm light until it has arrived
   vec3 still(vec2 uv, float cell) {
-    float i = mod(floor(cell), 8.0);
-    vec2 a = (vec2(mod(i, 4.0), floor(i / 4.0)) + clamp(uv, 0.03, 0.97)) / vec2(4.0, 2.0);
+    float i = mod(floor(cell), ATLAS.x * ATLAS.y);
+    vec2 a = (vec2(mod(i, ATLAS.x), floor(i / ATLAS.x)) + clamp(uv, 0.03, 0.97)) / ATLAS;
     vec3 film = texture2D(uAtlas, vec2(a.x, 1.0 - a.y)).rgb;
     vec3 warm = mix(vec3(1.0, 0.74, 0.4), vec3(1.0, 0.93, 0.78), uv.y) * (0.75 + 0.25 * h1(floor(cell)));
     return mix(warm, film * 1.3, uAtlasOn);
@@ -378,7 +387,7 @@ export const FAR_FRAG = /* glsl */ `
       float ss = sin(uSpin);
       vec2 fr = mat2(cs, ss, -ss, cs) * fp;
       float rho = length(fr);
-      float sector = 2.0 * PI / 6.0;
+      float sector = 2.0 * PI / (5.0 + floor(uVariant * 2.99));
       float a6 = mod(atan(fr.y, fr.x) + sector * 0.5, sector) - sector * 0.5;
       float dw = length(vec2(cos(a6), sin(a6)) * rho - vec2(0.5, 0.0));
       float win = smoothstep(0.205, 0.185, dw);
@@ -388,7 +397,7 @@ export const FAR_FRAG = /* glsl */ `
       float spindle = smoothstep(0.055, 0.04, rho);
       float flange = smoothstep(0.84, 0.9, rad) * smoothstep(1.0, 0.95, rad);
       float grooves = 0.9 + 0.1 * sin(rho * 150.0);
-      vec3 metal = vec3(0.66, 0.52, 0.3) * grooves;
+      vec3 metal = uTint * grooves;
       vec3 deep = vec3(0.08, 0.05, 0.03) * (0.7 + 0.3 * sin(dw * 110.0));
       vec3 albedo = mix(metal, deep, win);
       albedo = mix(albedo, metal * 1.35, clamp(winRim * 0.7 + hubRim * 0.7 + flange * 0.5, 0.0, 1.0));
@@ -474,7 +483,7 @@ export const FAR_FRAG = /* glsl */ `
       float lip = smoothstep(0.86, 0.9, rl) * (0.6 + 0.4 * smoothstep(0.0, 0.6, -e.y));
       float groove = smoothstep(0.025, 0.0, abs(rl - 0.72));
       float dimple = smoothstep(0.02, 0.0, abs(rl - 0.24));
-      vec3 metal = vec3(0.5, 0.51, 0.55) * brushed * (0.55 + 0.45 * smoothstep(0.9, -0.5, e.x - e.y * 0.6));
+      vec3 metal = uTint * brushed * (0.55 + 0.45 * smoothstep(0.9, -0.5, e.x - e.y * 0.6));
       metal += vec3(0.9, 0.88, 0.84) * aniso * 0.45 + vec3(0.25) * lip;
       metal *= (1.0 - 0.45 * groove) * (1.0 - 0.35 * dimple);
       // a strip of tape across it, its title in grease pencil
@@ -496,26 +505,29 @@ export const FAR_FRAG = /* glsl */ `
       vec2 d = p - vec2(x0, 0.0);
       float core = exp(-dot(d, d) * 90.0) * 1.8 + exp(-length(d) * 5.0) * 0.32;
       float streak = exp(-abs(d.y) * 55.0) * exp(-abs(d.x) * 2.2) * 0.35;
-      vec3 lamp = vec3(1.0, 0.93, 0.8) * (core + streak) * flick * (1.0 + 0.6 * uReveal);
+      vec3 lamp = uTint * (core * 1.25 + streak) * flick * (1.0 + 0.6 * uReveal);
       // the beam, widening from the lamp to the frame it throws
       float span = uAspect - x0 - 1.3;
       float t = (p.x - x0) / span;
       float half_ = 0.05 + t * 0.6;
       float beam = smoothstep(half_, half_ * 0.35, abs(p.y)) * step(0.0, t) * smoothstep(1.02, 0.96, t);
       float dust = 0.75 + 0.25 * h2(floor(vec2(p.x * 9.0 - uTime * 2.0, p.y * 12.0)));
-      vec3 beamC = vec3(0.95, 0.85, 0.66) * beam * pow(max(1.0 - t, 0.0), 0.5) * (0.07 + 0.2 * uReveal) * dust * flick;
+      vec3 beamC = mix(uTint, vec3(0.95, 0.85, 0.66), 0.4) * beam * pow(max(1.0 - t, 0.0), 0.5) * (0.13 + 0.24 * uReveal) * dust * flick;
       // the frame it throws onto the dark, revealed
       vec2 fq = (p - vec2(uAspect - 0.75, 0.0)) / vec2(0.62, 0.46);
       float inFrame = smoothstep(1.0, 0.94, max(abs(fq.x), abs(fq.y)));
-      vec3 frameC = still(fq * 0.5 + 0.5, 3.0 + floor(uTime / 4.0)) * inFrame * uReveal * flick * 0.85;
+      // the short film it throws: frame after frame of the tour's films, flickering through the gate
+      vec3 frameC = still(fq * 0.5 + 0.5, floor(uTime / 0.42) + uVariant * 7.0) * inFrame * uReveal * flick * 0.9;
       c = lamp + beamC + frameC;
       a = 1.0;
     #endif
     // far off: the sky's own colour mixed into what is lit (never added where there is nothing), and the
     // whole faded with its galaxy
-    c = mix(c, uHaze * (0.5 + dot(c, vec3(0.3, 0.5, 0.2))), uHazeK);
     #if KIND == 2
-      c = max(c - vec3(0.004), 0.0);
+      // (light added to the night: distance only dims it — never adds haze where there is nothing)
+      c *= 1.0 - uHazeK * 0.35;
+    #else
+      c = mix(c, uHaze * (0.5 + dot(c, vec3(0.3, 0.5, 0.2))), uHazeK);
     #endif
     gl_FragColor = vec4(c, a * uOpacity);
     ${OUT}
@@ -852,63 +864,13 @@ export const SKY_VERT = /* glsl */ `
     float r = length(c) * 2.0;
     return vec3(smoothstep(1.0, 0.05, r) * smoothstep(0.28, 0.85, n), m, smoothstep(0.58, 0.85, n) * smoothstep(0.75, 0.0, r));
   }
-  #ifdef GALAXY
-  // two galaxies at once while the universe travels between them: the one being left (A) and the one arriving (B)
-  uniform vec4 uGA;   // seed, the Milky Way's slope, its width, the zoom
-  uniform vec4 uGB;
-  uniform vec2 uCentre; // the point of the sky the camera looks at (uv): the journey runs toward it
-  varying vec3 vNebA;
-  varying vec3 vNebB;
-  varying vec3 vMilkyA; // the band, its core, its dust
-  varying vec3 vMilkyB;
-  varying vec2 vDustA;  // dark nebulae across the clouds; their weight
-  varying vec2 vDustB;
-  // the Milky Way, very far: a band across the sky, its light in clouds, its core cut by lanes of dust
-  vec3 milky(vec2 uv, float seed, float slope, float width, vec2 drift) {
-    vec2 a = (uv - vec2(0.5, 0.52)) * vec2(1.69, 1.0);
-    vec2 along = normalize(vec2(1.0, slope));
-    float across = dot(a, vec2(-along.y, along.x));
-    float s = dot(a, along);
-    float warp = (fbm(vec2(s * 3.0, 4.1) + seed) - 0.5) * 0.09;
-    float w = 0.075 * width;
-    float band = exp(-pow((across + warp) / w, 2.0));
-    float clouds = fbm(vec2(s * 9.0, across * 22.0) + 2.3 + seed - drift * 0.5);
-    float lanes = smoothstep(0.5, 0.72, fbm(vec2(s * 14.0, across * 34.0) + 8.1 + seed));
-    return vec3(
-      band * smoothstep(0.3, 0.78, clouds) * smoothstep(0.95, 0.4, abs(s)),
-      exp(-pow((across + warp) / (w * 0.47), 2.0)),
-      lanes * exp(-pow((across + warp) / (w * 0.6), 2.0))
-    );
-  }
-  vec2 zoomed(vec2 uv, float zoom, float turn) {
-    vec2 d = (uv - uCentre) / zoom;
-    float c = cos(turn);
-    float s = sin(turn);
-    return uCentre + mat2(c, s, -s, c) * d;
-  }
-  #endif
   void main() {
     vUv = uv;
     vec2 drift = vec2(uTime * 0.006, -uTime * 0.004);
-    #ifdef GALAXY
-      vec2 ua = zoomed(uv, uGA.w, (uGA.w - 1.0) * 0.12);
-      vec2 ub = zoomed(uv, uGB.w, (1.0 - uGB.w) * 0.2);
-      vNebA = nebula(ua, uGA.x, drift);
-      vNebB = nebula(ub, uGB.x, drift);
-      vMilkyA = milky(ua, uGA.x, uGA.y, uGA.z, drift);
-      vMilkyB = milky(ub, uGB.x, uGB.y, uGB.z, drift);
-      // dark nebulae: dust drifting across the bright clouds
-      vDustA = vec2(smoothstep(0.55, 0.8, fbm(ua * vec2(5.0, 3.2) + uGA.x * 1.7 + 31.0)), 1.0);
-      vDustB = vec2(smoothstep(0.55, 0.8, fbm(ub * vec2(5.0, 3.2) + uGB.x * 1.7 + 31.0)), 1.0);
-      vDensity = 0.0;
-      vMix = 0.0;
-      vAccent = 0.0;
-    #else
       vec3 n = nebula(uv, uSeed, drift);
       vDensity = n.x;
       vMix = n.y;
       vAccent = n.z;
-    #endif
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `
@@ -926,54 +888,11 @@ export const SKY_FRAG = /* glsl */ `
   varying float vMix;
   varying float vAccent;
   float dither(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453) - 0.5; }
-  #ifdef GALAXY
-  // each galaxy's colours: the nebula's two and its accent, the Milky Way's core and edge; and how much of it shows
-  uniform vec3 uColA[5];
-  uniform vec3 uColB[5];
-  uniform float uWA;
-  uniform float uWB;
-  uniform float uMilky;
-  varying vec3 vNebA;
-  varying vec3 vNebB;
-  varying vec3 vMilkyA;
-  varying vec3 vMilkyB;
-  varying vec2 vDustA;
-  varying vec2 vDustB;
-  float h21(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }
-  float grainNoise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), u.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), u.x), u.y);
-  }
-  // one galaxy's light at this pixel: its colour, and how much of it (premultiplied by its weight)
-  vec4 galaxy(vec3 neb, vec3 mw, vec2 dust, vec3 col[5], float w, float granular, float pin) {
-    vec3 c = mix(col[1], col[0], neb.y) + col[2] * neb.z * 0.6;
-    float alpha = neb.x * uStrength * (1.0 - dust.x * 0.55);
-    // its light is made of stars: a fine granular cloud, pinpoints thickening toward the core, a warmer
-    // core and cooler edges, and the dark lanes of dust across it
-    float light = mw.x * granular * (1.0 - mw.z * 0.85) * uMilky;
-    vec3 band = mix(col[4], col[3], clamp(mw.y * 1.3, 0.0, 1.0));
-    c = mix(c, band, clamp(light * 2.2, 0.0, 1.0));
-    alpha = max(alpha, light * 0.34) + pin * mw.x * uMilky * 0.55;
-    return vec4(c * alpha, alpha) * w;
-  }
-  #endif
   void main() {
-    #ifdef GALAXY
-      vec2 px = gl_FragCoord.xy;
-      float granular = 0.45 + 0.55 * grainNoise(px / 2.6) * grainNoise(px / 7.0 + 13.0);
-      float pinA = step(0.9975 - 0.006 * vMilkyA.x, h21(floor(px))) * (0.4 + 0.6 * h21(floor(px) + 7.0));
-      vec4 a = galaxy(vNebA, vMilkyA, vDustA, uColA, uWA, granular, pinA);
-      vec4 b = galaxy(vNebB, vMilkyB, vDustB, uColB, uWB, granular, pinA);
-      float alpha = a.a + b.a;
-      vec3 c = (a.rgb + b.rgb) / max(alpha, 1e-4);
-    #else
       vec3 ca = mix(uA, uA2, uFace);
       vec3 cb = mix(uB, uB2, uFace);
       vec3 c = mix(cb, ca, vMix) + uAccent * vAccent * 0.6;
       float alpha = vDensity * uWeight * uStrength;
-    #endif
     alpha += dither(gl_FragCoord.xy) * (1.5 / 255.0);
     gl_FragColor = vec4(c, clamp(alpha, 0.0, 1.0));
     ${OUT}
@@ -981,9 +900,8 @@ export const SKY_FRAG = /* glsl */ `
 `
 
 /**
- * Each space's structure, drawn behind it: the Crew's studio floor (a grid
- * receding to the horizon, a light sweeping across it), the Client's portal
- * (rings opening outward), the Suite's rays (a slow fan of light).
+ * Each space's floor, below it: the Crew's soundstage, the Client's cinema,
+ * the Suite's light table of frames.
  */
 export const STRUCTURE_VERT = /* glsl */ `
   varying vec2 vUv;
@@ -1003,6 +921,8 @@ export const STRUCTURE_FRAG = /* glsl */ `
   uniform vec3 uSpill;
   uniform sampler2D uAtlas;
   uniform float uHasAtlas;
+  uniform vec3 uRoom;
+  uniform float uAisle;
   varying vec2 vUv;
   float gridLine(float v, float step) {
     float g = abs(fract(v / step - 0.5) - 0.5) * step;
@@ -1058,41 +978,25 @@ export const STRUCTURE_FRAG = /* glsl */ `
       ${OUT}
       return;
     #elif MODE == 1
-      // THE PICTURE PALACE (the Client): a dark polished floor, a gold art-deco fan inlaid in it radiating
-      // from the foot of the great screen, two rows of aisle lights converging on it, the screen's silver
-      // washing over the floor nearest it. Premiere night (uFace, the Stakeholders): the aisle becomes a
-      // red carpet. (+y runs away from the camera; the screen stands at y = +2, the tile over y = -14.)
-      vec2 o = vec2(0.0, 2.0);
-      vec2 d = p - o;
-      float r = length(d);
-      float ang = atan(d.x, -d.y);
-      float front = step(d.y, 0.0) * smoothstep(30.0, 22.0, r);
-      float arcLen = abs(fract(ang * 22.0 / 6.2832 + 0.5) - 0.5) * (6.2832 / 22.0) * r;
-      float spokes = (1.0 - smoothstep(0.0, fwidth(arcLen) * 1.5 + 0.03, arcLen)) * smoothstep(4.0, 7.0, r) * 0.55;
-      float steps = (1.0 - smoothstep(0.0, fwidth(r) * 1.5, abs(r - 6.0))) + (1.0 - smoothstep(0.0, fwidth(r) * 1.5, abs(r - 11.0))) * 0.8 + (1.0 - smoothstep(0.0, fwidth(r) * 1.5, abs(r - 17.0))) * 0.6;
-      float fan = (spokes + steps) * front;
-      // the aisle: two rows of small lights converging on the screen
+      // THE CINEMA'S FLOOR (the Client, HALL_* in Station.tsx): dark under the room, so the sky doesn't show
+      // through it; two aisles of step lights running down to the screen; the film's light on the floor
+      // nearest it. Premiere night (uFace, the Stakeholders): the aisles carpeted red, their lights gold.
+      // Drawn with premultiplied alpha (rgb the light it adds, alpha the dark). (+y runs away from the camera;
+      // the screen stands at y = uRoom.y, the room is open at y = uRoom.z, its walls at x = ±uRoom.x.)
+      // (outside the room's footprint there is nothing to draw: the plane is far bigger than the room)
+      if (abs(p.x) > uRoom.x + 1.0 || p.y > uRoom.y || p.y < uRoom.z - 5.0) discard;
+      float inRoom = smoothstep(uRoom.x + 1.0, uRoom.x - 1.5, abs(p.x)) * smoothstep(uRoom.z - 5.0, uRoom.z + 1.0, p.y);
       float lights = 0.0;
-      for (int i = 0; i < 12; i++) {
-        float t = float(i) / 11.0;
-        float y = mix(-30.0, -3.0, t);
-        float x = mix(3.6, 1.6, t);
-        vec2 a1 = p - vec2(-x, y);
-        vec2 a2 = p - vec2(x, y);
-        lights += exp(-dot(a1, a1) / 0.05) + exp(-dot(a2, a2) / 0.05);
+      for (int i = 0; i < 9; i++) {
+        float y = mix(uRoom.z + 1.0, uRoom.y - 2.5, float(i) / 8.0);
+        vec2 l1 = vec2(abs(abs(p.x) - uAisle) - 0.95, p.y - y);
+        lights += exp(-dot(l1, l1) / 0.02);
       }
-      float aisle = 1.0 - smoothstep(1.4, 2.2, abs(p.x) - (p.y + 30.0) * -0.02);
-      aisle *= step(p.y, -2.0) * smoothstep(-40.0, -20.0, p.y);
-      float wash = exp(-pow(max(0.0, -d.y) / 9.0, 2.0)) * smoothstep(26.0, 6.0, abs(p.x)) * step(d.y, 0.0);
-      vec3 carpet = vec3(0.62, 0.08, 0.1);
-      // the house lights dim as the film plays (uHouse); the film's own light falls on the floor nearest it
-      lights *= uHouse;
-      a = fan * 0.9 + lights * 1.2 + wash * 0.34 + aisle * uFace * 0.5;
-      vec3 col = mix(uColor, uSpill, clamp(wash * 1.4, 0.0, 1.0) * (1.0 - 0.5 * uFace));
-      col = mix(col, vec3(1.0, 0.86, 0.6), clamp(lights, 0.0, 1.0));
-      col = mix(col, carpet, aisle * uFace);
-      float fade1 = smoothstep(uSize.y * 0.5, uSize.y * 0.1, abs(p.y + uSize.y * 0.06)) * smoothstep(uSize.x * 0.5, uSize.x * 0.14, abs(p.x));
-      gl_FragColor = vec4(col, a * fade1 * uWeight * uOpacity);
+      float wash = exp(-(uRoom.y - p.y) / 2.5) * step(p.y, uRoom.y) * smoothstep(uRoom.x, uRoom.x - 6.0, abs(p.x));
+      float carpet = (1.0 - smoothstep(0.75, 0.9, abs(abs(p.x) - uAisle))) * inRoom;
+      vec3 warm = mix(vec3(1.0, 0.7, 0.4), vec3(1.0, 0.84, 0.52), uFace);
+      vec3 L = uSpill * wash * 0.03 + warm * lights * (0.5 + 0.5 * uHouse) * 0.9 + vec3(0.42, 0.04, 0.06) * carpet * uFace * 0.5;
+      gl_FragColor = vec4(L * uWeight, inRoom * 0.9 * uWeight);
       ${OUT}
       return;
     #else
@@ -1140,8 +1044,8 @@ export const STRUCTURE_FRAG = /* glsl */ `
       } else {
         // a frame of film (the stills of the tour's films): generating — resolving out of noise and blur —
         // or finished, graded and letterboxed
-        float i = mod(id.x * 3.0 + id.y * 5.0, 8.0);
-        vec2 a = (vec2(mod(i, 4.0), floor(i / 4.0)) + clamp(fuv, 0.02, 0.98)) / vec2(4.0, 2.0);
+        float i = mod(id.x * 3.0 + id.y * 5.0, 16.0);
+        vec2 a = (vec2(mod(i, 4.0), floor(i / 4.0)) + clamp(fuv, 0.02, 0.98)) / vec2(4.0, 4.0);
         a.y = 1.0 - a.y;
         float gen = stage < 2.5 ? 0.55 + 0.45 * sin(uTime * 0.8 + hsh * 6.0) : 0.0;
         vec3 film = texture(uAtlas, a, gen * 5.0).rgb;
@@ -1229,74 +1133,115 @@ export const MOTE_FRAG = /* glsl */ `
   }
 `
 
-// ── THE CLIENT: THE PICTURE PALACE ──────────────────────────────────────────
+// ── THE CLIENT: THE CINEMA ──────────────────────────────────────────────────
 
 /**
- * Behind the Client's tile, the great screen of a picture palace — 2.39 : 1, silver, its light breathing
- * with the projector's shutter — framed by a gilded proscenium with an art-deco sunburst for its crown,
- * velvet curtains drawn aside, and its light spilling into space round the frame like an eclipse's
- * corona (where the cinema meets the sky). Premiere night (uFace): the light turns gold, the velvet red.
+ * The Client's cinema: a modern auditorium with its house lights down (the owner, 2026-11-06: "push the cinema
+ * back just a little bit … redesign it and make it properly advanced cinema with dim lights"). The screen spans
+ * the wall at the film's own 2.39 : 1 (cinema.tsx draws the film). The room round it is dark, and its walls
+ * dissolve into space the farther they are from the screen, so the sky still shows at the edges. Its lights
+ * are few and dim: sconces washing the side walls up and down, fibre-optic stars in the ceiling, step lights
+ * along the aisles (on the floor: STRUCTURE_FRAG mode 1), the film's own light on the wall round it and on the
+ * tops of the seats. Premiere night (uFace, the Stakeholders) turns the lights gold.
+ *
+ * One program per part (PART): 0 the screen wall, 1 the side walls, 2 the ceiling, 3 the rows of seats. Each
+ * part's uv runs 0–1 across it (each part says which way). Drawn with premultiplied alpha: rgb is the light a
+ * part adds, alpha how much of the sky behind it the room hides.
  */
-export const PALACE_VERT = /* glsl */ `
+export const HALL_VERT = /* glsl */ `
   varying vec2 vUv;
   void main() {
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `
-export const PALACE_FRAG = /* glsl */ `
+export const HALL_FRAG = /* glsl */ `
   uniform vec2 uSize;
+  uniform vec2 uScreen;
+  uniform vec2 uOffset;
   uniform float uTime;
   uniform float uWeight;
-  uniform float uOpacity;
   uniform float uFace;
-  uniform vec3 uSilver;
-  uniform vec3 uGold;
-  uniform vec3 uVelvet;
+  uniform float uHouse;
   uniform vec3 uSpill;
+  uniform vec3 uLamp;
+  uniform vec3 uGold;
   varying vec2 vUv;
-  float sdBox(vec2 p, vec2 b) { vec2 d = abs(p) - b; return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0); }
-  // the proscenium: a box whose top corners round into an arch
-  float sdArch(vec2 p, vec2 b, float r) {
-    float rr = p.y > 0.0 ? r : 0.4;
-    vec2 d = abs(p) - b + rr;
-    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - rr;
-  }
-  float lineOf(float d, float w) { return 1.0 - smoothstep(0.0, fwidth(d) * 1.5 + w, abs(d)); }
   float h12(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   void main() {
     vec2 p = (vUv - 0.5) * uSize;
-    vec2 sc = vec2(0.0, 1.5);
-    vec2 sh = vec2(19.0, 7.95);
-    float d = sdBox(p - sc, sh);
-    float inside = 1.0 - smoothstep(-0.06, 0.06, d);
-    vec2 q = (p - sc) / sh;
-    float streamers = 0.6 + 0.4 * pow(0.5 + 0.5 * sin(atan(q.y, q.x) * 11.0 + uTime * 0.15), 2.0);
-    float corona = exp(-max(d, 0.0) / 3.2) * (1.0 - inside) * streamers;
-    float frame = lineOf(sdArch(p - sc - vec2(0.0, 0.6), sh + vec2(1.1, 1.5), 4.5), 0.04) + lineOf(sdArch(p - sc - vec2(0.0, 0.9), sh + vec2(1.9, 2.2), 5.5), 0.02) * 0.6;
-    // small deco fans blooming at the arch's two upper corners
-    vec2 fc = vec2(abs(p.x) - (sh.x + 1.6), p.y - (sc.y + sh.y + 0.6));
-    float fr = length(fc);
-    float fans = smoothstep(2.6, 0.5, fr) * pow(0.5 + 0.5 * cos(atan(fc.x, fc.y) * 9.0), 8.0) * step(0.0, fc.y + 0.4);
-    // the crown: a sunburst rising from the top of the arch
-    vec2 cp = p - vec2(0.0, sc.y + sh.y + 1.6);
-    float r = length(cp);
-    float ang = atan(cp.x, cp.y);
-    float rays = step(0.0, cp.y) * smoothstep(7.0, 1.2, r) * smoothstep(0.5, 1.4, r) * pow(0.5 + 0.5 * cos(ang * 16.0), 10.0);
-    float arcs = step(0.0, cp.y) * (lineOf(r - 2.2, 0.02) + lineOf(r - 3.6, 0.02) * 0.7) * smoothstep(1.3, 0.9, abs(ang));
-    // the curtains, drawn aside: velvet folds either side of the frame
-    float side = abs(p.x) - (sh.x + 2.2);
-    float curtain = smoothstep(-0.4, 0.4, side) * (1.0 - smoothstep(5.0, 8.0, side)) * smoothstep(sc.y + sh.y + 3.5, sc.y + sh.y + 1.5, p.y) * smoothstep(sc.y - sh.y - 4.0, sc.y - sh.y - 2.0, p.y);
-    float folds = 0.45 + 0.55 * pow(0.5 + 0.5 * sin(p.x * 2.2 + sin(p.y * 0.25) * 0.8), 1.6);
-    vec3 silver = mix(uSilver, vec3(1.0, 0.86, 0.6), uFace * 0.55);
-    vec3 velvet = mix(uVelvet * 0.6, uVelvet, uFace);
-    // the film is the light now (the owner, 2026-11-06): the screen itself is the film's (cinema.tsx), the
-    // corona round it is cut back to a glow in the film's own colour, the house is dark
-    vec3 glow = mix(silver, uSpill, 0.75);
-    vec3 col = glow * corona * 0.2 + uGold * (frame * 0.85 + rays * 0.55 + arcs * 0.5 + fans * 0.6) + velvet * curtain * folds;
-    float a = clamp(corona * 0.2 + frame * 0.85 + rays * 0.55 + arcs * 0.5 + fans * 0.6 + curtain * folds * 0.8, 0.0, 1.0);
-    a *= 1.0 - inside;
-    gl_FragColor = vec4(col / max(a, 1e-3), a * uWeight * uOpacity);
+    // the house lights: down while the film plays (uHouse), gold on premiere night
+    vec3 lamp = mix(uLamp, uGold, uFace * 0.8) * (0.4 + 0.6 * uHouse);
+    vec3 L = vec3(0.0);
+    float k = 0.0;
+    #if PART == 0
+      // THE SCREEN WALL (p from the wall's middle, s from the screen's): black velour round the screen, the
+      // film's light caught on it nearest the screen and in the seams of its panels, a thin line of light
+      // either side of the screen, and the stage's edge below it
+      vec2 s = p - uOffset;
+      vec2 q = abs(s) - uScreen;
+      float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
+      float off = smoothstep(-0.02, 0.05, d);
+      vec2 e = uSize * 0.5 - abs(p);
+      float fade = smoothstep(0.0, 2.0, e.x) * smoothstep(0.0, 2.5, e.y);
+      k = off * mix(0.55, 0.96, exp(-max(d, 0.0) / 5.0)) * fade;
+      // (uSpill is the film's hue at full strength: the velour takes only a trace of it)
+      float bounce = exp(-max(d, 0.0) / 1.6) * off;
+      float seam = 1.0 - smoothstep(0.03, 0.09, abs(fract(s.x / 2.4 + 0.5) - 0.5) * 2.4);
+      L += uSpill * bounce * (0.018 + 0.03 * seam * bounce);
+      float side = abs(s.x) - uScreen.x - 1.4;
+      float strip = exp(-side * side / 0.004) * smoothstep(-uScreen.y - 2.6, -uScreen.y, s.y) * smoothstep(uScreen.y + 2.0, uScreen.y, s.y);
+      float stage = exp(-pow(s.y + uScreen.y + 1.1, 2.0) / 0.006) * smoothstep(uScreen.x + 1.5, uScreen.x - 2.0, abs(s.x));
+      L += lamp * (strip * 0.5 + stage * 0.3) * fade;
+    #elif PART == 1
+      // THE SIDE WALLS (u from the screen's end, v from the floor): sconces washing the wall up and down,
+      // the film's light nearest the screen; the wall fading away from it
+      float t = vUv.x * uSize.x;
+      float v = vUv.y * uSize.y;
+      k = 0.9 * exp(-t / 10.0) * smoothstep(uSize.x, uSize.x * 0.6, t) * smoothstep(0.0, 1.5, v) * smoothstep(uSize.y, uSize.y - 3.0, v);
+      for (int i = 0; i < 4; i++) {
+        vec2 r = vec2(t, v) - vec2(2.6 + float(i) * 4.6, 7.4);
+        float w = 0.24 + 0.3 * abs(r.y);
+        float wash = exp(-pow(r.x / w, 2.0)) * exp(-abs(r.y) / 3.6);
+        float fixture = exp(-(r.x * r.x / 0.02 + r.y * r.y / 0.2));
+        L += lamp * (wash * 0.55 + fixture * 1.8) * smoothstep(uSize.x, uSize.x * 0.5, t);
+      }
+      L += uSpill * 0.02 * exp(-t / 4.0) * smoothstep(1.0, 6.0, v);
+    #elif PART == 2
+      // THE CEILING (u across, v from the screen's end): fibre-optic stars, twinkling, the room's dark
+      // fading toward its open end, so its stars run on into the sky's
+      float t = vUv.y * uSize.y;
+      float ex = uSize.x * 0.5 - abs(p.x);
+      k = 0.86 * exp(-t / 9.0) * smoothstep(0.0, 2.0, ex) * smoothstep(uSize.y, uSize.y * 0.55, t);
+      vec2 g = vec2(p.x, t) / 0.9;
+      vec2 id = floor(g);
+      vec2 f = fract(g) - 0.5 - (vec2(h12(id), h12(id + 7.3)) - 0.5) * 0.7;
+      float rad = max(0.07, fwidth(g.x) * 0.9);
+      float tw = 0.55 + 0.45 * sin(uTime * (0.5 + h12(id + 3.1) * 1.5) + h12(id + 9.2) * 6.2832);
+      float star = smoothstep(rad, 0.0, length(f)) * (0.07 / rad) * step(0.5, h12(id + 1.7)) * tw;
+      L += mix(vec3(0.82, 0.86, 1.0), lamp * 1.8, 0.35 + 0.4 * uFace) * star * 1.6 * smoothstep(uSize.y, uSize.y * 0.4, t);
+      // a cove of light where the ceiling meets the screen wall
+      L += lamp * exp(-t / 0.6) * 0.3 * smoothstep(0.0, 4.0, ex);
+    #else
+      // THE ROWS OF SEATS, seen from behind (one quad a row): their backs in silhouette against the floor, the
+      // film's light along their tops, two aisles through them (uOffset.x), a step light at each row's end on
+      // the aisles
+      float ax = abs(abs(p.x) - uOffset.x);
+      float aisle = 1.0 - smoothstep(0.85, 0.95, ax);
+      float cx = (fract(p.x / 1.3 + 0.5) - 0.5) * 1.3;
+      vec2 b = vec2(cx, p.y + 0.12);
+      vec2 bq = abs(b) - vec2(0.55, 0.7) + 0.3;
+      float sd = length(max(bq, 0.0)) + min(max(bq.x, bq.y), 0.0) - 0.3;
+      float seat = (1.0 - smoothstep(-0.02, 0.02, sd)) * (1.0 - aisle);
+      float ex = uSize.x * 0.5 - abs(p.x);
+      float fade = smoothstep(0.0, 3.0, ex);
+      k = seat * 0.94 * fade;
+      float rim = exp(-pow((sd + 0.035) / 0.045, 2.0)) * smoothstep(0.0, 0.45, b.y) * (1.0 - aisle);
+      L += uSpill * rim * 0.05 * fade;
+      vec2 sl = vec2(ax - 0.95, p.y + 0.62);
+      L += lamp * exp(-dot(sl, sl) / 0.006) * 1.1 * fade;
+    #endif
+    gl_FragColor = vec4(L * uWeight, k * uWeight);
     ${OUT}
   }
 `

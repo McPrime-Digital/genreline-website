@@ -28,6 +28,8 @@ import { SCROLL_VH } from '@/components/hero/scene/numbers'
 import type { HeroSources } from '@/components/hero/scene/textures'
 import { hero, HERO_CAPTURES, HERO_ICONS, type HeroItem } from '@/content/home'
 import { FILM_CREDIT } from '@/content/hero-films'
+import { landingScript } from '@/components/hero/landing'
+import { PLAY_GAP } from '@/components/hero/frame'
 import { Icon } from '@/components/Icon'
 import { Feature, FeatureLabel } from '@/components/FeatureLabel'
 import { siteLabel } from '@/content/features'
@@ -98,9 +100,12 @@ function Poster({ shot }: { shot: (typeof POSTERS)[number] }) {
         alt=""
         width={1920}
         height={1080}
-        decoding="async"
+        // the title's poster lands with its words, in one frame: decoded with the paint, never after it
+        decoding={first ? 'sync' : 'async'}
         loading={first ? 'eager' : 'lazy'}
-        fetchPriority="auto"
+        fetchPriority={first ? 'high' : 'auto'}
+        // the landing script (landing.ts) sizes and places the title's poster before React arrives
+        suppressHydrationWarning={first}
       />
     </picture>
   )
@@ -194,6 +199,7 @@ function FilmLine({ text, metal }: { text: string; metal: 'silver' | 'gold' }) {
 
 export function HomeHero() {
   const sources = heroSources()
+  const frames = posterFrames()
   const marks = [
     { tc: hero.timecode, label: null },
     ...hero.nodes.map((n) => ({ tc: n.timecode, label: n.label })),
@@ -208,11 +214,12 @@ export function HomeHero() {
     >
       {/* without scripts the title's poster cannot be placed: show it as it is */}
       <noscript><style>{`.hero-poster[data-poster='title'] img { opacity: 1 !important; }`}</style></noscript>
-      <div data-hero-stage className="hero-stage">
+      {/* (the landing script marks the stage landed, and places the play control, before React arrives) */}
+      <div data-hero-stage className="hero-stage" suppressHydrationWarning>
         {POSTERS.map((shot) => (
           <Poster key={shot} shot={shot} />
         ))}
-        <HeroDirector sources={sources} posterFrames={posterFrames()} />
+        <HeroDirector sources={sources} posterFrames={frames} />
         {/* the shade: fixed gradients behind the words, faded (never repainted) as the words come and go */}
         <div aria-hidden className="hero-shade">
           <i data-scrim="title" className="hero-scrim hero-scrim-title" />
@@ -307,7 +314,7 @@ export function HomeHero() {
 
         {/* THE TOUR'S PLAY CONTROL — just under the 3D logo, placed by HeroDirector with the camera's own
             framing (frame.ts). The hero is one screen; the journey is the tour the visitor chooses. */}
-        <div data-hero-play-wrap className="hero-play-wrap">
+        <div data-hero-play-wrap className="hero-play-wrap" suppressHydrationWarning>
           <button type="button" data-hero-play aria-expanded="false" aria-controls="hero-tour" className="hero-play">
             <span aria-hidden className="hero-play-ring">
               <span className="hero-play-iris" />
@@ -364,6 +371,9 @@ export function HomeHero() {
           <span aria-hidden className="hero-cue" />
         </nav>
       </div>
+      {/* LANDING (landing.ts): the title's poster placed and the stage landed — words and picture together —
+          before any of the page's script has run */}
+      <script dangerouslySetInnerHTML={{ __html: landingScript(frames, PLAY_GAP) }} />
     </section>
   )
 }

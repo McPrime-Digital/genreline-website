@@ -9,6 +9,58 @@ climbs to **the Suite**, then pulls back to the whole line for the close: *Run
 the production. Keep the record.* Each space arrives in its own light, ringed
 by its own screens and tools.
 
+## Revision 4, 2026-11-06: a universe that never repeats, a quiet stage for the logo, the films large behind it
+
+The owner's review of round 3 asked for:
+- fewer galaxies (they made the logo noisy);
+- a universe that changes in many ways, at random, never showing the same background twice in ten minutes;
+- far worlds that change with it, with two projectors (top and bottom) per background;
+- everything to land at once on arrival;
+- more particles round the line, and the line hurrying as a change nears;
+- nothing behind the logo icons;
+- bigger cinemas that stay in the background: a modern film with people at Crew; a 21:9 film in a modern, dim cinema at Client, set back without shrinking; real footage on cards standing on the Suite's floor, coming and going at random.
+
+The owner's instruction: build it to completion, with no interruptions. Planned and built G1 to G10, each researched, built and checked before the next (`~/.claude/plans/happy-dancing-star.md`).
+
+| What | How |
+|---|---|
+| **The universe** (`scene/universe.ts`, `scene/phenomena.ts`) | **Fourteen phenomena**, each its own small program that keeps changing slowly while it holds: the Milky Way, a black hole and its disk, a ring nebula, the pillars of a star nursery, a supernova remnant, a comet, an eclipse's corona, a pulsar, a globular cluster, a binary star, a deep field, a quasar, a meteor storm, an Einstein ring. Each appears in one of ten film-stock palettes, somewhere new, at its own size and turn. **Ten changes**: push in, pull out, whip pan, spin, iris, star dissolve, light leak, anamorphic wipe, fade through black, hyperspace. **Never the same**: shuffle bags deal the phenomena, palettes and changes. A phenomenon returns only after all fourteen have shown (each holds 38–55 s, then a 4.5–7 s change), and never in the same palette, place or size; no change runs twice in a row. **On the tour** every space gets its own universe, and every journey its own change, driven by the scroll. **The galaxies are gone**: the far spirals are removed, the dust in each space's sky is much fainter, and seven star-filter stars remain. The next program is compiled ahead, so a change never stutters. |
+| **The far worlds** (`scene/far.tsx`) | **A set per universe**, drawn from its seed: one or two worlds, each its own metal or lacquer, and always **two Projector Stars, one high and one low**, inside the frame, never under the header. **The projector's thrown frame plays a short film**: a flip-book of the films' stills. On a change, the old set drifts out and the new one comes in. |
+| **Landing** (`landing.ts`, `styles/hero.css`) | **The stage lands as one.** An inline script, run before any of the page's script, places the title poster where the camera will put the logo. The stage waits hidden (visibility, never longer than 1.2 s) and lands when the poster arrives, words and picture in one frame (the poster decodes with its paint). **The live scene takes over without a seam**: the poster is its first frame, and the title's far worlds are placed by the same scaling that aligns the poster (`heroState.posterMap`), so nothing moves at any screen shape. The scene starts at first paint when a mouse is on the page; otherwise at the first move, scroll, touch or key, or after 3 quiet seconds. Booting it during the page's load blocked a throttled phone for half a second and cost the LCP. **The title poster** has its own budget (46 KB wide, 26 KB tall), since it is the page's LCP. |
+| **The line** | **About 45% more particles** round it (1,900 / 3,500 / 5,000 by quality). **Before the tour, it hurries**: its light quickens 4 s before a change, runs fast through it, holds 5 s after, then eases back. |
+| **The stage behind the logo** | The clapperboard and the ticket/pass are removed, with their shaders. Nothing is drawn behind the logo icons now. |
+| **Crew: an LED volume** | A curved LED wall, the modern film set, across the back of the soundstage (62 × 26 units, radius 36), with fine LED dots and panel seams. It plays **a montage from *Making of PARVA***: a real film crew at work. It is dimmed (`bright 0.6`), because the films are the background. |
+| **Client: a modern cinema, lights down** (`HALL_*`, `STRUCTURE` mode 1) | **Set back** (z −16 → −22) and **scaled up so it is no smaller**. **The screen fills its wall** at the film's own 2.39 : 1 and plays ***Tears of Steel*** in today's grade. **The room is dark**: black velour with the film's light in its seams, a line of light either side of the screen and at the stage's edge, sconces washing the side walls, fibre-optic stars in the ceiling with a cove light, four rows of seats in silhouette with the film's light on their tops, and step lights down two aisles. The house lights dim as you arrive. The walls fade into space away from the screen, so the sky still shows at the edges, and stars never shine through the room. **Premiere night** (the Stakeholders face): the lights turn gold and the aisles red. The gilded proscenium, the curtains and the searchlights are gone. |
+| **Suite: a cinema on the floor** (`FloorCinema`, `COMET_FRAG`, `POOL_FRAG`) | **One card at a time**, standing on the floor behind the station. The picture is 14 units tall, as wide as its film. Its light pools on the floor at its foot. **In**: a shooting star streaks down, bursts into a line of light and opens into the strip; or one of the floor's frames stands up and grows into the card. **Out**, never the same way twice running: thrown off to either side, turning and burning from its trailing edge; folded back into a star that shoots away; or tipped back onto the floor, where it shrinks into one of the floor's frames. **Twelve films** come from a shuffled bag, none returning before the rest have played. The card leans toward the pointer, and a click sends it on. Under reduced motion it only fades, and changes only on a click. Real perforations along the strip. |
+
+**The films are placeholders** (the owner will replace them). `scripts/make-hero-films.ts` cuts them (`FILMS_SRC=<dir>` reads local copies). It writes `public/hero/films/*`, 11 MB in all, H.264 only (WebM dropped), a 4 × 4 atlas of stills, and `content/hero-films.ts`.
+
+| Film | Where | Licence |
+|---|---|---|
+| Making of PARVA (P Sheshadri, 2021), a montage | Crew | CC BY 3.0 |
+| Tears of Steel (Blender Foundation, 2012) | Client | CC BY 3.0 |
+| Spring (2019), Sprite Fright (2021) | Suite | CC BY 4.0 |
+| Sintel (2010), Big Buck Bunny (2008) | Suite | CC BY 3.0 |
+| Cheetahs on the Edge (Gregory Wilson, 2012): wildlife | Suite | CC BY 3.0 |
+| Mount Bromo (Justin Ng, 2012), two cuts: time-lapse | Suite | CC BY 3.0 |
+| Time-Lapsing thru Europe (Tellurian Media, 2012) | Suite | CC BY 3.0 |
+| STS-51, in IMAX (NASA, 1993) | Suite | public domain |
+| A Trip to the Moon (Méliès, 1902), Gulliver's Travels (Fleischer, 1939) | Suite | public domain (Gulliver in the US) |
+| A century of cinema: an era montage of the above | Suite | as its sources |
+
+**Two of these show real people** (*PARVA*'s crew, *Tears of Steel*'s cast). CC BY covers the footage, not the likeness of the people in it. That is fine for placeholders, but replace them before launch. The close's `FILM_CREDIT` names every source; remove it when the placeholders go.
+
+**Checking by hand.** `?universe=0–13` holds a phenomenon. `?seed=` fixes the draw. `?drift=<s>` shortens the hold. `?shot=` holds a shot: the posters' universe, and the Suite's first card already standing.
+
+**Measured** (production build, this Mac):
+- the 3D chunk is 243.2 KB gzipped (budget 250);
+- 60 fps at every quality, through the tour, in Chrome with the films playing;
+- on a software renderer at quality 0: 29–34 fps per space. The full-sky phenomena cost more than the old galaxy sky; software renderers get the stills in production anyway;
+- Lighthouse mobile, Home: performance 87–89, LCP 3.6–3.9 s, TBT 0, CLS 0, accessibility 100, best practices 100. Round 3 measured 92. The difference is the landing rule: the words wait for their picture, so the LCP is the poster's arrival;
+- labels 26 pages, 0 failures; links 0 failures; axe 0 issues; no console errors through the tour at 1440, 1280, 768 and 390.
+
+Not tested on real Windows hardware or in Firefox.
+
 ## Revision 3, 2026-11-06: a living universe, a tour you start yourself, a cinema in every space
 
 The owner's review of the one-screen hero asked for:

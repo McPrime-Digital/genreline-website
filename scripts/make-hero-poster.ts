@@ -9,7 +9,8 @@
  *   npx tsx scripts/make-hero-poster.ts
  * Writes public/hero/poster-dark-{shot}-{wide,tall}.{avif,webp} (the site is
  * dark only — owner, 2026-11-06). Each
- * AVIF must stay under 120 KB; the script fails if one does not.
+ * AVIF must stay under 120 KB (the title's, the page's LCP, under 46 KB wide and 26 KB tall, as near as its
+ * quality steps reach); the script fails if one is over 120 KB.
  *
  * Uses Playwright's Chromium on the machine's GPU (SwiftShader, software
  * WebGL, with GL=swiftshader), each shot held with `?shot=`, and the page's
@@ -23,6 +24,12 @@ import { chromium } from '@playwright/test'
 const BASE = process.env.BASE ?? 'http://localhost:3001'
 const OUT = join(process.cwd(), 'public', 'hero')
 const LIMIT = 120 * 1024
+/**
+ * The title's poster is the page's Largest Contentful Paint: on a phone over slow 4G every kilobyte of it is
+ * time before the page counts as shown. It gets its own, tighter budget (its sky is fine grain the eye
+ * barely reads, and the live scene takes over from it within seconds).
+ */
+const TITLE_LIMIT = { wide: 46 * 1024, tall: 26 * 1024 } as const
 const ALL = ['title', 'crew', 'client', 'stakeholders', 'suite', 'close'] as const
 // `SHOTS=title,close` renders only those
 const SHOTS = process.env.SHOTS ? ALL.filter((s) => process.env.SHOTS!.split(',').includes(s)) : ALL
@@ -64,11 +71,13 @@ async function main() {
         const png = await page.locator('[data-hero-stage]').screenshot({ type: 'png' })
         const base = join(OUT, `poster-${theme}-${shot}-${shape}`)
         const img = sharp(png)
-        // a busy shot (the Suite's floor of frames) steps its quality down until it fits the limit
-        for (const quality of [80, 74, 68, 62]) {
+        // a busy shot (the Suite's floor of frames) steps its quality down until it fits the limit; the
+        // title, its own tighter one
+        const limit = shot === 'title' ? TITLE_LIMIT[shape] : LIMIT
+        for (const quality of shot === 'title' ? [72, 64, 56, 50, 45, 40] : [80, 74, 68, 62]) {
           await img.clone().avif({ quality, effort: 9, chromaSubsampling: '4:4:4' }).toFile(`${base}.avif`)
           await img.clone().webp({ quality, effort: 6 }).toFile(`${base}.webp`)
-          if (statSync(`${base}.avif`).size <= LIMIT) break
+          if (statSync(`${base}.avif`).size <= limit) break
         }
         const kb = (f: string) => Math.round(statSync(f).size / 1024)
         const avif = statSync(`${base}.avif`).size

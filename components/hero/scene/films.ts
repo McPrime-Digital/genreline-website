@@ -35,13 +35,11 @@ type Film = {
 const films = new Map<string, Film>(HERO_FILMS.map((spec) => [spec.id, { spec, video: null, still: null, moving: null, want: 0, blocked: false, stillAsked: false, tone: new Color().setRGB(0.82, 0.8, 0.74, SRGBColorSpace), toneAt: 0 }]))
 
 const saveData = () => typeof navigator !== 'undefined' && !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
-let codec: 'mp4' | 'webm' | null = null
-/** H.264 where the browser has it (hardware decoding nearly everywhere), VP9 where it doesn't. */
-function pickCodec() {
-  if (codec) return codec
-  const v = document.createElement('video')
-  codec = v.canPlayType('video/mp4; codecs="avc1.640028"') ? 'mp4' : 'webm'
-  return codec
+let h264: boolean | null = null
+/** H.264, which nearly every browser decodes in hardware; where one can't, its still stays. */
+function canPlay() {
+  if (h264 === null) h264 = !!document.createElement('video').canPlayType('video/mp4; codecs="avc1.640028"')
+  return h264
 }
 
 function loadStill(f: Film) {
@@ -66,7 +64,7 @@ function loadStill(f: Film) {
 
 function loadFootage(f: Film) {
   // nothing plays under reduced motion or on Save-Data: the footage is never fetched, the still stays
-  if (f.video || saveData() || heroState.reduced) return
+  if (f.video || saveData() || heroState.reduced || !canPlay()) return
   const v = document.createElement('video')
   v.muted = true
   v.defaultMuted = true
@@ -74,7 +72,7 @@ function loadFootage(f: Film) {
   v.setAttribute('playsinline', '')
   v.loop = f.spec.loop
   v.preload = 'auto'
-  v.src = pickCodec() === 'mp4' ? f.spec.mp4 : f.spec.webm
+  v.src = f.spec.mp4
   v.addEventListener(
     'loadeddata',
     () => {

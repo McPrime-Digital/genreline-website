@@ -13,16 +13,17 @@
 import * as React from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, NearestFilter, NormalBlending, PerspectiveCamera,
-  PlaneGeometry, RGBAFormat, TubeGeometry, Vector2, Vector3, Vector4, type Color, type ShaderMaterial,
+  AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, Mesh, NearestFilter, NormalBlending, PerspectiveCamera,
+  PlaneGeometry, RGBAFormat, ShaderMaterial, TubeGeometry, Vector2, Vector3, Vector4,
 } from 'three'
 import { heroState, shotWeight, storyAt } from '@/components/hero/state'
-import { FLOW, FOV, LOGO_BOX, POINTER, QUALITY, STARS, TUBE, type Quality } from '@/components/hero/scene/numbers'
-import { cameraAt, LINE, LINE_LENGTH, live, makeView, readyView } from '@/components/hero/scene/rig'
+import { FLOW, FOV, LOGO_BOX, POINTER, QUALITY, STARS, TUBE, type Quality, type Shot } from '@/components/hero/scene/numbers'
+import { cameraAt, LINE, LINE_LENGTH, live, makeView, readyView, shotView } from '@/components/hero/scene/rig'
 import {
-  FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, METEOR_FRAG, METEOR_VERT, SKY_FRAG, SKY_VERT, SKYOBJ_FRAG, SKYOBJ_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
+  FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, METEOR_FRAG, METEOR_VERT, SKYOBJ_FRAG, SKYOBJ_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
 } from '@/components/hero/scene/shaders'
-import { GALAXIES, universe, updateUniverse, WARP } from '@/components/hero/scene/universe'
+import { PALETTES, universe, upcoming, updateUniverse, WARP, type Universe } from '@/components/hero/scene/universe'
+import { PHENOM_FRAG, PHENOM_VERT, PHENOMENON_LOOK } from '@/components/hero/scene/phenomena'
 import { Station } from '@/components/hero/scene/Station'
 import { hsl, readTheme, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme } from '@/components/hero/scene/textures'
 import { farDiscs, FarWorlds } from '@/components/hero/scene/far'
@@ -67,6 +68,7 @@ function pixelScale(height: number, dpr: number, fov: number) {
 
 const SPAN = STARS.box.max[2] - STARS.box.min[2]
 const WARP_VEL = new Vector3()
+const SIDE = new Vector3()
 
 function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   const geos = React.useMemo(() => {
@@ -139,6 +141,13 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
       // the camera's own velocity, and the universe streaming past on a journey between galaxies
       const u = streakMat.current.uniforms
       ;(u.uVel.value as Vector3).copy(live.velocity).add(WARP_VEL.set(0, 0, -universe.warp * WARP.speed))
+      // a whip pan: the stars streak sideways with it
+      if (universe.sweep[0] || universe.sweep[1]) {
+        SIDE.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(universe.sweep[0] * WARP.speed * 1.6)
+        ;(u.uVel.value as Vector3).add(SIDE)
+        SIDE.setFromMatrixColumn(camera.matrixWorld, 1).multiplyScalar(universe.sweep[1] * WARP.speed * 1.6)
+        ;(u.uVel.value as Vector3).add(SIDE)
+      }
       u.uTravelled.value = universe.travelled % SPAN
       u.uAspect.value = live.aspect
     }
@@ -156,152 +165,214 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   )
 }
 
-// ── THE DEEP SKY: THE SPACE BEHIND EVERY SPACE ──────────────────────────────
+// ── THE DEEP SKY: THE UNIVERSE BEHIND EVERY SPACE ───────────────────────────
 
-const c3 = (v: readonly number[]) => hsl(v[0], v[1], v[2])
-/** Each galaxy's five colours, in the sky shader's order: the nebula's two, its accent, the Milky Way's core and edge. */
-const GALAXY_COLORS = GALAXIES.map((g) => [c3(g.a), c3(g.b), c3(g.accent), c3(g.band), c3(g.edge)])
 /** The deep sky's plane: far behind the logo, wider than any shot sees. */
 const SKY = { z: -162, scale: [640, 380] as const }
+const SKY_ASPECT = SKY.scale[0] / SKY.scale[1]
+const SKY_PLANE_Z = LOGO_BOX.center[2] + SKY.z
 
-/** Where the camera's gaze meets the deep sky (world x, y), for the journey to run toward. */
+/** Where the camera's gaze meets the deep sky (world x, y), for the changes to run toward. */
 function gazeOnSky(camera: PerspectiveCamera, out: Vector3) {
   camera.getWorldDirection(out)
-  const t = (LOGO_BOX.center[2] + SKY.z - camera.position.z) / (Math.abs(out.z) > 1e-4 ? out.z : -1e-4)
+  const t = (SKY_PLANE_Z - camera.position.z) / (Math.abs(out.z) > 1e-4 ? out.z : -1e-4)
   return out.multiplyScalar(t).add(camera.position)
 }
 const GAZE = new Vector3()
+const SKY_VIEW = makeView()
+const F3 = new Vector3()
+
+/** A view's frame on the deep sky (uv): the point at its middle, and its half extents. */
+function frameOnSky(pos: Vector3, look: Vector3, fov: number, shift: [number, number], aspect: number, out: { c: Vector2; half: Vector2 }) {
+  F3.copy(look).sub(pos).normalize()
+  const t = (SKY_PLANE_Z - pos.z) / (Math.abs(F3.z) > 1e-4 ? F3.z : -1e-4)
+  const hx = pos.x + F3.x * t
+  const hy = pos.y + F3.y * t
+  const halfH = t * Math.tan((fov * Math.PI) / 360)
+  const halfW = halfH * aspect
+  // the lens is shifted (the subject in the room the words leave): the frame's middle is off the gaze
+  const cx = hx - 2 * shift[0] * halfW
+  const cy = hy - 2 * shift[1] * halfH
+  out.c.set((cx - LOGO_BOX.center[0]) / SKY.scale[0] + 0.5, (cy - LOGO_BOX.center[1]) / SKY.scale[1] + 0.5)
+  out.half.set(halfW / SKY.scale[0], halfH / SKY.scale[1])
+  return out
+}
+
+/** One of the deep sky's two slots: the universe showing, or (during a change) the one arriving. */
+function phenomUniforms() {
+  return {
+    uGaze: { value: new Vector2(0.5, 0.5) }, uCenter: { value: new Vector2(0.5, 0.5) }, uScale: { value: 0.2 }, uRot: { value: 0 }, uAspect: { value: SKY_ASPECT },
+    uPal0: { value: new Vector3(1, 1, 1) }, uPal1: { value: new Vector3(1, 1, 1) }, uPal2: { value: new Vector3(1, 1, 1) },
+    uSeed: { value: 0 }, uAge: { value: 0 }, uLife: { value: 0 }, uIntensity: { value: 1 }, uTime: { value: 0 },
+    uK: { value: 0 }, uStyle: { value: 0 }, uRole: { value: 1 }, uDir: { value: new Vector2(1, 0) }, uHalf: { value: new Vector2(0.27, 0.28) },
+  }
+}
 
 /**
- * The deep sky: the galaxy the visitor is in, or two at once while the universe travels between them
- * (universe.ts) — the one being left swelling past the camera as it fades, the one arriving growing in
- * from far away.
+ * The deep sky: a universe (universe.ts) — one phenomenon of deep space (phenomena.ts), in a film stock's
+ * palette, somewhere in the sky — and, during a change, the next one arriving by one of ten changes.
+ * Each phenomenon is its own small program: the next one's is built ahead (compileAsync), so a change
+ * never stutters.
  */
-function DeepSky({ theme }: { theme: HeroTheme }) {
-  const geo = React.useMemo(() => new PlaneGeometry(1, 1, 128, 76), [])
+function DeepSky({ quality }: { quality: Quality }) {
+  const { gl, scene, camera } = useThree()
+  const geo = React.useMemo(() => new PlaneGeometry(1, 1), [])
   React.useEffect(() => () => geo.dispose(), [geo])
-  const mat = React.useRef<ShaderMaterial>(null)
-  const uniforms = React.useMemo(
-    () => ({
-      uTime: { value: 0 }, uStrength: { value: theme.dark ? 0.72 : 0.5 }, uMilky: { value: 1.1 },
-      uGA: { value: new Vector4() }, uGB: { value: new Vector4() }, uCentre: { value: new Vector2(0.5, 0.5) },
-      uColA: { value: GALAXY_COLORS[0].map((c) => c.clone()) }, uColB: { value: GALAXY_COLORS[0].map((c) => c.clone()) },
-      uWA: { value: 1 }, uWB: { value: 0 },
-    }),
-    [theme],
-  )
-  const [x, y, z] = LOGO_BOX.center
-  useFrame(({ camera }) => {
-    const m = mat.current
-    if (!m) return
-    const u = m.uniforms
-    const { from, to, k } = universe
-    const A = GALAXIES[from]
-    const B = GALAXIES[to]
-    const travelling = from !== to
-    u.uTime.value = live.time
-    ;(u.uGA.value as Vector4).set(A.seed, A.angle, A.width, travelling ? 1 + 1.4 * k : 1)
-    ;(u.uGB.value as Vector4).set(B.seed, B.angle, B.width, travelling ? 0.5 + 0.5 * k : 1)
-    const ca = u.uColA.value as Color[]
-    const cb = u.uColB.value as Color[]
-    for (let i = 0; i < 5; i++) {
-      ca[i].copy(GALAXY_COLORS[from][i])
-      cb[i].copy(GALAXY_COLORS[to][i])
+  const low = quality === 0
+  const definesFor = React.useCallback((kind: number) => (low ? { PHENOM: kind, LOW: 1 } : { PHENOM: kind }), [low])
+  const slotA = React.useRef<ShaderMaterial>(null)
+  const slotB = React.useRef<ShaderMaterial>(null)
+  const meshA = React.useRef<Mesh>(null)
+  const meshB = React.useRef<Mesh>(null)
+  const uniformsA = React.useMemo(() => phenomUniforms(), [])
+  const uniformsB = React.useMemo(() => phenomUniforms(), [])
+  // programs built ahead, kept (a program lives while a material uses it)
+  const built = React.useRef(new Map<string, ShaderMaterial>())
+  React.useEffect(() => {
+    const m = built.current
+    return () => {
+      m.forEach((mat) => mat.dispose())
+      m.clear()
     }
-    u.uWA.value = travelling ? Math.pow(1 - k, 1.4) : 1
-    u.uWB.value = travelling ? Math.pow(k, 1.1) : 0
-    const g = gazeOnSky(camera as PerspectiveCamera, GAZE)
-    ;(u.uCentre.value as Vector2).set((g.x - x) / SKY.scale[0] + 0.5, (g.y - y) / SKY.scale[1] + 0.5)
+  }, [])
+  const frames = React.useMemo(() => new Map<number, { c: Vector2; half: Vector2 }>(), [])
+  const now = React.useMemo(() => ({ c: new Vector2(), half: new Vector2() }), [])
+  useFrame(({ camera: cam, size }) => {
+    const lens = cam as PerspectiveCamera
+    const aspect = size.width / size.height
+    const tall = live.tall
+    // build the programs of every universe that may soon show
+    for (const u of upcoming()) {
+      const key = `${u.kind}.${low ? 1 : 0}`
+      if (built.current.has(key)) continue
+      const mat = new ShaderMaterial({ vertexShader: PHENOM_VERT, fragmentShader: PHENOM_FRAG, defines: definesFor(u.kind), uniforms: phenomUniforms(), transparent: true, depthWrite: false, depthTest: false, blending: AdditiveBlending })
+      built.current.set(key, mat)
+      const probe = new Mesh(geo, mat)
+      gl.compileAsync(probe, camera, scene).catch(() => {})
+    }
+    gazeOnSky(lens, GAZE)
+    frameOnSky(cam.position, GAZE, lens.fov, [0, 0], aspect, now)
+    frames.clear()
+    const homeFrame = (shot: Shot) => {
+      let f = frames.get(shot)
+      if (!f) {
+        shotView(shot, tall, aspect, 0.5, SKY_VIEW)
+        f = frameOnSky(SKY_VIEW.pos, SKY_VIEW.look, SKY_VIEW.fov, SKY_VIEW.shift, aspect, { c: new Vector2(), half: new Vector2() })
+        frames.set(shot, f)
+      }
+      return f
+    }
+    const { from, to, k } = universe
+    const set = (mat: ShaderMaterial | null, mesh: Mesh | null, u: Universe | null, role: number) => {
+      if (!mat || !mesh) return
+      mesh.visible = !!u
+      if (!u) return
+      const want = definesFor(u.kind)
+      if (mat.defines.PHENOM !== want.PHENOM || !!mat.defines.LOW !== low) {
+        mat.defines = want
+        mat.needsUpdate = true
+      }
+      const un = mat.uniforms
+      const home = homeFrame(u.home)
+      ;(un.uGaze.value as Vector2).copy(now.c)
+      ;(un.uHalf.value as Vector2).copy(now.half)
+      ;(un.uCenter.value as Vector2).set(home.c.x + u.at[0] * home.half.x, home.c.y + u.at[1] * home.half.y)
+      un.uScale.value = u.scale
+      un.uRot.value = u.rot
+      const pal = PALETTES[u.palette]
+      ;(un.uPal0.value as Vector3).set(pal[0][0], pal[0][1], pal[0][2])
+      ;(un.uPal1.value as Vector3).set(pal[1][0], pal[1][1], pal[1][2])
+      ;(un.uPal2.value as Vector3).set(pal[2][0], pal[2][1], pal[2][2])
+      un.uSeed.value = u.seed
+      const age = Math.max(0, live.time - u.born)
+      un.uAge.value = age
+      un.uLife.value = u.hold > 0 ? Math.min(1, age / u.hold) : 0
+      un.uIntensity.value = u.intensity
+      un.uTime.value = live.time
+      un.uK.value = to ? k : 0
+      un.uStyle.value = universe.style
+      un.uRole.value = role
+      ;(un.uDir.value as Vector2).set(universe.dir[0], universe.dir[1])
+      // a dark phenomenon (a black hole's shadow, an eclipsed sun): the stars hide behind it
+      const dark = PHENOMENON_LOOK[u.kind].dark
+      if (dark > 0) {
+        const cx = LOGO_BOX.center[0] + ((un.uCenter.value as Vector2).x - 0.5) * SKY.scale[0]
+        const cy = LOGO_BOX.center[1] + ((un.uCenter.value as Vector2).y - 0.5) * SKY.scale[1]
+        const dist = cam.position.distanceTo(F3.set(cx, cy, SKY_PLANE_Z))
+        F3.project(cam)
+        const r = (dark * u.scale * SKY.scale[1]) / (dist * Math.tan((lens.fov * Math.PI) / 360))
+        farDiscs[3].set(F3.x, F3.y, r, to ? (role > 0 ? 1 - k : k) : 1)
+      }
+    }
+    farDiscs[3].set(0, 0, 0, 0)
+    set(slotA.current, meshA.current, from, 1)
+    set(slotB.current, meshB.current, to, -1)
   })
-  return (
-    <mesh geometry={geo} position={[x, y, z + SKY.z]} scale={[SKY.scale[0], SKY.scale[1], 1]} renderOrder={-20} frustumCulled={false}>
-      <shaderMaterial ref={mat} vertexShader={SKY_VERT} fragmentShader={SKY_FRAG} defines={{ GALAXY: 1 }} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
+  const [x, y] = LOGO_BOX.center
+  const mesh = (ref: React.RefObject<Mesh | null>, mat: React.RefObject<ShaderMaterial | null>, uniforms: ReturnType<typeof phenomUniforms>, order: number) => (
+    <mesh ref={ref} geometry={geo} position={[x, y, SKY_PLANE_Z]} scale={[SKY.scale[0], SKY.scale[1], 1]} renderOrder={order} frustumCulled={false}>
+      <shaderMaterial ref={mat} vertexShader={PHENOM_VERT} fragmentShader={PHENOM_FRAG} defines={definesFor(0)} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
     </mesh>
+  )
+  return (
+    <>
+      {mesh(meshA, slotA, uniformsA, -21)}
+      {mesh(meshB, slotB, uniformsB, -20)}
+    </>
   )
 }
 
-/** Far galaxies and star-filter stars on the deep sky, each galaxy its own (shaders.ts SKYOBJ_*). */
+/** A few bright stars drawn the way a cinematographer's star filter draws them (shaders.ts SKYOBJ_*). */
 function SkyObjects() {
-  const [x, y, z] = LOGO_BOX.center
-  const geos = React.useMemo(() => {
-    const make = (perEra: number, kind: number) => {
-      const n = perEra * GALAXIES.length
-      const corner = new Float32Array(n * 8)
-      const centre = new Float32Array(n * 12)
-      const size = new Float32Array(n * 4)
-      const era = new Float32Array(n * 4)
-      const look = new Float32Array(n * 16)
-      const index: number[] = []
-      const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
-      for (let e = 0; e < GALAXIES.length; e++) {
-        const rnd = seeded(900 + e * 77 + kind * 13)
-        for (let j = 0; j < perEra; j++) {
-          const i = e * perEra + j
-          // spread over the sky every shot looks at, kept off the very middle (the logo's own place)
-          let px = 0
-          let py = 0
-          do {
-            px = -150 + rnd() * 330
-            py = -78 + rnd() * 170
-          } while (Math.abs(px - x) < 40 && Math.abs(py - y) < 30)
-          const sz = kind === 0 ? 6 + rnd() * 8 : 2.8 + rnd() * 2.6
-          const lk = [rnd() * Math.PI, 0.3 + rnd() * 0.6, rnd(), rnd() * 3]
-          for (let v = 0; v < 4; v++) {
-            corner.set(C[v], (i * 4 + v) * 2)
-            centre.set([px, py, z + SKY.z + 2], (i * 4 + v) * 3)
-            size[i * 4 + v] = sz
-            era[i * 4 + v] = e
-            look.set(lk, (i * 4 + v) * 4)
-          }
-          index.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3)
-        }
+  const [x, y] = LOGO_BOX.center
+  const geo = React.useMemo(() => {
+    const n = 7
+    const corner = new Float32Array(n * 8)
+    const centre = new Float32Array(n * 12)
+    const size = new Float32Array(n * 4)
+    const era = new Float32Array(n * 4)
+    const look = new Float32Array(n * 16)
+    const index: number[] = []
+    const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
+    const rnd = seeded(913)
+    for (let i = 0; i < n; i++) {
+      let px = 0
+      let py = 0
+      do {
+        px = -150 + rnd() * 330
+        py = -78 + rnd() * 170
+      } while (Math.abs(px - x) < 40 && Math.abs(py - y) < 30)
+      const sz = 2.8 + rnd() * 2.4
+      const lk = [rnd() * Math.PI, 0.5, rnd(), rnd() * 3]
+      for (let v = 0; v < 4; v++) {
+        corner.set(C[v], (i * 4 + v) * 2)
+        centre.set([px, py, SKY_PLANE_Z + 2], (i * 4 + v) * 3)
+        size[i * 4 + v] = sz
+        era[i * 4 + v] = 0
+        look.set(lk, (i * 4 + v) * 4)
       }
-      const g = new BufferGeometry()
-      g.setAttribute('position', new BufferAttribute(new Float32Array(n * 12), 3))
-      g.setAttribute('aCorner', new BufferAttribute(corner, 2))
-      g.setAttribute('aCentre', new BufferAttribute(centre, 3))
-      g.setAttribute('aSize', new BufferAttribute(size, 1))
-      g.setAttribute('aEra', new BufferAttribute(era, 1))
-      g.setAttribute('aLook', new BufferAttribute(look, 4))
-      g.setIndex(index)
-      return g
+      index.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3)
     }
-    return { galaxies: make(5, 0), stars: make(12, 1) }
-  }, [x, y, z])
-  React.useEffect(() => () => { geos.galaxies.dispose(); geos.stars.dispose() }, [geos])
-  const shared = React.useMemo(() => ({ uEraW: { value: new Vector4(1, 0, 0, 0) }, uEraZoom: { value: new Vector4(1, 1, 1, 1) }, uZoomCentre: { value: new Vector3() }, uTime: { value: 0 } }), [])
-  const galaxyUniforms = React.useMemo(() => ({ ...shared, uOpacity: { value: 0.85 } }), [shared])
-  const starUniforms = React.useMemo(() => ({ ...shared, uOpacity: { value: 0.9 } }), [shared])
-  const galaxyMat = React.useRef<ShaderMaterial>(null)
-  useFrame(({ camera }) => {
-    // (the two materials share these uniforms: written once, through the galaxies' material)
-    const u = galaxyMat.current?.uniforms
-    if (!u) return
-    const { from, to, k } = universe
-    const travelling = from !== to
-    const w = u.uEraW.value as Vector4
-    const zoom = u.uEraZoom.value as Vector4
-    w.set(0, 0, 0, 0)
-    zoom.set(1, 1, 1, 1)
-    w.setComponent(from, travelling ? Math.pow(1 - k, 1.4) : 1)
-    zoom.setComponent(from, travelling ? 1 + 1.4 * k : 1)
-    if (travelling) {
-      w.setComponent(to, Math.pow(k, 1.1))
-      zoom.setComponent(to, 0.5 + 0.5 * k)
-    }
-    const g = gazeOnSky(camera as PerspectiveCamera, GAZE)
-    ;(u.uZoomCentre.value as Vector3).set(g.x, g.y, 0)
-    u.uTime.value = live.time
+    const g = new BufferGeometry()
+    g.setAttribute('position', new BufferAttribute(new Float32Array(n * 12), 3))
+    g.setAttribute('aCorner', new BufferAttribute(corner, 2))
+    g.setAttribute('aCentre', new BufferAttribute(centre, 3))
+    g.setAttribute('aSize', new BufferAttribute(size, 1))
+    g.setAttribute('aEra', new BufferAttribute(era, 1))
+    g.setAttribute('aLook', new BufferAttribute(look, 4))
+    g.setIndex(index)
+    return g
+  }, [x, y])
+  React.useEffect(() => () => geo.dispose(), [geo])
+  const uniforms = React.useMemo(() => ({ uEraW: { value: new Vector4(1, 0, 0, 0) }, uEraZoom: { value: new Vector4(1, 1, 1, 1) }, uZoomCentre: { value: new Vector3() }, uTime: { value: 0 }, uOpacity: { value: 0.75 } }), [])
+  const mat = React.useRef<ShaderMaterial>(null)
+  useFrame(() => {
+    if (mat.current) mat.current.uniforms.uTime.value = live.time
   })
   return (
-    <>
-      <mesh geometry={geos.galaxies} frustumCulled={false} renderOrder={-19}>
-        <shaderMaterial ref={galaxyMat} vertexShader={SKYOBJ_VERT} fragmentShader={SKYOBJ_FRAG} defines={{ KIND: 0 }} uniforms={galaxyUniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
-      </mesh>
-      <mesh geometry={geos.stars} frustumCulled={false} renderOrder={-18}>
-        <shaderMaterial vertexShader={SKYOBJ_VERT} fragmentShader={SKYOBJ_FRAG} defines={{ KIND: 1 }} uniforms={starUniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
-      </mesh>
-    </>
+    <mesh geometry={geo} frustumCulled={false} renderOrder={-18}>
+      <shaderMaterial ref={mat} vertexShader={SKYOBJ_VERT} fragmentShader={SKYOBJ_FRAG} defines={{ KIND: 1 }} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
+    </mesh>
   )
 }
 
@@ -380,8 +451,10 @@ function Line({ theme }: { theme: HeroTheme }) {
   useFrame(({ gl }, dt) => {
     const c = clock.current
     const d = heroState.reduced ? 0 : Math.min(dt, 0.1)
-    c.boost = damp(c.boost, heroState.playHover, 5, Math.min(dt, 0.1))
-    c.t += d * (1 + c.boost * 2.2)
+    // it quickens under the play control, and — before the tour — as the universe is about to change, through
+    // the change and a while after (the owner, 2026-11-06), easing back to its own pace
+    c.boost = damp(c.boost, Math.max(heroState.playHover, heroState.tour ? 0 : universe.hurry), 2.2, Math.min(dt, 0.1))
+    c.t += d * (1 + c.boost * 3)
     // behind the words on screen the line steps back: the caption of the space on screen, or the close
     // (the core and the halo share these uniforms: written once, through the core's material)
     const u = core.current?.uniforms
@@ -564,7 +637,7 @@ function CameraRig() {
     live.aspect = aspect
     const place = storyAt(heroState.current)
     live.place = place
-    updateUniverse(place, d)
+    updateUniverse(place, live.time, d, tall)
     const v = r.view
     cameraAt(place, tall, aspect, v)
     // the tour taken: the stage readies — the title's words step aside and the camera eases round to give
@@ -698,7 +771,7 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
       <Atmosphere theme={theme} />
       <CameraRig />
       <Uploader />
-      <DeepSky theme={theme} />
+      <DeepSky quality={quality} />
       <SkyObjects />
       <FarWorlds />
       <Meteors />

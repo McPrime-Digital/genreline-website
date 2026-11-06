@@ -12,7 +12,9 @@
  *  · The Client station turns to its Stakeholders face every three seconds
  *    while it is on screen (the owner, 2026-11-03), and back — its words and
  *    the 3D together. The pointer resting on one of its screens holds it.
- *  · The scene: after first paint, on the visitor's first move. Every device
+ *  · The scene: once the page has painted — at once where a mouse is on the
+ *    page, else at the visitor's first move or after a few quiet seconds; the
+ *    title's poster is its first frame, so it never lands late. Every device
  *    that draws WebGL 2 on real graphics hardware gets the live scene — a
  *    laptop's integrated graphics, a gaming PC, a tablet, a phone, on any
  *    system and in any browser — at a starting quality fitted to it (the GPU's
@@ -34,7 +36,7 @@ import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { cut, heroState, nearestShot, SHOT_AT, shotWeight, storyAt, timecode } from '@/components/hero/state'
 import { FACE, FOV, SCROLL_DAMPING, type Quality, type Shot } from '@/components/hero/scene/numbers'
-import { logoOnStage, tourLayout } from '@/components/hero/frame'
+import { logoOnStage, PLAY_GAP, tourLayout } from '@/components/hero/frame'
 import type { HeroSources } from '@/components/hero/scene/textures'
 import type { PosterFrames } from '@/components/hero/HomeHero'
 import { useReducedMotion } from '@/lib/motion'
@@ -75,27 +77,24 @@ function afterFirstPaint(fn: () => void) {
   }
 }
 
-/**
- * The scene wakes when the visitor first does something — moves the mouse,
- * scrolls, touches, presses a key. Until then the title's poster IS the scene
- * (its first frame, rendered by the scene), so nothing visible changes, and
- * the 3D never competes with the page's first seconds.
- */
+/** The visitor's first move, scroll, touch or key (once). */
 function whenEngaged(fn: () => void) {
   const events = ['pointermove', 'pointerdown', 'wheel', 'touchstart', 'keydown', 'scroll'] as const
   let done = false
+  const stop = () => {
+    for (const e of events) window.removeEventListener(e, go)
+  }
   const go = () => {
     if (done) return
     done = true
     stop()
     fn()
   }
-  const stop = () => {
-    for (const e of events) window.removeEventListener(e, go)
-  }
   for (const e of events) window.addEventListener(e, go, { passive: true, once: true })
   return stop
 }
+/** Where nobody has moved: how long after the page settles the scene takes over anyway (ms). */
+const QUIET_START = 3000
 
 const params = () => new URLSearchParams(window.location.search)
 
@@ -135,9 +134,6 @@ const EASE_IN_OUT = bezier(0.77, 0, 0.175, 1)
 /** The house's entering curve (tokens.css --ease-out): for the play control's iris, and for the dive. */
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 const EASE_OUT_FN = bezier(0.23, 1, 0.32, 1)
-
-/** The gap between the logo's lowest point (its halo included) and the play control, in pixels. */
-const PLAY_GAP = 18
 
 type Choice = { tier: 'live'; quality: Quality; hz: number } | { tier: 'poster' }
 
@@ -476,10 +472,27 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
           const scale = ((at.right - at.left) * st.width) / ((pf.right - pf.left) * pf.width)
           const ox = at.left * st.width - pf.left * pf.width * scale - (box.left - st.left)
           const oy = at.top * st.height - pf.top * pf.height * scale - (box.top - st.top)
+          // the inline landing (landing.ts) placed it first, before any script: the two must agree
+          if (process.env.NODE_ENV !== 'production' && img.dataset.aligned === 'true') {
+            const m = /translate3d\(([-\d.]+)px, ([-\d.]+)px/.exec(img.style.transform)
+            if (m && (Math.abs(Number(m[1]) - ox) > 2 || Math.abs(Number(m[2]) - oy) > 2)) console.warn('hero: the landing placed the poster differently', m[1], m[2], ox, oy)
+          }
+          // (the scene's far worlds on the title are placed by the same scaling: heroState.posterMap — not while
+          // a poster is being made, `?shot=`: the poster's own frame is the one they are defined in)
+          if (!s.tour && !held) heroState.posterMap = { tall: shape === 'tall', k: scale, x0: at.left * st.width - pf.left * pf.width * scale, y0: at.top * st.height - pf.top * pf.height * scale, w: st.width, h: st.height, pw: pf.width, ph: pf.height }
           img.style.width = `${(pf.width * scale).toFixed(1)}px`
           img.style.height = `${(pf.height * scale).toFixed(1)}px`
           img.style.transform = `translate3d(${ox.toFixed(1)}px, ${oy.toFixed(1)}px, 0)`
           img.dataset.aligned = 'true'
+          // the stage lands as one — picture and words together — once the picture is placed and decoded
+          // (if the CSS's own deadline came first, it has already shown: leave it)
+          if (!stageEl.dataset.landed) {
+            stageEl.dataset.landed = 'pending'
+            img
+              .decode()
+              .catch(() => {})
+              .then(() => void (stageEl.dataset.landed = getComputedStyle(stageEl).visibility === 'visible' ? 'late' : 'true'))
+          }
         }
         // the posters are rendered from the held title shot: where its logo is, for the script
         if (held) stageEl.dataset.logo = JSON.stringify({ ...at, width: st.width, height: st.height })
@@ -631,7 +644,7 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
      */
     const launch = async (to: Shot = 1, go = false) => {
       if (s.tour) return glide(shotTop(to))
-      // on a phone the tap is also what wakes the scene: the control waits, turning, until it is there
+      // the scene may still be on its way (on a phone this tap is what wakes it): the control waits, turning, until it is there
       if (tierRef.current === 'pending' || (tierRef.current === 'live' && layer.current?.dataset.ready !== 'true')) {
         playBtn?.setAttribute('data-waiting', 'true')
         await settled()
@@ -747,18 +760,23 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
     }
   }, [])
 
-  // The device tier: once the page has painted and the visitor is there. The visitor is listened for
-  // from the moment the page is interactive, and a mouse already resting on the page, or a page
-  // restored mid-scroll, counts — so a first move made while the page was settling is never lost.
+  // The scene starts as soon as the page has painted when the visitor is plainly there (a mouse already over
+  // the page, a page restored mid-scroll), or at their first move, scroll, touch or key; failing those, once
+  // the page has been quiet a few seconds. The title's poster is the scene's first frame — the same universe,
+  // the same far worlds, the logo in the same place — so whenever the scene takes over, nothing lands late
+  // and nothing jumps (the owner, 2026-11-06: the space objects had arrived seconds late, "like boom"): it
+  // only begins to move. (Booting it during the page's own load blocked a throttled phone's main thread for
+  // over half a second, and cost the page its Largest Contentful Paint.)
   React.useEffect(() => {
     let alive = true
     let painted = false
-    // already engaged: the page restored mid-scroll, or a mouse already resting on the page
     let engaged = window.scrollY > 0 || document.querySelector(':hover') !== null
     let started = false
+    let quiet = 0
     const start = () => {
       if (started || !painted || !engaged || !alive) return
       started = true
+      window.clearTimeout(quiet)
       choose()
         .catch((): Choice => ({ tier: 'poster' }))
         .then((c) => {
@@ -781,9 +799,14 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
     const stopPaint = afterFirstPaint(() => {
       painted = true
       start()
+      quiet = window.setTimeout(() => {
+        engaged = true
+        start()
+      }, QUIET_START)
     })
     return () => {
       alive = false
+      window.clearTimeout(quiet)
       stopPaint()
       stopEngaged()
     }

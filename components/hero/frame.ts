@@ -34,6 +34,9 @@ export type Layout = {
   closeRight: number
 }
 
+/** The gap between the logo's lowest point and the play control under it, and below the control (px). */
+export const PLAY_GAP = 18
+
 /** The whole logo: the line's extent. */
 export const LINE_BOX: Box = (() => {
   const xs = LINE_POINTS.map((p) => p[0])

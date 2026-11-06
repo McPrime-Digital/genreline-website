@@ -8,109 +8,208 @@
 export type HeroFilm = {
   id: string
   title: string
-  year: number
+  year: number | string
   maker: string
   licence: string
   source: string
   mp4: string
-  webm: string
   still: string
   /** Width over height. */
   aspect: number
   loop: boolean
-  /** Its place in the stills atlas (4 × 2). */
+  /** Its place in the stills atlas (4 × 4). */
   atlas: number
 }
 
 export const HERO_FILMS: readonly HeroFilm[] = [
-{
-  "id": "crew",
-  "title": "A Trip to the Moon",
-  "year": 1902,
-  "maker": "Georges Méliès",
-  "licence": "public domain",
-  "source": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_Lune_(1902).webm",
-  "mp4": "/hero/films/crew.mp4",
-  "webm": "/hero/films/crew.webm",
-  "still": "/hero/films/crew.avif",
-  "aspect": 1.3333,
-  "loop": true,
-  "atlas": 0
-},
-{
-  "id": "client",
-  "title": "Gulliver’s Travels",
-  "year": 1939,
-  "maker": "Fleischer Studios",
-  "licence": "public domain in the United States",
-  "source": "https://commons.wikimedia.org/wiki/File:Gulliver%27s_Travels_(1939).webm",
-  "mp4": "/hero/films/client.mp4",
-  "webm": "/hero/films/client.webm",
-  "still": "/hero/films/client.avif",
-  "aspect": 1.3278,
-  "loop": true,
-  "atlas": 1
-},
-{
-  "id": "suite-1",
-  "title": "Spring",
-  "year": 2019,
-  "maker": "Blender Studio",
-  "licence": "CC BY 4.0",
-  "source": "https://commons.wikimedia.org/wiki/File:Spring_-_Blender_Open_Movie.webm",
-  "mp4": "/hero/films/suite-1.mp4",
-  "webm": "/hero/films/suite-1.webm",
-  "still": "/hero/films/suite-1.avif",
-  "aspect": 2.3855,
-  "loop": false,
-  "atlas": 2
-},
-{
-  "id": "suite-2",
-  "title": "Sintel",
-  "year": 2010,
-  "maker": "Blender Foundation",
-  "licence": "CC BY 3.0",
-  "source": "https://commons.wikimedia.org/wiki/File:Sintel_movie_4K.webm",
-  "mp4": "/hero/films/suite-2.mp4",
-  "webm": "/hero/films/suite-2.webm",
-  "still": "/hero/films/suite-2.avif",
-  "aspect": 2.3462,
-  "loop": false,
-  "atlas": 3
-},
-{
-  "id": "suite-3",
-  "title": "Sprite Fright",
-  "year": 2021,
-  "maker": "Blender Studio",
-  "licence": "CC BY 4.0",
-  "source": "https://commons.wikimedia.org/wiki/File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm",
-  "mp4": "/hero/films/suite-3.mp4",
-  "webm": "/hero/films/suite-3.webm",
-  "still": "/hero/films/suite-3.avif",
-  "aspect": 2.3855,
-  "loop": false,
-  "atlas": 4
-},
-{
-  "id": "suite-4",
-  "title": "Big Buck Bunny",
-  "year": 2008,
-  "maker": "Blender Foundation",
-  "licence": "CC BY 3.0",
-  "source": "https://commons.wikimedia.org/wiki/File:Big_Buck_Bunny_4K.webm",
-  "mp4": "/hero/films/suite-4.mp4",
-  "webm": "/hero/films/suite-4.webm",
-  "still": "/hero/films/suite-4.avif",
-  "aspect": 2.3989,
-  "loop": false,
-  "atlas": 5
-}
+  {
+    "id": "crew",
+    "title": "Making of PARVA",
+    "year": 2021,
+    "maker": "P Sheshadri",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Making_of_PARVA.webm",
+    "mp4": "/hero/films/crew.mp4",
+    "still": "/hero/films/crew.avif",
+    "aspect": 1.7792,
+    "loop": true,
+    "atlas": 0
+  },
+  {
+    "id": "client",
+    "title": "Tears of Steel",
+    "year": 2012,
+    "maker": "Blender Foundation",
+    "licence": "CC BY 3.0",
+    "source": "https://mango.blender.org",
+    "mp4": "/hero/films/client.mp4",
+    "still": "/hero/films/client.avif",
+    "aspect": 2.397,
+    "loop": true,
+    "atlas": 1
+  },
+  {
+    "id": "suite-1",
+    "title": "Spring",
+    "year": 2019,
+    "maker": "Blender Studio",
+    "licence": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Spring_-_Blender_Open_Movie.webm",
+    "mp4": "/hero/films/suite-1.mp4",
+    "still": "/hero/films/suite-1.avif",
+    "aspect": 2.3855,
+    "loop": false,
+    "atlas": 2
+  },
+  {
+    "id": "suite-2",
+    "title": "Cheetahs on the Edge",
+    "year": 2012,
+    "maker": "Gregory Wilson",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Cheetahs_on_the_Edge_(Director%27s_Cut).ogv",
+    "mp4": "/hero/films/suite-2.mp4",
+    "still": "/hero/films/suite-2.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 3
+  },
+  {
+    "id": "suite-3",
+    "title": "Sintel",
+    "year": 2010,
+    "maker": "Blender Foundation",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sintel_movie_4K.webm",
+    "mp4": "/hero/films/suite-3.mp4",
+    "still": "/hero/films/suite-3.avif",
+    "aspect": 2.3462,
+    "loop": false,
+    "atlas": 4
+  },
+  {
+    "id": "suite-4",
+    "title": "Mount Bromo time-lapse",
+    "year": 2012,
+    "maker": "Justin Ng",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mount_Bromo_HD_Timelapse_Movie_by_Justin_Ng.webm",
+    "mp4": "/hero/films/suite-4.mp4",
+    "still": "/hero/films/suite-4.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 5
+  },
+  {
+    "id": "suite-5",
+    "title": "A century of film",
+    "year": "1902–2019",
+    "maker": "a montage",
+    "licence": "various",
+    "source": "",
+    "mp4": "/hero/films/suite-5.mp4",
+    "still": "/hero/films/suite-5.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 6
+  },
+  {
+    "id": "suite-6",
+    "title": "Sprite Fright",
+    "year": 2021,
+    "maker": "Blender Studio",
+    "licence": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm",
+    "mp4": "/hero/films/suite-6.mp4",
+    "still": "/hero/films/suite-6.avif",
+    "aspect": 2.3855,
+    "loop": false,
+    "atlas": 7
+  },
+  {
+    "id": "suite-7",
+    "title": "Time-Lapsing thru Europe",
+    "year": 2012,
+    "maker": "Tellurian Media",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Time-Lapsing_thru_Europe.webm",
+    "mp4": "/hero/films/suite-7.mp4",
+    "still": "/hero/films/suite-7.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 8
+  },
+  {
+    "id": "suite-8",
+    "title": "Gulliver’s Travels",
+    "year": 1939,
+    "maker": "Fleischer Studios",
+    "licence": "public domain in the United States",
+    "source": "https://commons.wikimedia.org/wiki/File:Gulliver%27s_Travels_(1939).webm",
+    "mp4": "/hero/films/suite-8.mp4",
+    "still": "/hero/films/suite-8.avif",
+    "aspect": 1.3278,
+    "loop": false,
+    "atlas": 9
+  },
+  {
+    "id": "suite-9",
+    "title": "STS-51, in IMAX",
+    "year": 1993,
+    "maker": "NASA",
+    "licence": "public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:STS-51_IMAX_footage_part_1.webm",
+    "mp4": "/hero/films/suite-9.mp4",
+    "still": "/hero/films/suite-9.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 10
+  },
+  {
+    "id": "suite-10",
+    "title": "Big Buck Bunny",
+    "year": 2008,
+    "maker": "Blender Foundation",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Big_Buck_Bunny_4K.webm",
+    "mp4": "/hero/films/suite-10.mp4",
+    "still": "/hero/films/suite-10.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 11
+  },
+  {
+    "id": "suite-11",
+    "title": "A Trip to the Moon",
+    "year": 1902,
+    "maker": "Georges Méliès",
+    "licence": "public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_Lune_(1902).webm",
+    "mp4": "/hero/films/suite-11.mp4",
+    "still": "/hero/films/suite-11.avif",
+    "aspect": 1.3333,
+    "loop": false,
+    "atlas": 12
+  },
+  {
+    "id": "suite-12",
+    "title": "Mount Bromo time-lapse, morning",
+    "year": 2012,
+    "maker": "Justin Ng",
+    "licence": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mount_Bromo_HD_Timelapse_Movie_by_Justin_Ng.webm",
+    "mp4": "/hero/films/suite-12.mp4",
+    "still": "/hero/films/suite-12.avif",
+    "aspect": 1.7792,
+    "loop": false,
+    "atlas": 13
+  }
 ]
 
-/** The stills atlas: a frame of each film, 4 × 2. */
+/** The stills atlas: a frame of each film, 4 × 4. */
 export const FILM_ATLAS = '/hero/films/atlas.avif'
+/** The Suite's deck: its films, in the order they first come. */
+export const DECK_FILMS: readonly string[] = ["suite-1","suite-2","suite-3","suite-4","suite-5","suite-6","suite-7","suite-8","suite-9","suite-10","suite-11","suite-12"]
 
 // PLACEHOLDER — the credit for the placeholder films; it goes when they are replaced
-export const FILM_CREDIT = "The films shown are placeholders: excerpts of Spring (2019, Blender Studio) and Sprite Fright (2021, Blender Studio) under CC BY 4.0 and Sintel (2010, Blender Foundation) and Big Buck Bunny (2008, Blender Foundation) under CC BY 3.0 (studio.blender.org, creativecommons.org/licenses); A Trip to the Moon (Georges Méliès, 1902) is in the public domain and Gulliver’s Travels (Fleischer Studios, 1939) is in the public domain in the United States."
+export const FILM_CREDIT = "The films shown are placeholders: excerpts of Spring (Blender Studio, 2019) and Sprite Fright (Blender Studio, 2021) under CC BY 4.0 and Making of PARVA (P Sheshadri, 2021), Tears of Steel (Blender Foundation, 2012), Cheetahs on the Edge (Gregory Wilson, 2012), Sintel (Blender Foundation, 2010), Mount Bromo time-lapse (Justin Ng, 2012), Time-Lapsing thru Europe (Tellurian Media, 2012) and Big Buck Bunny (Blender Foundation, 2008) under CC BY 3.0 (creativecommons.org/licenses); Gulliver’s Travels (Fleischer Studios, 1939) is in the public domain in the United States, STS-51, in IMAX (NASA, 1993) is in the public domain and A Trip to the Moon (Georges Méliès, 1902) is in the public domain."

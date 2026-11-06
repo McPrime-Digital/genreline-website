@@ -28,14 +28,26 @@
    Paint, and the title's poster is meant to be that paint. Under the
    header's glass there is only the canvas colour anyway, and the live scene
    covers the stage to its top edge. */
+/* Landing: the stage — its picture and its words — arrives as one (the owner, 2026-11-06: "everything must
+   land at once and very fast. nothing lands before the other comes later"). It waits for the title's
+   poster to be placed and decoded (landing.ts, inline, before any script), and never longer than 1.2 s: past
+   that it shows regardless (a CSS animation, so it shows without scripts too). It waits hidden (visibility,
+   not opacity) and lands from a fifth of its light: the browser counts only what it paints visibly as the
+   page's main content (its LCP), and content first painted at opacity 0 never counts at all. */
+.hero-stage { visibility: hidden; animation: hero-land 320ms var(--ease-out) 1200ms forwards; }
+.hero-stage[data-landed='true'] { animation: hero-landed 320ms var(--ease-out) forwards; }
+@keyframes hero-land { from { visibility: visible; opacity: 0.2; } to { visibility: visible; opacity: 1; } }
+@keyframes hero-landed { from { visibility: visible; opacity: 0.2; } to { visibility: visible; opacity: 1; } }
 .hero-poster { position: absolute; inset: 64px 0 0; z-index: 0; opacity: 0; transition: opacity 600ms var(--ease-out); }
 .hero-stage .hero-poster[data-want='false'] { display: none; }
 .hero-poster[data-on='true'] { opacity: 1; }
 .hero-poster img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
-/* The title's poster is shown only once HeroDirector has scaled and placed it so its logo sits where the
-   camera will put it at this screen's size (posters.json) — it fades up from black, and the logo never
-   jumps when the live scene takes over. */
-.hero-poster[data-poster='title'] img { opacity: 0; transition: opacity 900ms var(--ease-out); will-change: opacity; }
+/* The title's poster is shown only once it has been scaled and placed so its logo sits where the camera
+   will put it at this screen's size (posters.json; landing.ts, then HeroDirector) — so the logo never jumps
+   when the live scene takes over. It lands inside the stage's own fade, with the words; only where it
+   arrives after the stage has shown (past the CSS's deadline: 'late') does it fade up on its own. */
+.hero-poster[data-poster='title'] img { opacity: 0; will-change: opacity; }
+.hero-stage[data-landed='late'] .hero-poster[data-poster='title'] img { transition: opacity 200ms var(--ease-out); }
 .hero-poster[data-poster='title'] img[data-aligned='true'] {
   opacity: 1; max-width: none; object-fit: fill;
   /* placed, it may not reach every edge of the stage: its own edges feather into the black */

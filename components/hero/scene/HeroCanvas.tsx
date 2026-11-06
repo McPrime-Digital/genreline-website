@@ -1,7 +1,7 @@
 'use client'
 /**
- * The 3D canvas — loaded with next/dynamic (ssr: false) on the visitor's
- * first move, on every device that draws WebGL 2 on graphics hardware
+ * The 3D canvas — loaded with next/dynamic (ssr: false) once the page has
+ * painted and the visitor is there, on every device that draws WebGL 2 on graphics hardware
  * (HeroDirector decides). Hidden from assistive technology: every word the
  * hero says is in the HTML around it.
  *

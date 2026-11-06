@@ -8,7 +8,7 @@
  */
 import * as React from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { Vector2, type Mesh, type ShaderMaterial, type Texture } from 'three'
+import { BackSide, CylinderGeometry, FrontSide, PlaneGeometry, Vector2, type Mesh, type ShaderMaterial, type Texture } from 'three'
 import { heroState } from '@/components/hero/state'
 import { live } from '@/components/hero/scene/rig'
 import { FILM_FRAG, FILM_VERT } from '@/components/hero/scene/shaders'
@@ -33,11 +33,18 @@ export type Era = 0 | 1 | 2
  * era. Children hang in the same frame (a screen's border, its frame), drawn round it.
  */
 export function FilmScreen({
-  film, era, station, size, weight, position, rotation, renderOrder = -6, opacity = 1,
+  film, era, station, size, weight, position, rotation, renderOrder = -6, opacity = 1, curve, bright = 1,
 }: {
   film: string; era: Era; station: StationKey; size: [number, number]; weight: () => number
   position?: [number, number, number]; rotation?: [number, number, number]; renderOrder?: number; opacity?: number
+  /** A curved LED wall instead of a flat screen: its radius (the wall is size[0] long round its arc, size[1] tall). */
+  curve?: number
+  /** How bright the picture is (the films are the background: the logo and its screens are the focus). */
+  bright?: number
 }) {
+  const [sw, sh] = size
+  const geo = React.useMemo(() => (curve ? new CylinderGeometry(curve, curve, sh, 64, 1, true, Math.PI - sw / curve / 2, sw / curve) : new PlaneGeometry(sw, sh)), [curve, sw, sh])
+  React.useEffect(() => () => geo.dispose(), [geo])
   const spec = HERO_FILMS.find((f) => f.id === film)
   const mat = React.useRef<ShaderMaterial>(null)
   const mesh = React.useRef<Mesh>(null)
@@ -45,9 +52,9 @@ export function FilmScreen({
   const uniforms = React.useMemo(
     () => ({
       uMap: { value: null as Texture | null }, uHasMap: { value: 0 }, uTexel: { value: new Vector2(1 / 640, 1 / 480) },
-      uTime: { value: 0 }, uWeight: { value: 0 }, uBright: { value: 1 }, uScreen: { value: size[0] / size[1] }, uFilm: { value: spec?.aspect ?? 4 / 3 },
+      uTime: { value: 0 }, uWeight: { value: 0 }, uBright: { value: 1 }, uScreen: { value: sw / sh }, uFilm: { value: spec?.aspect ?? 4 / 3 },
     }),
-    [size, spec],
+    [sw, sh, spec],
   )
   useFrame(() => {
     const m = mat.current
@@ -69,7 +76,7 @@ export function FilmScreen({
     }
     u.uTime.value = live.time
     u.uWeight.value = w * opacity
-    u.uBright.value = 1 + 0.3 * watching[station].now
+    u.uBright.value = bright * (1 + 0.3 * watching[station].now)
   })
   const handlers = {
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
@@ -83,9 +90,17 @@ export function FilmScreen({
     },
   }
   return (
-    <mesh ref={mesh} position={position} rotation={rotation} renderOrder={renderOrder} visible={false} {...handlers}>
-      <planeGeometry args={[size[0], size[1]]} />
-      <shaderMaterial ref={mat} vertexShader={FILM_VERT} fragmentShader={FILM_FRAG} defines={{ ERA: era }} uniforms={uniforms} transparent depthWrite={false} />
+    <mesh ref={mesh} geometry={geo} position={position} rotation={rotation} renderOrder={renderOrder} visible={false} {...handlers}>
+      <shaderMaterial
+        ref={mat}
+        vertexShader={FILM_VERT}
+        fragmentShader={FILM_FRAG}
+        defines={curve ? { ERA: era, LED: 1 } : { ERA: era }}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        side={curve ? BackSide : FrontSide}
+      />
     </mesh>
   )
 }

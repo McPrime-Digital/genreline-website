@@ -33,6 +33,12 @@ export const heroState = {
    * under the logo; the rest are the edges of the title card, a space's caption and the close.
    */
   layout: { top: 0.15, bottom: 0.93, slate: 0.12, titleRight: 0.5, titleTop: 0.6, edge: 0.03, play: 0.1, captionTop: 0.74, captionRight: 0.42, captions: [], closeTop: 0.74, closeRight: 0.5 } as Layout,
+  /**
+   * How the title's poster is laid over the stage (HeroDirector places it): a point of the poster, in the
+   * poster's own stage pixels (pw × ph, posters.json), lands at x0 + x·k, y0 + y·k on this stage (w × h).
+   * The title's far worlds stand by it, so the scene takes over from the poster without a jump.
+   */
+  posterMap: null as null | { tall: boolean; k: number; x0: number; y0: number; w: number; h: number; pw: number; ph: number },
   /** The scene asks for one frame (demand mode); a no-op until the scene mounts. */
   invalidate: () => {},
   /** Scroll the page to a shot (0–4); set by the director. */
