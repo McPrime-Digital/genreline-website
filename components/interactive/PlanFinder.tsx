@@ -12,7 +12,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Check, Minus } from '@/components/icons'
 import { cx as cn } from '@/lib/cx'
-import type { Plan } from '@/content/pricing'
+import { PRICES_PUBLISHED, type Plan } from '@/content/pricing'
 
 const n = (v: number | null, unit = '') => (v === null ? 'By contract' : `${v.toLocaleString('en-US')}${unit}`)
 const money = (v: number) => `$${v.toLocaleString('en-US', { maximumFractionDigits: v % 1 ? 2 : 0 })}`
@@ -28,12 +28,22 @@ export function PlanFinder({ plans }: { plans: readonly Plan[] }) {
   const seatsOn = (p: Plan) => Math.max(p.seatRange.min, Math.min(seats, p.seatRange.max ?? seats))
   const billFor = (p: Plan) => (p.price ? (yearly ? p.price.annual ?? p.price.amount * 10 : p.price.amount) * seatsOn(p) : null)
 
+  // The owner, 2026-11-06: no amount on the page until the final prices are set — the three money rows and the bill line wait
+  // on PRICES_PUBLISHED (content/pricing.ts, generated from the app); the seat ranges and what each plan includes stay.
   const rows: { label: string; value: (p: Plan) => React.ReactNode }[] = [
     { label: 'Staff seats', value: (p) => (p.seatRange.max === null ? `${p.seatRange.min} and up` : `${p.seatRange.min}–${p.seatRange.max}`) },
     { label: 'Client companies included', value: (p) => n(p.clientCompanies) },
-    { label: 'More companies', value: (p) => (p.extraCompany === null ? 'By contract' : `${money(p.extraCompany)} a month each`) },
+    ...(PRICES_PUBLISHED ? [
+      { label: 'More companies', value: (p: Plan) => (p.extraCompany === null ? 'By contract' : `${money(p.extraCompany)} a month each`) },
+    ] : [
+      { label: 'More companies', value: (p: Plan) => (p.id === 'enterprise' ? 'By contract' : 'By the unit, monthly') },
+    ]),
     { label: 'People per company', value: (p) => `${p.peoplePerCompany}${p.extraPerson === null ? '' : `, then ${money(p.extraPerson)} each`}` },
-    { label: 'Collaborator, per active month', value: (p) => (p.collaboratorMonth === null ? 'By contract' : money(p.collaboratorMonth)) },
+    ...(PRICES_PUBLISHED ? [
+      { label: 'Collaborator, per active month', value: (p: Plan) => (p.collaboratorMonth === null ? 'By contract' : money(p.collaboratorMonth)) },
+    ] : [
+      { label: 'Collaborators', value: (p: Plan) => (p.id === 'enterprise' ? 'By contract' : 'Per active month') },
+    ]),
     { label: 'Active storage, per seat', value: (p) => gb(p.storageGbPerSeat) },
     { label: 'Meeting minutes, per seat a month', value: (p) => n(p.meetingMinutesPerSeat) },
     { label: 'Largest call', value: (p) => n(p.largestCall) },
@@ -59,7 +69,7 @@ export function PlanFinder({ plans }: { plans: readonly Plan[] }) {
           <span className="block text-[13px] font-medium text-foreground">Billing</span>
           <div role="radiogroup" aria-label="Billing interval" className="mt-3 flex rounded-lg bg-secondary/60 p-0.5 text-[12px]">
             {([false, true] as const).map((y) => (
-              <button key={String(y)} type="button" role="radio" aria-checked={yearly === y} onClick={() => setYearly(y)} className={cn('min-h-[36px] flex-1 rounded-md px-3', yearly === y ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')}>{y ? 'Yearly · two months free' : 'Monthly'}</button>
+              <button key={String(y)} type="button" role="radio" aria-checked={yearly === y} onClick={() => setYearly(y)} className={cn('min-h-[36px] flex-1 rounded-md px-3', yearly === y ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')}>{y ? (PRICES_PUBLISHED ? 'Yearly · two months free' : 'Yearly') : 'Monthly'}</button>
             ))}
           </div>
         </div>
@@ -73,7 +83,7 @@ export function PlanFinder({ plans }: { plans: readonly Plan[] }) {
         </div>
         <p className="text-[15px] text-foreground sm:col-span-3" aria-live="polite">
           <span className="font-semibold text-foreground">{pick.name}</span> takes {seats >= 120 ? 'a hundred and twenty or more' : seats} staff seat{seats === 1 ? '' : 's'}{sso !== 'none' ? ` with ${sso === 'linked' ? 'linked' : 'managed'} sign-in` : ''}
-          {billFor(pick) !== null ? <> — <span className="tabular-nums">{money(billFor(pick)!)}</span> {yearly ? 'a year' : 'a month'} for {seatsOn(pick)} seat{seatsOn(pick) === 1 ? '' : 's'}.</> : ' — by contract.'}
+          {billFor(pick) !== null ? <> — <span className="tabular-nums">{money(billFor(pick)!)}</span> {yearly ? 'a year' : 'a month'} for {seatsOn(pick)} seat{seatsOn(pick) === 1 ? '' : 's'}.</> : PRICES_PUBLISHED || pick.id === 'enterprise' ? ' — by contract.' : ' — priced per seat, announced at launch.'}
         </p>
       </div>
 
@@ -90,7 +100,7 @@ export function PlanFinder({ plans }: { plans: readonly Plan[] }) {
               <h3 id={`plan-${p.id}`} className="font-display text-xl font-semibold text-foreground">{p.name}</h3>
               <p className="mt-1 text-[14px] text-muted-foreground">{p.forWhom}</p>
               <p className="mt-6 font-display text-2xl font-semibold text-foreground">
-                {p.price ? <>{money(yearly ? (p.price.annual ?? p.price.amount * 10) / 12 : p.price.amount)}<span className="text-[13px] font-normal text-muted-foreground"> per seat a month{yearly ? ', billed yearly' : ''}</span></> : 'Talk to us'}
+                {p.price ? <>{money(yearly ? (p.price.annual ?? p.price.amount * 10) / 12 : p.price.amount)}<span className="text-[13px] font-normal text-muted-foreground"> per seat a month{yearly ? ', billed yearly' : ''}</span></> : PRICES_PUBLISHED || p.id === 'enterprise' ? 'Talk to us' : <span className="text-lg">Per seat<span className="text-[13px] font-normal text-muted-foreground"> · price announced at launch</span></span>}
               </p>
               <dl className="mt-6 flex-1 divide-y divide-border border-t border-border">
                 {rows.map((r) => (
@@ -110,7 +120,7 @@ export function PlanFinder({ plans }: { plans: readonly Plan[] }) {
           )
         })}
       </div>
-      <p className="text-[12px] text-muted-foreground">Prices are provisional until launch and are stated in US dollars. Per-seat allowances pool across the studio: a five-seat Pro studio has 1 TB of active storage, 1,500 meeting minutes and 1,500 playable minutes a month for anyone in it to use.</p>
+      <p className="text-[12px] text-muted-foreground">{PRICES_PUBLISHED ? 'Prices are provisional until launch and are stated in US dollars.' : 'Prices are announced at launch, in US dollars.'} Per-seat allowances pool across the studio: a five-seat Pro studio has 1 TB of active storage, 1,500 meeting minutes and 1,500 playable minutes a month for anyone in it to use.</p>
     </div>
   )
 }

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Accordion } from 'radix-ui'
 import { PageHero, Section } from '@/components/site/Frame'
 import { PlanFinder } from '@/components/interactive/PlanFinder'
-import { PLANS, ADDONS, METERS, AI, JOB_POST, UNITS, TRIAL_AND_EXPLORE } from '@/content/pricing'
+import { PLANS, ADDONS, METERS, AI, JOB_POST, UNITS, TRIAL_AND_EXPLORE, PRICES_PUBLISHED } from '@/content/pricing'
 import { APP } from '@/lib/site'
 import { pageMeta } from '@/lib/meta'
 
@@ -11,15 +11,19 @@ export const metadata = pageMeta('/pricing')
 const money = (v: number) => `$${v.toLocaleString('en-US', { maximumFractionDigits: v % 1 ? 2 : 0 })}`
 const aiUnit = UNITS.find((u) => u.id === 'ai')!
 
+// The owner, 2026-11-06: no figure on this page until the final prices are set. The plans, what each includes and how every
+// unit is counted stay; every amount is announced at launch (content/pricing.ts PRICES_PUBLISHED, generated from the app).
 const QUESTIONS = [
-  { q: 'Are these prices final?', a: 'They are provisional until launch. They are generated from the same catalog the product bills from, so what you read here is what a studio is charged today; if a price moves before launch, this page moves with it.' },
+  PRICES_PUBLISHED
+    ? { q: 'Are these prices final?', a: 'They are provisional until launch. They are generated from the same catalog the product bills from, so what you read here is what a studio is charged today; if a price moves before launch, this page moves with it.' }
+    : { q: 'When are the prices published?', a: 'At launch. Until then, choosing a plan is a conversation — write to us and name your studio. The plans, what each includes and how every unit is counted are already exactly as the product does them; only the amounts wait.' },
   { q: 'Can I start now?', a: `Yes. You can open a studio today without a card. ${TRIAL_AND_EXPLORE.body}` },
   { q: 'What does a card do during the trial?', a: TRIAL_AND_EXPLORE.card },
   { q: 'What happens when the trial ends?', a: TRIAL_AND_EXPLORE.explore },
   { q: 'How is AI paid for?', a: aiUnit.plain },
-  { q: 'What happens when we go beyond the plan?', a: 'What your seats include is pooled across the studio. Beyond it, meetings, recording, video and the archive are metered at the prices on this page and billed on the month’s invoice — never from your AI balance — under a monthly ceiling you set ($200 by default). At the ceiling the metered services pause until the month turns or you raise it; nothing is deleted and everything included keeps working. Storage beyond the plan is bought in 250 GB blocks; an upload past them is refused, never deleted.' },
+  { q: 'What happens when we go beyond the plan?', a: 'What your seats include is pooled across the studio. Beyond it, meetings, recording, video and the archive are metered at the prices on this page and billed on the month’s invoice — never from your AI balance — under a monthly ceiling you set. At the ceiling the metered services pause until the month turns or you raise it; nothing is deleted and everything included keeps working. Storage beyond the plan is bought in 250 GB blocks; an upload past them is refused, never deleted.' },
   { q: 'Do our clients’ teams count as seats?', a: `No. A seat is a person who works for your studio. Your clients are counted as companies — each with up to ${PLANS[0].peoplePerCompany} of its own people logging in — and your freelancers as collaborator-months, only in the months they are on a job.` },
-  { q: 'Is there an annual price?', a: 'Yes — two months free, billed yearly per seat. Enterprise is annual and by contract.' },
+  { q: 'Is there an annual price?', a: PRICES_PUBLISHED ? 'Yes — two months free, billed yearly per seat. Enterprise is annual and by contract.' : 'Yes — every plan is billed monthly or yearly, per seat. Enterprise is annual and by contract.' },
 ]
 
 export default function Pricing() {
@@ -49,26 +53,26 @@ export default function Pricing() {
         </dl>
       </Section>
       <Section id="beyond" title="Beyond the plan" width="measure">
-        <p className="text-lg leading-relaxed text-muted-foreground">Bought by the unit, a month at a time, from inside the studio.</p>
+        <p className="text-lg leading-relaxed text-muted-foreground">Bought by the unit, a month at a time, from inside the studio.{PRICES_PUBLISHED ? '' : ' Priced at launch.'}</p>
         <ul className="mt-6 divide-y divide-border border-y border-border">
           {ADDONS.map((a) => (
             <li key={a.id} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3">
               <span className="text-[15px] text-foreground">{a.name}{a.note ? <span className="text-muted-foreground"> · {a.note}</span> : null}</span>
-              <span className="text-[15px] font-medium tabular-nums text-foreground">{money(a.amount)} <span className="font-normal text-muted-foreground">{a.unit}</span></span>
+              <span className="text-[15px] font-medium tabular-nums text-foreground">{a.amount !== null ? <>{money(a.amount)} </> : null}<span className="font-normal text-muted-foreground">{a.unit}</span></span>
             </li>
           ))}
           <li className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3">
             <span className="text-[15px] text-foreground">Job post on the Marketplace<span className="text-muted-foreground"> · {JOB_POST.businessIncluded} a month included on Business</span></span>
-            <span className="text-[15px] font-medium tabular-nums text-foreground">{money(JOB_POST.amount)} <span className="font-normal text-muted-foreground">{JOB_POST.unit}</span></span>
+            <span className="text-[15px] font-medium tabular-nums text-foreground">{JOB_POST.amount !== null ? <>{money(JOB_POST.amount)} </> : null}<span className="font-normal text-muted-foreground">{JOB_POST.unit}</span></span>
           </li>
         </ul>
-        <p className="mt-10 text-lg leading-relaxed text-muted-foreground">Metered when you use more than your seats include — at a price beside what it costs us, under a monthly ceiling you set.</p>
+        <p className="mt-10 text-lg leading-relaxed text-muted-foreground">Metered when you use more than your seats include — at a price beside what it costs us, under a monthly ceiling you set.{PRICES_PUBLISHED ? '' : ' The price of each unit is announced at launch.'}</p>
         <ul className="mt-6 divide-y divide-border border-y border-border">
           {METERS.map((m) => (
             <li key={m.id} className="py-4">
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                 <span className="text-[15px] font-semibold text-foreground">{m.name}</span>
-                <span className="text-[15px] font-medium tabular-nums text-foreground">{money(m.amount)} <span className="font-normal text-muted-foreground">{m.unit}</span></span>
+                <span className="text-[15px] font-medium tabular-nums text-foreground">{m.amount !== null ? <>{money(m.amount)} </> : null}<span className="font-normal text-muted-foreground">{m.unit}</span></span>
               </div>
               <p className="mt-1 text-[14px] leading-6 text-muted-foreground">{m.plain}</p>
             </li>
@@ -77,12 +81,20 @@ export default function Pricing() {
       </Section>
       <Section id="ai" title="AI, prepaid" width="measure">
         <p className="text-lg leading-relaxed text-muted-foreground">{aiUnit.plain}</p>
-        <ul className="mt-6 flex flex-wrap gap-3">
-          {AI.plans.map((p) => (
-            <li key={p.id} className="rounded-full border border-border px-4 py-2 text-[14px] text-foreground">{p.name} <span className="text-muted-foreground">· {money(p.amount)} a month, no bonus</span></li>
-          ))}
-          <li className="rounded-full border border-border px-4 py-2 text-[14px] text-foreground">Top up <span className="text-muted-foreground">· from {money(AI.minimumTopUp)}, lasts twelve months</span></li>
-        </ul>
+        {AI.plans.length > 0 && AI.minimumTopUp !== null ? (
+          <ul className="mt-6 flex flex-wrap gap-3">
+            {AI.plans.map((p) => (
+              <li key={p.id} className="rounded-full border border-border px-4 py-2 text-[14px] text-foreground">{p.name} <span className="text-muted-foreground">· {money(p.amount)} a month, no bonus</span></li>
+            ))}
+            <li className="rounded-full border border-border px-4 py-2 text-[14px] text-foreground">Top up <span className="text-muted-foreground">· from {money(AI.minimumTopUp)}, lasts twelve months</span></li>
+          </ul>
+        ) : (
+          <ul className="mt-6 flex flex-wrap gap-3">
+            <li className="rounded-full border border-border px-4 py-2 text-[14px] text-foreground">Monthly AI plan <span className="text-muted-foreground">· refills the balance each month, no bonus</span></li>
+            <li className="rounded-full border border-border px-4 py-2 text-[14px] text-foreground">Top up <span className="text-muted-foreground">· whenever you need to, lasts twelve months</span></li>
+            <li className="rounded-full border border-border px-4 py-2 text-[14px] text-muted-foreground">Sizes and prices announced at launch</li>
+          </ul>
+        )}
       </Section>
       <Section id="trial" title={TRIAL_AND_EXPLORE.heading} width="measure">
         <p className="text-lg leading-relaxed text-muted-foreground">{TRIAL_AND_EXPLORE.body}</p>
