@@ -4,6 +4,11 @@
  * plan table (lib/billing/plans.ts) and the trial's rules (lib/entitlements.ts);
  * `--check` refuses a stale copy. S-PR §15 B-13 (2026-10-10).
  *
+ * PRICES_PUBLISHED is the owner's switch (2026-11-06): while false, no amount is
+ * written here — every price is null and the AI plans are an empty list — and the
+ * page says prices are announced at launch. The plans, their seat ranges, what
+ * each includes and how every unit is counted are published as before.
+ *
  * EVERY PRICE IS PROVISIONAL UNTIL LAUNCH (S-PR, owner-approved 2026-10-09):
  * the amounts are the catalog's placeholders — what Stripe is installed with —
  * and the page says so. The plan ids are the app's (S-T ST-16); the house plan
@@ -40,6 +45,9 @@ export type Plan = {
   hidesAttribution: boolean
 }
 
+/** The owner's switch: are the amounts on this page? False until the final figures are in the catalog. */
+export const PRICES_PUBLISHED: boolean = false
+
 export const PLANS: readonly Plan[] = [
   {
     "id": "indie",
@@ -49,22 +57,15 @@ export const PLANS: readonly Plan[] = [
       "min": 1,
       "max": 2
     },
-    "price": {
-      "amount": 59,
-      "annual": 590,
-      "currency": "USD",
-      "per": "seat",
-      "period": "month",
-      "provisional": true
-    },
-    "collaboratorMonth": 19,
+    "price": null,
+    "collaboratorMonth": null,
     "clientCompanies": 3,
-    "extraCompany": 25,
+    "extraCompany": null,
     "peoplePerCompany": 10,
-    "extraPerson": 3,
+    "extraPerson": null,
     "storageGbPerSeat": 100,
     "meetingMinutesPerSeat": 200,
-    "largestCall": 10,
+    "largestCall": null,
     "playableMinutesPerSeat": 200,
     "watchedMinutesPerSeat": 1000,
     "whiteLabel": "addon",
@@ -83,22 +84,15 @@ export const PLANS: readonly Plan[] = [
       "min": 3,
       "max": 19
     },
-    "price": {
-      "amount": 89,
-      "annual": 890,
-      "currency": "USD",
-      "per": "seat",
-      "period": "month",
-      "provisional": true
-    },
-    "collaboratorMonth": 29,
+    "price": null,
+    "collaboratorMonth": null,
     "clientCompanies": 10,
-    "extraCompany": 25,
+    "extraCompany": null,
     "peoplePerCompany": 10,
-    "extraPerson": 3,
+    "extraPerson": null,
     "storageGbPerSeat": 200,
     "meetingMinutesPerSeat": 300,
-    "largestCall": 25,
+    "largestCall": null,
     "playableMinutesPerSeat": 300,
     "watchedMinutesPerSeat": 2000,
     "whiteLabel": "addon",
@@ -118,22 +112,15 @@ export const PLANS: readonly Plan[] = [
       "min": 20,
       "max": 99
     },
-    "price": {
-      "amount": 129,
-      "annual": 1290,
-      "currency": "USD",
-      "per": "seat",
-      "period": "month",
-      "provisional": true
-    },
-    "collaboratorMonth": 39,
+    "price": null,
+    "collaboratorMonth": null,
     "clientCompanies": 30,
-    "extraCompany": 20,
+    "extraCompany": null,
     "peoplePerCompany": 10,
-    "extraPerson": 3,
+    "extraPerson": null,
     "storageGbPerSeat": 300,
     "meetingMinutesPerSeat": 400,
-    "largestCall": 50,
+    "largestCall": null,
     "playableMinutesPerSeat": 500,
     "watchedMinutesPerSeat": 3000,
     "whiteLabel": "included",
@@ -160,7 +147,7 @@ export const PLANS: readonly Plan[] = [
     "extraPerson": null,
     "storageGbPerSeat": null,
     "meetingMinutesPerSeat": null,
-    "largestCall": 100,
+    "largestCall": null,
     "playableMinutesPerSeat": null,
     "watchedMinutesPerSeat": null,
     "whiteLabel": "included",
@@ -173,101 +160,85 @@ export const PLANS: readonly Plan[] = [
   }
 ] as const
 
-/** Bought by the unit beyond the plan (S-PR §6). */
-export const ADDONS = [
+/** Bought by the unit beyond the plan (S-PR §6). `amount` is null while prices are unpublished. */
+export const ADDONS: readonly { id: string; name: string; amount: number | null; unit: string; note: string }[] = [
   {
     "id": "extra_company",
     "name": "Client company beyond the plan",
-    "amount": 25,
+    "amount": null,
     "unit": "a month each",
-    "note": "$20 on Business"
+    "note": "a lower price on Business"
   },
   {
     "id": "extra_person",
     "name": "Person at a company beyond 10",
-    "amount": 3,
+    "amount": null,
     "unit": "a month each",
     "note": ""
   },
   {
     "id": "storage_block",
     "name": "Active storage block",
-    "amount": 15,
+    "amount": null,
     "unit": "a month per 250 GB",
     "note": "beyond what your seats include"
   },
   {
     "id": "white_label",
     "name": "White-label",
-    "amount": 299,
+    "amount": null,
     "unit": "a month",
     "note": "on Indie and Pro; included from Business"
   }
-] as const
+]
 
-/** Metered beyond the plan's pooled allowances, at a price beside its cost (S-PR §7.1). */
-export const METERS = [
+/** Metered beyond the plan's pooled allowances, at a price beside its cost (S-PR §7.1). `amount` is null while prices are unpublished. */
+export const METERS: readonly { id: string; name: string; amount: number | null; unit: string; plain: string }[] = [
   {
     "id": "meetings",
     "name": "Meetings",
-    "amount": 5,
+    "amount": null,
     "unit": "per 1,000 participant-minutes beyond the plan",
     "plain": "One person in a call for one minute. A 30-minute call with four people is 120."
   },
   {
     "id": "recording",
     "name": "Recording",
-    "amount": 0.04,
+    "amount": null,
     "unit": "per recorded minute",
     "plain": "Every recorded minute; nothing is included."
   },
   {
     "id": "archive",
     "name": "Archive storage",
-    "amount": 15,
+    "amount": null,
     "unit": "per TB-month",
     "plain": "Files nobody has opened for ninety days move cold and come back the moment they are opened. You can turn it off."
   },
   {
     "id": "playable",
     "name": "Playable video",
-    "amount": 10,
+    "amount": null,
     "unit": "per 1,000 minutes kept playable a month",
     "plain": "Minutes of video kept ready to play in the browser, beyond the plan. A copy nobody plays for sixty days is retired and remade on the next play."
   },
   {
     "id": "watched",
     "name": "Watched video",
-    "amount": 2,
+    "amount": null,
     "unit": "per 1,000 minutes watched",
     "plain": "Minutes your reviewers, clients and guests actually watch, beyond the plan."
   }
-] as const
+]
 
-/** AI is prepaid (S-PR §8). */
-export const AI = {
-  "minimumTopUp": 25,
-  "plans": [
-    {
-      "id": "ai25",
-      "name": "AI $25",
-      "amount": 25
-    },
-    {
-      "id": "ai100",
-      "name": "AI $100",
-      "amount": 100
-    },
-    {
-      "id": "ai400",
-      "name": "AI $400",
-      "amount": 400
-    }
-  ],
-  "markup": 1.25
-} as const
+/** AI is prepaid (S-PR §8). The plans are an empty list while prices are unpublished (they are named by their amount). */
+export const AI: { minimumTopUp: number | null; plans: readonly { id: string; name: string; amount: number }[]; markup: number | null } = {
+  "minimumTopUp": null,
+  "plans": [],
+  "markup": null
+}
 
-export const JOB_POST = {"amount":99,"unit":"for 30 days","businessIncluded":2} as const
+export const JOB_POST: { amount: number | null; unit: string; businessIncluded: number } = {"amount":null,"unit":"for 30 days","businessIncluded":2}
 
 /** S-PR §5 — every unit, plainly, in the words the plan page uses. */
 export const UNITS = [
@@ -304,7 +275,7 @@ export const UNITS = [
   {
     "id": "ai",
     "name": "AI",
-    "plain": "Prepaid, shown in dollars and cents, never free. Each action's price is the provider's price times 1.25, rounded up to the cent, and shown before it runs; a failed or refused generation is not charged. The minimum top-up is $25; the AI plans refill monthly with no bonus."
+    "plain": "Prepaid, shown in dollars and cents, never free. Every model has a published price per unit — a token, a second, an image — shown before each action runs; a failed or refused generation is not charged. Top up whenever you need to, or let a monthly AI plan refill the balance."
   }
 ] as const
 
@@ -320,7 +291,7 @@ export const TRIAL_AND_EXPLORE = {
 /** Kept for scripts/export-claims.ts: the one-paragraph statement about prepaid usage. */
 export const USAGE_CREDITS = {
   heading: 'AI, prepaid',
-  body: "Prepaid, shown in dollars and cents, never free. Each action's price is the provider's price times 1.25, rounded up to the cent, and shown before it runs; a failed or refused generation is not charged. The minimum top-up is $25; the AI plans refill monthly with no bonus.",
+  body: "Prepaid, shown in dollars and cents, never free. Every model has a published price per unit — a token, a second, an image — shown before each action runs; a failed or refused generation is not charged. Top up whenever you need to, or let a monthly AI plan refill the balance.",
 } as const
 
-export const PRICING_SOURCE = { repository: 'McPrime-Digital/McPrime_ClientsPortal', from: 'lib/billing/catalog.ts · lib/billing/plans.ts · lib/entitlements.ts', provisional: true } as const
+export const PRICING_SOURCE = { repository: 'McPrime-Digital/McPrime_ClientsPortal', from: 'lib/billing/catalog.ts · lib/billing/plans.ts · lib/entitlements.ts', provisional: true, published: false } as const
