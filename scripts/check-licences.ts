@@ -9,6 +9,17 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 
+// Licences outside the allowlist that were READ and accepted for one package,
+// with the reason. Anything not named here still fails the check.
+const REVIEWED: Record<string, string> = {
+  // Batch W-3D-1 names GSAP ScrollTrigger for the home hero's scroll. GSAP's
+  // "Standard 'no charge' license" (https://gsap.com/standard-license, read
+  // 2026-11-03) allows commercial use at no charge since 3.13; its one
+  // restriction is building a no-code visual animation tool that competes with
+  // Webflow, which a film production platform's website is not.
+  gsap: "GSAP Standard 'no charge' license — reviewed for batch W-3D-1",
+}
+
 const ALLOW = new Set(['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', '0BSD', 'OFL-1.1', 'CC0-1.0', 'Unlicense', 'BlueOak-1.0.0', 'MPL-2.0', 'Python-2.0', 'CC-BY-4.0'])
 
 type Node = { version?: string; missing?: boolean; path?: string; license?: string; dependencies?: Record<string, Node> }
@@ -34,6 +45,7 @@ function walk(node: Node) {
 walk(tree)
 let bad = 0
 for (const [pkg, lic] of [...seen.entries()].sort()) {
+  if (REVIEWED[pkg.slice(0, pkg.lastIndexOf('@'))]) continue
   const ok = lic.split(/\s+OR\s+|\s*\|\|\s*/i).map((s) => s.replace(/[()]/g, '').trim()).some((s) => ALLOW.has(s))
   if (!ok) { bad++; console.log(`REVIEW  ${pkg}  ${lic}`) }
 }

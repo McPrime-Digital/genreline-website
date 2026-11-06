@@ -1,0 +1,205 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE HOME HERO — the logo's line through space (batch W-3D-1).
+   A tall section (its scroll set by --hero-scroll, from the scene's
+   timeline); inside it a stage, sticky, one screen tall, and covered edge to
+   edge by the 3D (the owner, 2026-11-03: "the whole hero must be covered
+   with the 3D"). Layers, back to front: the posters (first paint, and the
+   stills on devices that play them) → the 3D canvas → a soft scrim only where
+   words sit → the slate line, the shots' words, and the track.
+   Built on the site's tokens; no new colours.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.hero { height: calc(var(--hero-scroll, 850vh) + 100vh); height: calc(var(--hero-scroll, 850vh) + 100svh); }
+.hero-stage {
+  position: sticky; top: 0;
+  height: 100vh; height: 100svh;
+  overflow: hidden; isolation: isolate;
+  background: hsl(var(--background));
+}
+
+/* 1 · the posters, then the scene over them. A poster starts under the header
+   rather than behind it: Chrome treats an image that covers the whole
+   viewport as a background and never counts it as the Largest Contentful
+   Paint, and the title's poster is meant to be that paint. Under the
+   header's glass there is only the canvas colour anyway, and the live scene
+   covers the stage to its top edge. */
+.hero-poster { position: absolute; inset: 64px 0 0; z-index: 0; opacity: 0; transition: opacity 600ms var(--ease-out); }
+.hero-stage .hero-poster[data-want='false'] { display: none; }
+.hero-poster[data-on='true'] { opacity: 1; }
+.hero-poster img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
+.dark .hero-poster.theme-light, :root:not(.dark) .hero-poster.theme-dark { display: none; }
+.hero-scene { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 900ms var(--ease-out); }
+.hero-scene[data-ready='true'] { opacity: 1; }
+
+/* 2 · the scrim: the 3D stays whole; only where words sit does a soft pool of
+   the canvas colour gather behind them, and it follows the words in and out. */
+.hero-shade { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.hero-shade::before { content: ''; position: absolute; inset: 0; }
+.hero-shade::before {
+  background:
+    linear-gradient(180deg, hsl(var(--background) / 0.62) 0%, hsl(var(--background) / 0) 15%),
+    linear-gradient(0deg, hsl(var(--background) / 0.66) 0%, hsl(var(--background) / 0) 14%);
+}
+.hero-scrim { position: absolute; inset: 0; will-change: opacity; }
+.hero-scrim-title { background: radial-gradient(ellipse 44% 58% at 16% 52%, hsl(var(--background) / 0.74) 0%, hsl(var(--background) / 0) 100%); }
+.hero-scrim-caption { opacity: 0; background: radial-gradient(ellipse 46% 40% at 14% 88%, hsl(var(--background) / 0.7) 0%, hsl(var(--background) / 0) 100%); }
+@media (max-aspect-ratio: 5/4) {
+  .hero-scrim-title { background: linear-gradient(0deg, hsl(var(--background) / 0.86) 0%, hsl(var(--background) / 0.55) 34%, hsl(var(--background) / 0) 58%); }
+  .hero-scrim-caption { background: linear-gradient(0deg, hsl(var(--background) / 0.8) 0%, hsl(var(--background) / 0) 36%); }
+}
+
+/* While the live 3D is on screen nothing frosts over it. A backdrop blur over a canvas that changes
+   every frame has to be re-blurred every frame, and on many GPUs — Windows' integrated graphics
+   above all — that alone can halve the frame rate. The header lies on the hero's own top shade. */
+:root[data-hero-live='true'] .site-header-bar { -webkit-backdrop-filter: none; backdrop-filter: none; background: hsl(var(--background) / 0.5); }
+/* The title's running film stock repaints its letters every frame: only the shot on screen runs it. */
+.hero-shot:not([data-active='true']) .film-line { animation-play-state: paused; }
+:root[data-hero-live='true'] .hero .liquid-pill { -webkit-backdrop-filter: none; backdrop-filter: none; background: hsl(var(--card) / 0.94); }
+
+/* 3 · the slate line, under the header */
+.hero-top { position: absolute; top: calc(64px + 22px); left: 0; right: 0; z-index: 3; }
+
+/* 4 · the shots: five cards in one grid cell, faded by the director */
+.hero-shots {
+  position: absolute; left: 0; right: 0; z-index: 3;
+  top: calc(64px + 70px); bottom: 92px;
+  display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  pointer-events: none;
+}
+.hero-shot { grid-area: 1 / 1; min-width: 0; pointer-events: none; will-change: opacity, transform; }
+.hero-shot:not([data-shot='0']) { opacity: 0; }
+.hero-shot[data-active='true'] :is(a, button) { pointer-events: auto; }
+
+/* the title card: smaller, on the left, so the line in space carries the frame */
+.hero-shot-title { align-self: center; max-width: 520px; }
+.hero-title { font-size: clamp(22px, min(2.7vw, 4.9svh), 40px); }
+.hero-sub {
+  margin-top: 1.15rem; max-width: 38ch;
+  font-size: clamp(14.5px, min(1.08vw, 2svh), 17px); line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+.hero-ctas { margin-top: 1.6rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+
+/* each space: a lower third — its timecode, its name, its part of the line */
+.hero-shot-node { align-self: end; max-width: 440px; }
+.hero-tc {
+  display: flex; align-items: center; gap: 0.65rem;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.18em; font-variant-numeric: tabular-nums;
+  color: hsl(var(--gold-ink));
+}
+.hero-glyph { width: 20px; height: 20px; flex: none; color: hsl(var(--primary)); }
+.hero-node-title {
+  margin-top: 0.75rem;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700; letter-spacing: -0.026em; line-height: 1.04;
+  font-size: clamp(26px, min(3vw, 5.2svh), 42px);
+  color: hsl(var(--foreground));
+}
+.hero-node-line {
+  margin-top: 0.6rem; max-width: 36ch;
+  font-size: clamp(14.5px, min(1.12vw, 2.1svh), 17px); line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+/* the Client's two faces, one cell, cross-fading as the station turns */
+.hero-faces { display: grid; }
+.hero-faces > .hero-face { grid-area: 1 / 1; transition: opacity 420ms var(--ease-out), translate 420ms var(--ease-out); }
+[data-showing='client'] .hero-face[data-face='stakeholders'],
+[data-showing='stakeholders'] .hero-face[data-face='client'] { opacity: 0; translate: 0 6px; }
+.hero-tc .hero-faces { width: 20px; height: 20px; }
+
+/* the close: the tagline alone, in the space the logo leaves below Crew */
+.hero-shot-close { align-self: end; max-width: 620px; }
+.hero-close-title { margin-top: 0.75rem; font-size: clamp(24px, min(3.1vw, 5.4svh), 46px); }
+
+/* 5 · the track: the sixteen seconds, the three spaces marked */
+.hero-track { position: absolute; left: 0; right: 0; bottom: 32px; z-index: 3; pointer-events: none; }
+.hero-rail { position: relative; height: 1px; background: hsl(var(--foreground) / 0.14); }
+.hero-fill {
+  position: absolute; inset: 0; transform-origin: left; transform: scaleX(0);
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.35), hsl(var(--primary)));
+}
+.hero-mark { position: absolute; top: 0; translate: -50% -50%; }
+.hero-mark-dot {
+  display: block; width: 7px; height: 7px; rotate: 45deg;
+  border: 1px solid hsl(var(--primary) / 0.7); background: hsl(var(--background));
+  transition: background-color var(--dur-panel) var(--ease-out), scale var(--dur-panel) var(--ease-out);
+}
+.hero-mark[data-reached='true'] .hero-mark-dot { background: hsl(var(--primary)); }
+.hero-mark[data-current='true'] .hero-mark-dot { scale: 1.35; box-shadow: 0 0 0 4px hsl(var(--primary) / 0.16); }
+.hero-mark-label {
+  position: absolute; left: 50%; bottom: 13px; translate: -50% 0;
+  display: flex; align-items: baseline; gap: 0.55rem; white-space: nowrap;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  transition: color var(--dur-panel) var(--ease-out);
+}
+.hero-mark-tc { font-variant-numeric: tabular-nums; letter-spacing: 0.1em; opacity: 0.7; }
+.hero-mark[data-current='true'] .hero-mark-label { color: hsl(var(--foreground)); }
+
+/* The cue: a light runs from the start of the track toward Crew, until the visitor scrolls. */
+.hero-cue {
+  position: absolute; left: 0; bottom: -1px; width: 14%; height: 3px; overflow: hidden;
+  will-change: opacity;
+}
+.hero-cue::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, hsl(var(--primary)) 9%, transparent 18%);
+  transform: translateX(-20%);
+  animation: hero-cue 2.6s var(--ease-in-out) infinite;
+}
+@keyframes hero-cue { to { transform: translateX(100%); } }
+
+@media (max-width: 1023px) {
+  .hero-mark-label { display: none; }
+}
+/* A tall frame (a phone): the line in space holds the top of the frame, the words the bottom. */
+@media (max-aspect-ratio: 4/5) {
+  .hero-top { top: calc(64px + 14px); }
+  .hero-shots { top: calc(64px + 44px); bottom: 56px; }
+  .hero-shot-title, .hero-shot-close { align-self: end; }
+  .hero-track { bottom: 24px; }
+  .hero-title { font-size: clamp(22px, min(6.6vw, 4.4svh), 34px); }
+  .hero-sub { margin-top: 0.85rem; font-size: clamp(14px, 1.9svh, 16px); }
+  .hero-ctas { margin-top: 1.2rem; }
+  .hero-node-title { font-size: clamp(26px, min(8vw, 4.8svh), 38px); }
+  .hero-close-title { font-size: clamp(22px, min(6.6vw, 4.4svh), 34px); }
+}
+/* A near-square frame (a tablet, a small window): the title and the close move to the foot of the
+   frame, and the camera puts the whole line above them (rig.ts picks whichever shows it larger). */
+@media (min-aspect-ratio: 4/5) and (max-aspect-ratio: 5/4) {
+  .hero-shot-title, .hero-shot-close { align-self: end; }
+}
+/* A short landscape screen (a phone on its side): everything steps down so the title card still fits. */
+@media (max-height: 560px) and (min-aspect-ratio: 4/5) {
+  .hero-top { top: calc(64px + 10px); }
+  .hero-shots { top: calc(64px + 40px); bottom: 48px; }
+  .hero-sub { margin-top: 0.7rem; font-size: 14px; }
+  .hero-ctas { margin-top: 1rem; }
+  .hero-track { bottom: 18px; }
+  .hero-mark-label { display: none; }
+}
+
+/* Reduced motion: the words cut with the camera, and nothing on the hero runs on its own. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene, .hero-poster, .hero-faces > .hero-face, .hero-mark-dot, .hero-mark-label { transition: none; }
+  .hero-cue::after { animation: none; }
+}
+
+/* ── THE SPACES INDEX, at the foot of the home page (out of the hero, so its
+   close has room to breathe — the owner, 2026-11-03). ─────────────────────── */
+.spaces-index {
+  display: grid; gap: 1px; overflow: hidden;
+  border: 1px solid hsl(var(--border)); border-radius: 16px; background: hsl(var(--border));
+}
+@media (min-width: 640px) { .spaces-index { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .spaces-index { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.spaces-index-item {
+  display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem 1.1rem;
+  background: hsl(var(--background));
+  outline: none; transition: background-color var(--dur-pop) var(--ease-out);
+}
+.spaces-index-item:hover { background: hsl(var(--card)); }
+.spaces-index-item:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: -2px; }
