@@ -21,9 +21,13 @@
  *  · the closing title: the site's tagline (lib/site.ts);
  *  · the spaces index at the foot of the home page: the hero this replaced,
  *    with its lede's last sentence as the index's line.
- * Two exceptions, both the owner's own (2026-11-06): the subtext, which the
- * owner chose from drafts ("go with the first one"), and the tour's controls,
- * named in the owner's words ("take the tour"). Nothing here is a placeholder.
+ * Exceptions, all the owner's own (2026-11-06): the subtext, which the owner
+ * chose from drafts ("go with the first one"); the tour's controls, named in
+ * the owner's words ("take the tour"), and its cue to scroll (the owner: it
+ * "must just animate and signal scroll to move"); and the Crew space's line
+ * and items, rewritten at the owner's request to name the whole crew and its
+ * best features. Nothing here is a placeholder (the films' credit, which is,
+ * lives with the films in content/hero-films.ts).
  * If one is ever added it carries `// PLACEHOLDER` on its own line (HANDOFF.md
  * keeps that list).
  */
@@ -66,8 +70,12 @@ export const hero = {
   subtext: 'Make the film, run the crew and take every client from first cut to approval, signature and payment — in one place.',
   primaryButton: { label: 'Open Studio OS account', href: APP.signup },
   secondaryButton: { label: 'Talk to sales', href: '/contact?topic=sales' },
-  /** The tour (the owner, 2026-11-06): the hero is one screen; the journey is a tour the visitor chooses. */
-  tour: { play: 'Take the tour', exit: 'Exit tour' },
+  /**
+   * The tour (the owner, 2026-11-06): the hero is one screen; the journey is a tour the visitor chooses.
+   * Taking it doesn't move the camera: it readies the stage and asks the visitor to scroll (the owner:
+   * "it must just animate and signal scroll to move") — the cue's words are the owner's request.
+   */
+  tour: { play: 'Take the tour', exit: 'Exit tour', cue: 'Scroll to begin' },
 
   /**
    * The three spaces on the line, in the logo's order: each with its shot's timecode, what it is (the
@@ -78,13 +86,21 @@ export const hero = {
    */
   nodes: [
     {
+      // The owner, 2026-11-06, asked for new words here: the whole crew by its real roles and the
+      // collaborators it brings aboard ("not freelancers"), and its best features. Each item names a
+      // feature of the register; the Control Tower's item claims only the live part of it (MON-06,
+      // budgets per member), the Jotter is JOT-01 (see content/features.ts).
       id: 'crew', timecode: '00:00:04:00', label: 'Crew space',
-      line: 'Your producers, editors, artists and freelancers — who is on the job, what they are doing and exactly what they may see.',
+      line: 'Your whole crew — executive producers, creative directors, producers, writers, editors, VFX, colour and sound — and every collaborator you bring aboard. Who is on the job, what they are doing and exactly what they may see.',
       items: [
-        { id: 'CRW-02', icon: 'Contact', text: 'A directory with skills, rates and availability' },
-        { id: 'CRW-04', icon: 'ListChecks', text: 'Tasks across your team and the client’s' },
-        { id: 'MSG-02', icon: 'MessagesSquare', text: 'Internal rooms, threads and calls' },
-        { id: 'IDN-04', icon: 'KeyRound', text: 'Roles, project roles, grants and denials' },
+        { id: 'MSG-02', icon: 'MessagesSquare', text: 'Team chat — rooms, threads, calls and voice notes' },
+        { id: 'CLI-03', icon: 'FolderOpen', text: 'Productions — your own work and your clients’' },
+        { id: 'CRW-04', icon: 'ListChecks', text: 'Tasks & assignments — on both rosters' },
+        { id: 'CRW-05', icon: 'ScanEye', text: 'Reviews & sign-off — before the client sees a frame' },
+        { id: 'APR-15', icon: 'Video', text: 'Meetings — live co-review, playback in sync' },
+        { id: 'MON-06', icon: 'Gauge', text: 'Control Tower — AI usage, credits and budgets in one place' },
+        { id: 'JOT-01', icon: 'NotebookPen', text: 'Jotter — every idea, note, recording and clip, sorted' },
+        { id: 'CRW-02', icon: 'Contact', text: 'People — skills, rates and availability' },
       ],
     },
     {

@@ -14,18 +14,20 @@ import * as React from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, NearestFilter, NormalBlending, PerspectiveCamera,
-  PlaneGeometry, RGBAFormat, TubeGeometry, Vector2, Vector3, Vector4, type Color, type ShaderMaterial, type Sprite, type SpriteMaterial,
+  PlaneGeometry, RGBAFormat, TubeGeometry, Vector2, Vector3, Vector4, type Color, type ShaderMaterial,
 } from 'three'
 import { heroState, shotWeight, storyAt } from '@/components/hero/state'
-import { FLOW, FOV, LOGO_BOX, QUALITY, STARS, TUBE, VIEW, type Quality } from '@/components/hero/scene/numbers'
-import { cameraAt, LINE, LINE_LENGTH, live, makeView } from '@/components/hero/scene/rig'
+import { FLOW, FOV, LOGO_BOX, POINTER, QUALITY, STARS, TUBE, type Quality } from '@/components/hero/scene/numbers'
+import { cameraAt, LINE, LINE_LENGTH, live, makeView, readyView } from '@/components/hero/scene/rig'
 import {
-  FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, METEOR_FRAG, METEOR_VERT, SKY_FRAG, SKY_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
+  FLOW_FRAG, FLOW_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, METEOR_FRAG, METEOR_VERT, SKY_FRAG, SKY_VERT, SKYOBJ_FRAG, SKYOBJ_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
 } from '@/components/hero/scene/shaders'
+import { GALAXIES, universe, updateUniverse, WARP } from '@/components/hero/scene/universe'
 import { Station } from '@/components/hero/scene/Station'
-import {
-  farPlanetTexture, filmPlanetTexture, hsl, readTheme, reelTexture, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme,
-} from '@/components/hero/scene/textures'
+import { hsl, readTheme, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme } from '@/components/hero/scene/textures'
+import { farDiscs, FarWorlds } from '@/components/hero/scene/far'
+import { easeWatching } from '@/components/hero/scene/cinema'
+import { directFilms, releaseFilms } from '@/components/hero/scene/films'
 
 /** A seeded random, so the stars lie the same way on every visit (and in the posters). */
 function seeded(seed: number) {
@@ -62,6 +64,9 @@ function pixelScale(height: number, dpr: number, fov: number) {
 }
 
 // ── THE STARS, AND THEIR STREAKS ON A JOURNEY ───────────────────────────────
+
+const SPAN = STARS.box.max[2] - STARS.box.min[2]
+const WARP_VEL = new Vector3()
 
 function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   const geos = React.useMemo(() => {
@@ -108,27 +113,35 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
     () => ({
       uTime: { value: 0 }, uPixel: { value: 600 }, uWarm: { value: hsl(38, 90, 78) }, uCool: { value: hsl(212, 70, 80) },
       uInk: { value: theme.ink.clone() }, uDark: { value: theme.dark ? 1 : 0 }, uOpacity: { value: theme.dark ? 0.95 : 0.4 },
-      uPointer: { value: [0, 0] }, uPointerOn: { value: 0 }, uAspect: { value: 1 },
+      uTravelled: { value: 0 }, uField: { value: [STARS.box.min[2], STARS.box.max[2]] }, uFar: { value: farDiscs }, uAspect: { value: 1 },
     }),
     [theme],
   )
   const streakUniforms = React.useMemo(
-    () => ({ uVel: { value: new Vector3() }, uStretch: { value: 0.05 }, uColor: { value: theme.dark ? hsl(40, 60, 88) : theme.ink.clone() }, uOpacity: { value: theme.dark ? 0.55 : 0.25 } }),
+    () => ({
+      uVel: { value: new Vector3() }, uStretch: { value: 0.05 }, uColor: { value: theme.dark ? hsl(40, 60, 88) : theme.ink.clone() }, uOpacity: { value: theme.dark ? 0.55 : 0.25 },
+      uTravelled: { value: 0 }, uField: { value: [STARS.box.min[2], STARS.box.max[2]] }, uFar: { value: farDiscs }, uAspect: { value: 1 },
+    }),
     [theme],
   )
   const starMat = React.useRef<ShaderMaterial>(null)
   const streakMat = React.useRef<ShaderMaterial>(null)
   useFrame(({ size, viewport, camera }) => {
     if (starMat.current) {
+      // the stars keep still under the pointer: only the logo, its particles and the film things answer it
       const u = starMat.current.uniforms
       u.uTime.value = live.time
       u.uPixel.value = pixelScale(size.height, viewport.dpr, (camera as PerspectiveCamera).fov)
-      // the stars answer the pointer, subtly (HeroScene's flow does the same, harder)
-      u.uPointer.value = [live.pointer.x, live.pointer.y]
-      u.uPointerOn.value = heroState.reduced ? 0 : live.pointer.on
-      u.uAspect.value = size.width / size.height
+      u.uTravelled.value = universe.travelled % SPAN
+      u.uAspect.value = live.aspect
     }
-    if (streakMat.current) (streakMat.current.uniforms.uVel.value as Vector3).copy(live.velocity)
+    if (streakMat.current) {
+      // the camera's own velocity, and the universe streaming past on a journey between galaxies
+      const u = streakMat.current.uniforms
+      ;(u.uVel.value as Vector3).copy(live.velocity).add(WARP_VEL.set(0, 0, -universe.warp * WARP.speed))
+      u.uTravelled.value = universe.travelled % SPAN
+      u.uAspect.value = live.aspect
+    }
   })
   return (
     <>
@@ -145,81 +158,150 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
 
 // ── THE DEEP SKY: THE SPACE BEHIND EVERY SPACE ──────────────────────────────
 
-/**
- * The universe's slow change of era (the owner, 2026-11-06: "at times there should be universe era change
- * subtle"): the deep sky's grade drifts through a century of film stock — today's deep blue and amber,
- * held longest; then silver nitrate, the first films' black and white; the silent era's amber tint; and
- * three-strip Technicolor's red against teal — each crossfading over eight seconds, about two minutes
- * round. [hue, saturation, lightness] for the nebula's two colours, its accent, and the Milky Way.
- */
-const ERAS = [
-  // today: the deep blue night, a cream-gold galaxy with blue edges
-  { a: [226, 52, 13], b: [252, 40, 7], accent: [36, 55, 20], band: [40, 55, 84], edge: [218, 45, 62], hold: 40 },
-  // silver nitrate: the first films' black and white
-  { a: [220, 8, 15], b: [230, 6, 6], accent: [40, 6, 32], band: [40, 8, 86], edge: [220, 6, 58], hold: 16 },
-  // the silent era's tinting: amber
-  { a: [32, 52, 14], b: [20, 44, 6], accent: [38, 66, 28], band: [36, 78, 74], edge: [24, 60, 46], hold: 16 },
-  // three-strip Technicolor: red against teal
-  { a: [352, 52, 15], b: [190, 58, 8], accent: [44, 74, 30], band: [350, 62, 76], edge: [186, 58, 52], hold: 16 },
-] as const
-const ERA_FADE = 8
 const c3 = (v: readonly number[]) => hsl(v[0], v[1], v[2])
-const ERA_COLORS = ERAS.map((e) => ({ a: c3(e.a), b: c3(e.b), accent: c3(e.accent), band: c3(e.band), edge: c3(e.edge) }))
-const ERA_CYCLE = ERAS.reduce((t, e) => t + e.hold + ERA_FADE, 0)
-/** The era at a moment: which two eras, and how far from the first to the second. */
-function eraAt(t: number) {
-  let x = ((t % ERA_CYCLE) + ERA_CYCLE) % ERA_CYCLE
-  for (let i = 0; i < ERAS.length; i++) {
-    if (x < ERAS[i].hold) return { i, j: i, k: 0 }
-    x -= ERAS[i].hold
-    if (x < ERA_FADE) {
-      const k = x / ERA_FADE
-      return { i, j: (i + 1) % ERAS.length, k: k * k * (3 - 2 * k) }
-    }
-    x -= ERA_FADE
-  }
-  return { i: 0, j: 0, k: 0 }
-}
+/** Each galaxy's five colours, in the sky shader's order: the nebula's two, its accent, the Milky Way's core and edge. */
+const GALAXY_COLORS = GALAXIES.map((g) => [c3(g.a), c3(g.b), c3(g.accent), c3(g.band), c3(g.edge)])
+/** The deep sky's plane: far behind the logo, wider than any shot sees. */
+const SKY = { z: -162, scale: [640, 380] as const }
 
+/** Where the camera's gaze meets the deep sky (world x, y), for the journey to run toward. */
+function gazeOnSky(camera: PerspectiveCamera, out: Vector3) {
+  camera.getWorldDirection(out)
+  const t = (LOGO_BOX.center[2] + SKY.z - camera.position.z) / (Math.abs(out.z) > 1e-4 ? out.z : -1e-4)
+  return out.multiplyScalar(t).add(camera.position)
+}
+const GAZE = new Vector3()
+
+/**
+ * The deep sky: the galaxy the visitor is in, or two at once while the universe travels between them
+ * (universe.ts) — the one being left swelling past the camera as it fades, the one arriving growing in
+ * from far away.
+ */
 function DeepSky({ theme }: { theme: HeroTheme }) {
-  // `?era=0–3` holds one era, for checking by hand
-  const [held] = React.useState(() => {
-    const e = Number(new URLSearchParams(window.location.search).get('era'))
-    return Number.isInteger(e) && e >= 0 && e < ERAS.length && new URLSearchParams(window.location.search).has('era') ? e : -1
-  })
   const geo = React.useMemo(() => new PlaneGeometry(1, 1, 128, 76), [])
   React.useEffect(() => () => geo.dispose(), [geo])
   const mat = React.useRef<ShaderMaterial>(null)
-  const uniforms = React.useMemo(() => {
-    const e = ERA_COLORS[0]
-    return {
-      uA: { value: e.a.clone() }, uB: { value: e.b.clone() }, uA2: { value: e.a.clone() }, uB2: { value: e.b.clone() }, uAccent: { value: e.accent.clone() },
-      uFace: { value: 0 }, uWeight: { value: 1 }, uStrength: { value: theme.dark ? 0.6 : 0.5 }, uTime: { value: 0 }, uSeed: { value: 3.3 },
-      uBand: { value: e.band.clone() }, uBandEdge: { value: e.edge.clone() }, uMilky: { value: 0.85 },
-    }
-  }, [theme])
-  useFrame(() => {
+  const uniforms = React.useMemo(
+    () => ({
+      uTime: { value: 0 }, uStrength: { value: theme.dark ? 0.72 : 0.5 }, uMilky: { value: 1.1 },
+      uGA: { value: new Vector4() }, uGB: { value: new Vector4() }, uCentre: { value: new Vector2(0.5, 0.5) },
+      uColA: { value: GALAXY_COLORS[0].map((c) => c.clone()) }, uColB: { value: GALAXY_COLORS[0].map((c) => c.clone()) },
+      uWA: { value: 1 }, uWB: { value: 0 },
+    }),
+    [theme],
+  )
+  const [x, y, z] = LOGO_BOX.center
+  useFrame(({ camera }) => {
     const m = mat.current
     if (!m) return
     const u = m.uniforms
+    const { from, to, k } = universe
+    const A = GALAXIES[from]
+    const B = GALAXIES[to]
+    const travelling = from !== to
     u.uTime.value = live.time
-    // the era, drifting (still under reduced motion: live.time stands)
-    const { i, j, k } = held >= 0 ? { i: held, j: held, k: 0 } : eraAt(live.time + 6)
-    const A = ERA_COLORS[i]
-    const B = ERA_COLORS[j]
-    ;(u.uA.value as Color).lerpColors(A.a, B.a, k)
-    ;(u.uA2.value as Color).copy(u.uA.value as Color)
-    ;(u.uB.value as Color).lerpColors(A.b, B.b, k)
-    ;(u.uB2.value as Color).copy(u.uB.value as Color)
-    ;(u.uAccent.value as Color).lerpColors(A.accent, B.accent, k)
-    ;(u.uBand.value as Color).lerpColors(A.band, B.band, k)
-    ;(u.uBandEdge.value as Color).lerpColors(A.edge, B.edge, k)
+    ;(u.uGA.value as Vector4).set(A.seed, A.angle, A.width, travelling ? 1 + 1.4 * k : 1)
+    ;(u.uGB.value as Vector4).set(B.seed, B.angle, B.width, travelling ? 0.5 + 0.5 * k : 1)
+    const ca = u.uColA.value as Color[]
+    const cb = u.uColB.value as Color[]
+    for (let i = 0; i < 5; i++) {
+      ca[i].copy(GALAXY_COLORS[from][i])
+      cb[i].copy(GALAXY_COLORS[to][i])
+    }
+    u.uWA.value = travelling ? Math.pow(1 - k, 1.4) : 1
+    u.uWB.value = travelling ? Math.pow(k, 1.1) : 0
+    const g = gazeOnSky(camera as PerspectiveCamera, GAZE)
+    ;(u.uCentre.value as Vector2).set((g.x - x) / SKY.scale[0] + 0.5, (g.y - y) / SKY.scale[1] + 0.5)
   })
-  const [x, y, z] = LOGO_BOX.center
   return (
-    <mesh geometry={geo} position={[x, y, z - 160]} scale={[640, 380, 1]} renderOrder={-20} frustumCulled={false}>
-      <shaderMaterial ref={mat} vertexShader={SKY_VERT} fragmentShader={SKY_FRAG} defines={{ MILKY: 1 }} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
+    <mesh geometry={geo} position={[x, y, z + SKY.z]} scale={[SKY.scale[0], SKY.scale[1], 1]} renderOrder={-20} frustumCulled={false}>
+      <shaderMaterial ref={mat} vertexShader={SKY_VERT} fragmentShader={SKY_FRAG} defines={{ GALAXY: 1 }} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={theme.dark ? AdditiveBlending : NormalBlending} />
     </mesh>
+  )
+}
+
+/** Far galaxies and star-filter stars on the deep sky, each galaxy its own (shaders.ts SKYOBJ_*). */
+function SkyObjects() {
+  const [x, y, z] = LOGO_BOX.center
+  const geos = React.useMemo(() => {
+    const make = (perEra: number, kind: number) => {
+      const n = perEra * GALAXIES.length
+      const corner = new Float32Array(n * 8)
+      const centre = new Float32Array(n * 12)
+      const size = new Float32Array(n * 4)
+      const era = new Float32Array(n * 4)
+      const look = new Float32Array(n * 16)
+      const index: number[] = []
+      const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
+      for (let e = 0; e < GALAXIES.length; e++) {
+        const rnd = seeded(900 + e * 77 + kind * 13)
+        for (let j = 0; j < perEra; j++) {
+          const i = e * perEra + j
+          // spread over the sky every shot looks at, kept off the very middle (the logo's own place)
+          let px = 0
+          let py = 0
+          do {
+            px = -150 + rnd() * 330
+            py = -78 + rnd() * 170
+          } while (Math.abs(px - x) < 40 && Math.abs(py - y) < 30)
+          const sz = kind === 0 ? 6 + rnd() * 8 : 2.8 + rnd() * 2.6
+          const lk = [rnd() * Math.PI, 0.3 + rnd() * 0.6, rnd(), rnd() * 3]
+          for (let v = 0; v < 4; v++) {
+            corner.set(C[v], (i * 4 + v) * 2)
+            centre.set([px, py, z + SKY.z + 2], (i * 4 + v) * 3)
+            size[i * 4 + v] = sz
+            era[i * 4 + v] = e
+            look.set(lk, (i * 4 + v) * 4)
+          }
+          index.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3)
+        }
+      }
+      const g = new BufferGeometry()
+      g.setAttribute('position', new BufferAttribute(new Float32Array(n * 12), 3))
+      g.setAttribute('aCorner', new BufferAttribute(corner, 2))
+      g.setAttribute('aCentre', new BufferAttribute(centre, 3))
+      g.setAttribute('aSize', new BufferAttribute(size, 1))
+      g.setAttribute('aEra', new BufferAttribute(era, 1))
+      g.setAttribute('aLook', new BufferAttribute(look, 4))
+      g.setIndex(index)
+      return g
+    }
+    return { galaxies: make(5, 0), stars: make(12, 1) }
+  }, [x, y, z])
+  React.useEffect(() => () => { geos.galaxies.dispose(); geos.stars.dispose() }, [geos])
+  const shared = React.useMemo(() => ({ uEraW: { value: new Vector4(1, 0, 0, 0) }, uEraZoom: { value: new Vector4(1, 1, 1, 1) }, uZoomCentre: { value: new Vector3() }, uTime: { value: 0 } }), [])
+  const galaxyUniforms = React.useMemo(() => ({ ...shared, uOpacity: { value: 0.85 } }), [shared])
+  const starUniforms = React.useMemo(() => ({ ...shared, uOpacity: { value: 0.9 } }), [shared])
+  const galaxyMat = React.useRef<ShaderMaterial>(null)
+  useFrame(({ camera }) => {
+    // (the two materials share these uniforms: written once, through the galaxies' material)
+    const u = galaxyMat.current?.uniforms
+    if (!u) return
+    const { from, to, k } = universe
+    const travelling = from !== to
+    const w = u.uEraW.value as Vector4
+    const zoom = u.uEraZoom.value as Vector4
+    w.set(0, 0, 0, 0)
+    zoom.set(1, 1, 1, 1)
+    w.setComponent(from, travelling ? Math.pow(1 - k, 1.4) : 1)
+    zoom.setComponent(from, travelling ? 1 + 1.4 * k : 1)
+    if (travelling) {
+      w.setComponent(to, Math.pow(k, 1.1))
+      zoom.setComponent(to, 0.5 + 0.5 * k)
+    }
+    const g = gazeOnSky(camera as PerspectiveCamera, GAZE)
+    ;(u.uZoomCentre.value as Vector3).set(g.x, g.y, 0)
+    u.uTime.value = live.time
+  })
+  return (
+    <>
+      <mesh geometry={geos.galaxies} frustumCulled={false} renderOrder={-19}>
+        <shaderMaterial ref={galaxyMat} vertexShader={SKYOBJ_VERT} fragmentShader={SKYOBJ_FRAG} defines={{ KIND: 0 }} uniforms={galaxyUniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
+      </mesh>
+      <mesh geometry={geos.stars} frustumCulled={false} renderOrder={-18}>
+        <shaderMaterial vertexShader={SKYOBJ_VERT} fragmentShader={SKYOBJ_FRAG} defines={{ KIND: 1 }} uniforms={starUniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
+      </mesh>
+    </>
   )
 }
 
@@ -264,33 +346,6 @@ function Meteors() {
   )
 }
 
-// ── THE FAR WORLDS ──────────────────────────────────────────────────────────
-
-/** Very far off, behind everything and faint: the film-ringed planet, its reel moon turning, and a small cool planet beyond. */
-function FarWorlds() {
-  const maps = React.useMemo(() => ({ planet: filmPlanetTexture(), reel: reelTexture(), far: farPlanetTexture() }), [])
-  React.useEffect(() => () => Object.values(maps).forEach((t) => t.dispose()), [maps])
-  const reel = React.useRef<Sprite>(null)
-  useFrame(() => {
-    const r = reel.current
-    if (!r) return
-    ;(r.material as SpriteMaterial).rotation = live.time * 0.06
-    // its slow orbit round the planet
-    const a = live.time * 0.012 + 2.2
-    r.position.set(FAR.planet[0] + Math.cos(a) * 46, FAR.planet[1] + Math.sin(a) * 13, FAR.planet[2] + Math.sin(a) * 8)
-  })
-  const sprite = (map: typeof maps.planet, opacity: number) => <spriteMaterial map={map} transparent opacity={opacity} depthWrite={false} depthTest={false} />
-  return (
-    <group>
-      <sprite position={FAR.planet} scale={[88, 55, 1]} renderOrder={-16}>{sprite(maps.planet, 0.38)}</sprite>
-      <sprite ref={reel} position={FAR.planet} scale={8} renderOrder={-15}>{sprite(maps.reel, 0.36)}</sprite>
-      <sprite position={FAR.far} scale={11} renderOrder={-16}>{sprite(maps.far, 0.3)}</sprite>
-    </group>
-  )
-}
-/** Where the far worlds hang: high in the sky, far behind the line. */
-const FAR = { planet: [-170, 78, -250] as [number, number, number], far: [150, 52, -280] as [number, number, number] }
-
 // ── THE LINE ────────────────────────────────────────────────────────────────
 
 function Line({ theme }: { theme: HeroTheme }) {
@@ -306,6 +361,7 @@ function Line({ theme }: { theme: HeroTheme }) {
     () => ({
       uTime: { value: 0 }, uLength: { value: LINE_LENGTH }, uSpacing: { value: TUBE.pulse.spacing }, uSpeed: { value: TUBE.pulse.speed }, uHead: { value: 0 }, uHeadOn: { value: 0 },
       uMask: { value: new Vector4() }, uMaskOn: { value: 0 }, uTrackY: { value: 0.95 }, uTrackOn: { value: 0 }, uTopY: { value: 0.12 }, uRes: { value: new Vector2(1, 1) },
+      uPointer: { value: new Vector2(0.5, 0.5) }, uPointerOn: { value: 0 },
     }),
     [],
   )
@@ -345,6 +401,11 @@ function Line({ theme }: { theme: HeroTheme }) {
       u.uTopY.value = L.slate + 0.008
       u.uTrackOn.value = damp(u.uTrackOn.value as number, heroState.tour ? 1 : 0, 4, Math.min(dt, 0.1))
       gl.getDrawingBufferSize(u.uRes.value as Vector2)
+    }
+    if (u) {
+      // the pointer, in the frame's fractions from the bottom left (gl_FragCoord's own)
+      ;(u.uPointer.value as Vector2).set(live.pointer.x * 0.5 + 0.5, live.pointer.y * 0.5 + 0.5)
+      u.uPointerOn.value = live.pointer.on
     }
     for (const m of [core.current, halo.current]) {
       if (!m) continue
@@ -448,21 +509,47 @@ function Flow({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
 // ── THE CAMERA ──────────────────────────────────────────────────────────────
 
 function CameraRig() {
-  const rig = React.useRef({ view: makeView(), prev: new Vector3(), has: false, target: { x: 0, y: 0, on: 0 }, shift: [NaN, NaN, NaN, NaN] })
+  const rig = React.useRef({ view: makeView(), prev: new Vector3(), has: false, target: { x: 0, y: 0, on: 0 }, shift: [NaN, NaN, NaN, NaN], ready: 0, ready2: makeView() })
 
+  // The pointer — a mouse, or a finger — for the things that answer it (the line, its particles, the
+  // film things). The camera itself never follows it: the owner, 2026-11-06, the whole page moving with
+  // the mouse "makes it unreal space". A touch holds for a moment after the finger lifts, then fades.
   React.useEffect(() => {
     const r = rig.current
-    const move = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return
-      r.target.x = (e.clientX / window.innerWidth) * 2 - 1
-      r.target.y = -((e.clientY / window.innerHeight) * 2 - 1)
+    let lift = 0
+    const at = (x: number, y: number) => {
+      r.target.x = (x / window.innerWidth) * 2 - 1
+      r.target.y = -((y / window.innerHeight) * 2 - 1)
       r.target.on = 1
     }
-    const leave = () => void (r.target.on = 0)
+    const move = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') at(e.clientX, e.clientY)
+    }
+    const touch = (e: TouchEvent) => {
+      const t = e.touches[0]
+      if (!t) return
+      window.clearTimeout(lift)
+      at(t.clientX, t.clientY)
+    }
+    const untouch = () => {
+      window.clearTimeout(lift)
+      lift = window.setTimeout(() => void (r.target.on = 0), POINTER.touchHold)
+    }
+    // (a finger fires pointerleave as it lifts: the touch keeps its own hold instead)
+    const leave = (e: PointerEvent) => void (e.pointerType !== 'touch' && (r.target.on = 0))
     window.addEventListener('pointermove', move, { passive: true })
+    window.addEventListener('touchstart', touch, { passive: true })
+    window.addEventListener('touchmove', touch, { passive: true })
+    window.addEventListener('touchend', untouch, { passive: true })
+    window.addEventListener('touchcancel', untouch, { passive: true })
     document.documentElement.addEventListener('pointerleave', leave)
     return () => {
+      window.clearTimeout(lift)
       window.removeEventListener('pointermove', move)
+      window.removeEventListener('touchstart', touch)
+      window.removeEventListener('touchmove', touch)
+      window.removeEventListener('touchend', untouch)
+      window.removeEventListener('touchcancel', untouch)
       document.documentElement.removeEventListener('pointerleave', leave)
     }
   }, [])
@@ -474,20 +561,34 @@ function CameraRig() {
     const aspect = size.width / size.height
     const tall = aspect < FOV.tallBelowAspect
     live.tall = tall
+    live.aspect = aspect
     const place = storyAt(heroState.current)
     live.place = place
+    updateUniverse(place, d)
     const v = r.view
     cameraAt(place, tall, aspect, v)
+    // the tour taken: the stage readies — the title's words step aside and the camera eases round to give
+    // the logo the whole stage, then waits for the scroll (a cut under reduced motion)
+    r.ready = heroState.reduced ? (heroState.tour ? 1 : 0) : damp(r.ready, heroState.tour ? 1 : 0, 1.6, d)
+    live.readied = r.ready
+    const atTitle = shotWeight(place, 0) * r.ready
+    if (atTitle > 0.001) {
+      const ready = r.ready2
+      readyView(tall, aspect, ready)
+      v.pos.lerp(ready.pos, atTitle)
+      v.look.lerp(ready.look, atTitle)
+      v.fov += (ready.fov - v.fov) * atTitle
+      v.shift[0] += (ready.shift[0] - v.shift[0]) * atTitle
+      v.shift[1] += (ready.shift[1] - v.shift[1]) * atTitle
+    }
 
-    // the pointer: the camera leans with it a little (not under reduced motion)
-    const k = heroState.reduced ? 0 : VIEW.pointer.damping
+    // the pointer, eased (under reduced motion it jumps, and nothing it moves travels on its own)
     const p = live.pointer
-    p.x = k ? damp(p.x, r.target.x, k, d) : 0
-    p.y = k ? damp(p.y, r.target.y, k, d) : 0
-    p.on = damp(p.on, r.target.on, 4, d)
-    const reach = v.pos.distanceTo(v.look) / 25
-    v.pos.x += p.x * VIEW.pointer.x * reach * p.on
-    v.pos.y += p.y * VIEW.pointer.y * reach * p.on
+    // (arriving from nowhere — a first touch, the mouse coming back — it starts where it lands)
+    const k = heroState.reduced || p.on < 0.02 ? 0 : POINTER.damping
+    p.x = k ? damp(p.x, r.target.x, k, d) : r.target.x
+    p.y = k ? damp(p.y, r.target.y, k, d) : r.target.y
+    p.on = heroState.reduced ? r.target.on : damp(p.on, r.target.on, 5, d)
 
     camera.position.copy(v.pos)
     camera.lookAt(v.look)
@@ -542,6 +643,18 @@ function Uploader() {
   return null
 }
 
+// ── THE PROJECTIONIST ───────────────────────────────────────────────────────
+
+/** Once a frame, after every cinema has asked for its film: the nearest plays, the others wait (films.ts). */
+function Projectionist() {
+  useFrame((_, dt) => {
+    easeWatching(Math.min(dt, 0.1))
+    directFilms()
+  })
+  React.useEffect(() => () => releaseFilms(), [])
+  return null
+}
+
 // ── THE WHOLE SCENE ─────────────────────────────────────────────────────────
 
 const STATIONS = ['crew', 'client', 'suite'] as const
@@ -586,6 +699,7 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
       <CameraRig />
       <Uploader />
       <DeepSky theme={theme} />
+      <SkyObjects />
       <FarWorlds />
       <Meteors />
       <Stars theme={theme} quality={quality} />
@@ -595,6 +709,7 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
         // every station's pictures start loading at once, in the order of the journey; they reach the GPU one a frame
         <Station key={id} id={id} theme={theme} sources={sources} soft={soft} anisotropy={anisotropy} tall={tall} maxWidth={maxWidth} armed />
       ))}
+      <Projectionist />
     </>
   )
 }

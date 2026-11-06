@@ -76,7 +76,7 @@ export function SpacesBento() {
       </article>
 
       <Tile className="lg:col-span-6" id="space-crew" icon="UsersRound" kicker="Space · where the studio works" title="Crew" href="/product/crew" media="crew-tasks"
-        line="Your producers, editors, artists and freelancers — who is on the job, what they are doing and exactly what they may see."
+        line="Your whole crew — executive producers, creative directors, producers, writers, editors, VFX, colour and sound — and every collaborator you bring aboard. Who is on the job, what they are doing and exactly what they may see."
         items={[
           { icon: 'Contact', text: 'A directory with skills, rates and availability', id: 'CRW-02' },
           { icon: 'ListChecks', text: 'Tasks across your team and the client’s', id: 'CRW-04' },

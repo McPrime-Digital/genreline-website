@@ -34,7 +34,7 @@ import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { cut, heroState, nearestShot, SHOT_AT, shotWeight, storyAt, timecode } from '@/components/hero/state'
 import { FACE, FOV, SCROLL_DAMPING, type Quality, type Shot } from '@/components/hero/scene/numbers'
-import { logoOnStage } from '@/components/hero/frame'
+import { logoOnStage, tourLayout } from '@/components/hero/frame'
 import type { HeroSources } from '@/components/hero/scene/textures'
 import type { PosterFrames } from '@/components/hero/HomeHero'
 import { useReducedMotion } from '@/lib/motion'
@@ -266,6 +266,8 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
     const faceCard = section.querySelector<HTMLElement>('[data-faces]')
     const fill = section.querySelector<HTMLElement>('[data-hero-fill]')
     const cue = section.querySelector<HTMLElement>('.hero-cue')
+    const beginFade = section.querySelector<HTMLElement>('[data-hero-begin-fade]')
+    const beginBtn = section.querySelector<HTMLButtonElement>('[data-hero-begin]')
     const scrimTitle = section.querySelector<HTMLElement>('[data-scrim="title"]')
     const scrimCaption = section.querySelector<HTMLElement>('[data-scrim="caption"]')
     const s = heroState
@@ -284,9 +286,11 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       painted = p
       const place = storyAt(p)
       let caption = 0
+      // on the tour the title waits off stage (once its words have stepped aside as the tour starts)
+      const titleAway = s.tour && section.dataset.launching !== 'true'
       shots.forEach((card) => {
         const i = Number(card.dataset.shot) as Shot
-        const w = shotWeight(place, i)
+        const w = i === 0 && titleAway ? 0 : shotWeight(place, i)
         const leaving = place.seg.kind === 'travel' && place.seg.from === i
         const y = (1 - w) * (leaving ? -14 : 14)
         set(card, 'opacity', w.toFixed(3))
@@ -312,6 +316,15 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       for (const c of clocks) if (c.textContent !== tc) c.textContent = tc
       set(fill, 'transform', `scaleX(${p.toFixed(4)})`)
       set(cue, 'opacity', Math.max(0, 1 - p * 30).toFixed(3))
+      // the cue to scroll fades as the visitor starts the journey (gone well before the title's hold ends)
+      const begin = Math.max(0, 1 - p * 70)
+      set(beginFade, 'opacity', begin.toFixed(3))
+      const gone = begin < 0.04 ? 'true' : 'false'
+      if (beginFade && beginFade.dataset.gone !== gone) {
+        beginFade.dataset.gone = gone
+        // the keyboard was on the cue: it moves on to the way out of the tour
+        if (gone === 'true' && document.activeElement === beginBtn) section.querySelector<HTMLElement>('[data-hero-exit]')?.focus({ preventScroll: true })
+      }
       // the Client's face: back to Client whenever the station is off screen
       const clientOn = shotWeight(place, 2) > 0.5
       if (!clientOn && s.face !== 0 && !held) setFace(0, false)
@@ -446,7 +459,8 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       // exactly on it"): the logo's middle and its lowest point, from the camera's own framing.
       if (playWrap) {
         const aspect = st.width / st.height
-        const at = logoOnStage(aspect < FOV.tallBelowAspect, aspect, s.layout)
+        // under the logo where the camera has it: on the tour, given the whole stage (its words away)
+        const at = logoOnStage(aspect < FOV.tallBelowAspect, aspect, s.tour ? tourLayout(s.layout) : s.layout)
         const w = playWrap.offsetWidth
         const edgePx = s.layout.edge * st.width
         const x = Math.min(st.width - edgePx - w, Math.max(edgePx, at.centerX * st.width - w / 2))
@@ -602,7 +616,20 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
 
     let leaving = false
     let launching = 0
-    const launch = async (to: Shot = 1) => {
+    let gliding = 0
+    const glideWrap = () => {
+      const wrap = section.querySelector<HTMLElement>('[data-hero-play-wrap]')
+      if (!wrap || s.reduced) return
+      wrap.dataset.glide = 'true'
+      window.clearTimeout(gliding)
+      gliding = window.setTimeout(() => delete wrap.dataset.glide, 1400)
+    }
+    /**
+     * Taking the tour readies the stage and asks the visitor to scroll — it doesn't move the camera (the
+     * owner, 2026-11-06: a click "shouldnt move directly to the crew space, it must just animate and signal
+     * scroll to move"). Only a click on a space itself (its tile) carries the visitor there: `go`.
+     */
+    const launch = async (to: Shot = 1, go = false) => {
       if (s.tour) return glide(shotTop(to))
       // on a phone the tap is also what wakes the scene: the control waits, turning, until it is there
       if (tierRef.current === 'pending' || (tierRef.current === 'live' && layer.current?.dataset.ready !== 'true')) {
@@ -624,14 +651,26 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       launching = window.setTimeout(() => {
         delete section.dataset.launching
         s.playHover = 0
+        // the title's words have stepped aside: it now waits off stage for the tour
+        painted = -1
+        kick()
       }, 1100)
+      // the play control's place glides with the camera to where the logo now stands (the cue rises there)
+      glideWrap()
       refresh()
       measure()
-      // The camera dives as the lens opens. The scroll leaves on the entering curve: the camera's own path
-      // from the whole logo into the space already eases in and out, and the two eased together would
-      // hold the frame still for half the dive.
-      window.setTimeout(() => s.tour && glide(shotTop(to), undefined, EASE_OUT_FN), s.reduced ? 0 : 120)
-      window.setTimeout(() => exitBtn?.focus({ preventScroll: true }), s.reduced ? 0 : 900)
+      painted = -1
+      kick()
+      if (go) {
+        // The camera dives as the lens opens. The scroll leaves on the entering curve: the camera's own path
+        // from the whole logo into the space already eases in and out, and the two eased together would
+        // hold the frame still for half the dive.
+        window.setTimeout(() => s.tour && glide(shotTop(to), undefined, EASE_OUT_FN), s.reduced ? 0 : 120)
+        window.setTimeout(() => exitBtn?.focus({ preventScroll: true }), s.reduced ? 0 : 900)
+      } else {
+        // the cue to scroll rises in where the play control was: the keyboard lands on it
+        window.setTimeout(() => s.tour && beginBtn?.focus({ preventScroll: true }), s.reduced ? 0 : 900)
+      }
     }
     const end = () => {
       leaving = false
@@ -639,7 +678,9 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       delete root.dataset.tour
       delete root.dataset.tourLeaving
       s.target = 0
+      painted = -1
       kick()
+      glideWrap()
       refresh()
       measure()
       playBtn?.setAttribute('aria-expanded', 'false')
@@ -652,8 +693,10 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       // rewind to the title, then the hero is one screen again
       glide(heroTop(), end)
     }
-    s.goToShot = (shot: number) => (s.tour ? glide(shotTop(shot)) : void launch(shot as Shot))
+    s.goToShot = (shot: number) => (s.tour ? glide(shotTop(shot)) : void launch(shot as Shot, true))
     const onPlay = () => void launch(1)
+    // the cue's own button: the journey starts (the keyboard's way in; a click or a tap does the same)
+    const onBegin = () => s.tour && glide(shotTop(1), undefined, EASE_OUT_FN)
     const onExit = () => leave()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && s.tour && onScreen) leave()
@@ -663,6 +706,7 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       if (go && s.tour) glide(shotTop(Number(go.dataset.heroGo)))
     }
     playBtn?.addEventListener('click', onPlay)
+    beginBtn?.addEventListener('click', onBegin)
     exitBtn?.addEventListener('click', onExit)
     trackEl?.addEventListener('click', onMark)
     window.addEventListener('keydown', onKey)
@@ -678,8 +722,10 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
       stopGlide()
       revert()
       window.clearTimeout(launching)
+      window.clearTimeout(gliding)
       for (const t of TAKE) window.removeEventListener(t, takeOver)
       playBtn?.removeEventListener('click', onPlay)
+      beginBtn?.removeEventListener('click', onBegin)
       exitBtn?.removeEventListener('click', onExit)
       trackEl?.removeEventListener('click', onMark)
       window.removeEventListener('keydown', onKey)

@@ -129,6 +129,10 @@
   color: hsl(var(--foreground) / 0.88);
 }
 .hero-node-icon { width: 15px; height: 15px; flex: none; margin-top: 0.12em; color: hsl(var(--primary)); }
+.hero-item-name { color: hsl(var(--foreground)); font-weight: 600; }
+.hero-item-more { color: hsl(var(--muted-foreground)); }
+/* a space with many capabilities (Crew's eight): tighter rows, a wider grid */
+.hero-node-items:has(> :nth-child(5)) { max-width: 560px; gap: 0.4rem 1.25rem; }
 
 /* the Client's two faces, one cell, cross-fading as the station turns */
 .hero-faces { display: grid; }
@@ -140,6 +144,8 @@
 /* the close: the tagline alone, in the space the logo leaves below Crew */
 .hero-shot-close { align-self: end; max-width: 620px; }
 .hero-close-title { margin-top: 0.75rem; font-size: clamp(24px, min(3.1vw, 5.4svh), 46px); }
+/* the films' credit, under the close's calls to action: small, quiet, readable */
+.hero-film-credit { margin-top: 1rem; max-width: 56ch; font-size: 11.5px; line-height: 1.5; color: hsl(var(--muted-foreground)); }
 
 /* 4b · the tour's play control, just under the 3D logo (placed by HeroDirector, frame.ts). A real
    button: a ring of gold glass with ▶, and the words beside it. No backdrop blur over the canvas. */
@@ -149,6 +155,8 @@
   pointer-events: none; will-change: transform, opacity;
 }
 .hero-play-wrap[data-placed='true'] { opacity: 1; }
+/* taking or leaving the tour: the place glides with the camera (only then — never on load or a resize) */
+.hero-play-wrap[data-glide='true'] { transition: opacity 700ms var(--ease-out), transform 1200ms var(--ease-in-out); }
 .hero-play {
   pointer-events: auto; position: relative;
   display: inline-flex; align-items: center; gap: 0.9rem;
@@ -246,6 +254,9 @@ button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--
   .hero-node-line { margin-top: 0.45rem; font-size: clamp(13.5px, 1.8svh, 15px); }
   .hero-node-items { margin-top: 0.7rem; grid-template-columns: minmax(0, 1fr); gap: 0.32rem; }
   .hero-node-item { font-size: 13px; }
+  /* many capabilities on a phone: their names only, two to a row */
+  .hero-node-items:has(> :nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.34rem 0.9rem; }
+  .hero-node-items:has(> :nth-child(5)) .hero-item-more { display: none; }
   .hero-close-title { font-size: clamp(22px, min(6.6vw, 4.4svh), 34px); }
 }
 /* A near-square frame (a tablet, a small window): the title and the close move to the foot of the
@@ -297,14 +308,53 @@ button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--
 }
 .hero-play[data-waiting='true'] .hero-play-wait { opacity: 1; animation: hero-spin 900ms linear infinite; }
 @keyframes hero-spin { to { transform: rotate(360deg); } }
-.hero-play-wrap { transition: opacity 360ms var(--ease-out), visibility 0s; }
-.hero-play { transition: transform 360ms var(--ease-out); }
-:root[data-tour='on'] .hero-play-wrap { opacity: 0; visibility: hidden; transition: opacity 320ms var(--ease-out) 80ms, visibility 0s linear 420ms; }
-:root[data-tour='on'] .hero-play { transform: translateY(10px); transition: transform 380ms var(--ease-out) 80ms; }
+.hero-play-wrap { display: grid; justify-items: center; align-items: start; }
+.hero-play-wrap > * { grid-area: 1 / 1; }
+.hero-play { transition: opacity 360ms var(--ease-out), transform 360ms var(--ease-out), visibility 0s; }
+:root[data-tour='on'] .hero-play {
+  opacity: 0; visibility: hidden; transform: translateY(10px);
+  transition: opacity 320ms var(--ease-out) 80ms, transform 380ms var(--ease-out) 80ms, visibility 0s linear 420ms;
+}
+
+/* the cue to scroll, in the play control's place: it rises in once the lens has opened and the title has
+   stepped aside; a light runs down its line; it fades as the visitor scrolls (HeroDirector) */
+.hero-begin-fade { pointer-events: none; will-change: opacity; }
+.hero-begin-fade[data-gone='true'] { visibility: hidden; }
+.hero-begin {
+  display: inline-flex; align-items: center; gap: 0.85rem; padding: 6px 16px 6px 12px; border-radius: 999px;
+  color: hsl(var(--foreground)); outline: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  opacity: 0; visibility: hidden; transform: translateY(-8px);
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out), visibility 0s linear 160ms;
+}
+:root[data-tour='on']:not([data-tour-leaving]) .hero-begin {
+  pointer-events: auto; opacity: 1; visibility: visible; transform: none;
+  transition: opacity 420ms var(--ease-out) 720ms, transform 520ms var(--ease-out) 720ms, visibility 0s;
+}
+.hero-begin-line {
+  position: relative; width: 2px; height: 34px; border-radius: 2px; overflow: hidden; flex: none;
+  background: hsl(var(--primary) / 0.22);
+}
+.hero-begin-light {
+  position: absolute; left: 0; right: 0; top: 0; height: 45%; border-radius: 2px;
+  background: linear-gradient(180deg, transparent, hsl(var(--primary)) 70%, hsl(42 90% 82%));
+  transform: translateY(-110%); animation: hero-begin 1.9s var(--ease-in-out) infinite;
+}
+@keyframes hero-begin { 0% { transform: translateY(-110%); } 70%, 100% { transform: translateY(240%); } }
+.hero-begin-label {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; white-space: nowrap;
+}
+.hero-begin:focus-visible { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring)); }
+@media (hover: hover) and (pointer: fine) {
+  .hero-begin:hover .hero-begin-line { background: hsl(var(--primary) / 0.4); }
+}
+/* on the tour the title waits off stage (the scroll's journey starts from the logo alone); it fades back on leaving */
+.hero-shot[data-shot='0'] { transition: opacity 420ms var(--ease-out); }
 
 /* the title steps aside as the lens opens (only while launching: after that the scroll owns its fade) */
 .hero-shot-title > * { transition: opacity 360ms var(--ease-out), transform 360ms var(--ease-out); }
-[data-launching='true'] .hero-shot-title > * {
+[data-launching='true'] .hero-shot-title > *,
+:root[data-tour='on'] .hero-shot-title > * {
   opacity: 0; transform: translateX(-28px);
   transition: opacity 420ms var(--ease-out) 150ms, transform 560ms var(--ease-out) 150ms;
 }
@@ -348,7 +398,9 @@ button.hero-mark:focus-visible .hero-mark-dot { box-shadow: 0 0 0 3px hsl(var(--
 /* Reduced motion: the same states, by fades alone — nothing travels, scales or opens. */
 @media (prefers-reduced-motion: reduce) {
   .hero-play-iris, .hero-play-ring::after { display: none; }
-  :root[data-tour='on'] .hero-play, [data-launching='true'] .hero-shot-title > *, .hero-exit, :root[data-tour='on'] .hero-exit { transform: none; }
+  .hero-begin-light { animation: none; transform: translateY(60%); }
+  .hero-begin, :root[data-tour='on'] .hero-begin, :root[data-tour='on'] .hero-play { transform: none; }
+  :root[data-tour='on'] .hero-play, [data-launching='true'] .hero-shot-title > *, :root[data-tour='on'] .hero-shot-title > *, .hero-exit, :root[data-tour='on'] .hero-exit { transform: none; }
   .hero-rail::before, :root[data-tour='on'] .hero-rail::before { transform: none; }
   .hero-mark, :root[data-tour='on'] .hero-mark { scale: none; }
   .hero-play[data-waiting='true'] .hero-play-wait { animation-duration: 2.4s; }

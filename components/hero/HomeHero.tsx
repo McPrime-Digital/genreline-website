@@ -27,6 +27,7 @@ import { SHOT_AT } from '@/components/hero/state'
 import { SCROLL_VH } from '@/components/hero/scene/numbers'
 import type { HeroSources } from '@/components/hero/scene/textures'
 import { hero, HERO_CAPTURES, HERO_ICONS, type HeroItem } from '@/content/home'
+import { FILM_CREDIT } from '@/content/hero-films'
 import { Icon } from '@/components/Icon'
 import { Feature, FeatureLabel } from '@/components/FeatureLabel'
 import { siteLabel } from '@/content/features'
@@ -157,12 +158,24 @@ function NodeWords({ label, line, items }: { label: string; line: string; items:
           <Feature key={it.id} id={it.id} as="li" className="hero-node-item">
             <Icon name={it.icon} className="hero-node-icon" />
             <span>
-              {it.text}
+              <ItemText text={it.text} />
               {siteLabel(it.id) === 'Coming' && <FeatureLabel id={it.id} className="ml-2 align-middle" />}
             </span>
           </Feature>
         ))}
       </ul>
+    </>
+  )
+}
+
+/** An item's words: its name, and what it does (after " — ") quieter — the part a phone leaves out. */
+function ItemText({ text }: { text: string }) {
+  const at = text.indexOf(' — ')
+  if (at < 0) return <>{text}</>
+  return (
+    <>
+      <span className="hero-item-name">{text.slice(0, at)}</span>
+      <span className="hero-item-more"> — {text.slice(at + 3)}</span>
     </>
   )
 }
@@ -287,6 +300,8 @@ export function HomeHero() {
                 {hero.secondaryButton.label}
               </a>
             </div>
+            {/* the tour's films are placeholders: the credit their licences ask for (content/hero-films.ts) */}
+            <p className="hero-film-credit">{FILM_CREDIT}</p>
           </div>
         </div>
 
@@ -301,6 +316,16 @@ export function HomeHero() {
             </span>
             <span className="hero-play-label">{hero.tour.play}</span>
           </button>
+          {/* On the tour, in its place: the cue to scroll — a light running down a line. A button too, for
+              the keyboard: it starts the journey. It fades as the visitor scrolls. */}
+          <div data-hero-begin-fade className="hero-begin-fade">
+            <button type="button" data-hero-begin className="hero-begin">
+              <span aria-hidden className="hero-begin-line">
+                <span className="hero-begin-light" />
+              </span>
+              <span className="hero-begin-label">{hero.tour.cue}</span>
+            </button>
+          </div>
         </div>
 
         {/* LEAVING THE TOUR — top right of the stage, only on the tour (Escape does the same). */}

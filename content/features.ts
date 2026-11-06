@@ -245,6 +245,11 @@ export const FEATURES: readonly Feature[] = [
   F({ id: 'LOG-01', title: 'Notes kept across the Crew space, the Client space and every portal', space: 'notes', status: 'partial', timing: 'launch', label: 'hidden' }),
   F({ id: 'LOG-02', title: 'Summaries of logs, chats and meetings', space: 'notes', status: 'not-built', timing: 'v1.5', label: 'hidden' }),
   F({ id: 'LOG-03', title: 'Ask about anything said in a chat or meeting, respecting permissions exactly', space: 'notes', status: 'not-built', timing: 'v2', label: 'hidden' }),
+  // JOT-01 is NOT in S-F-A rev 2, which predates it. Added 2026-11-06 on the owner's word ("we have … a
+  // jotter where you brainstorm and bring all your ideas") and the app's own record: the Crew space's
+  // rail lists Jotter as LIVE (gl-sp35 lib/studio/spaces.ts), its page and API ship (app/studio/crew/jotter,
+  // app/api/jotter), its description is lib/pageHeads.ts crewJotter. The next transcription carries it.
+  F({ id: 'JOT-01', title: 'Jotter — every inspiration and rough idea, notes, recordings, pictures to draw on, links, clips and reminders, sorted', space: 'notes', status: 'built', timing: 'live', label: 'available' }),
   // ── 4.12 Notifications and presence
   F({ id: 'NTF-01', title: 'One inbox per person — every notice defined, at most three alerts about one thing a day, email only if still unseen', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),
   F({ id: 'NTF-02', title: 'Web push', space: 'notifications', status: 'built', timing: 'live', label: 'available' }),

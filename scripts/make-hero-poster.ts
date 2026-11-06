@@ -64,8 +64,12 @@ async function main() {
         const png = await page.locator('[data-hero-stage]').screenshot({ type: 'png' })
         const base = join(OUT, `poster-${theme}-${shot}-${shape}`)
         const img = sharp(png)
-        await img.clone().avif({ quality: 80, effort: 9, chromaSubsampling: '4:4:4' }).toFile(`${base}.avif`)
-        await img.clone().webp({ quality: 80, effort: 6 }).toFile(`${base}.webp`)
+        // a busy shot (the Suite's floor of frames) steps its quality down until it fits the limit
+        for (const quality of [80, 74, 68, 62]) {
+          await img.clone().avif({ quality, effort: 9, chromaSubsampling: '4:4:4' }).toFile(`${base}.avif`)
+          await img.clone().webp({ quality, effort: 6 }).toFile(`${base}.webp`)
+          if (statSync(`${base}.avif`).size <= LIMIT) break
+        }
         const kb = (f: string) => Math.round(statSync(f).size / 1024)
         const avif = statSync(`${base}.avif`).size
         if (avif > LIMIT) over++

@@ -15,7 +15,7 @@
  */
 import { CatmullRomCurve3, Vector3 } from 'three'
 import { CHIPS, FOV, LINE_POINTS, NODES, NODE_SAMPLE, PANEL, RINGS, SLOTS, TALL_KEEP, TILE, VIEW, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
-import { clampBand, distanceFor, LOGO_Z, wholeFrame, type Band, type Box } from '@/components/hero/frame'
+import { clampBand, distanceFor, LOGO_Z, tourLayout, wholeFrame, type Band, type Box } from '@/components/hero/frame'
 import { heroState, smoothstep, type Place } from '@/components/hero/state'
 
 export const v3 = (p: Vec3) => new Vector3(p[0], p[1], p[2])
@@ -45,12 +45,29 @@ export const live = {
   velocity: new Vector3(),
   /** Seconds of ambient time (frozen under reduced motion). */
   time: 0,
-  /** The pointer over the stage, −1…1 (y up), and whether it is there at all. */
+  /** The pointer over the stage, −1…1 (y up), and whether it is there at all (a mouse, or a finger held a moment). */
   pointer: { x: 0, y: 0, on: 0 },
+  /** The frame's width over its height. */
+  aspect: 1,
+  /** How far the title has readied for the tour (0–1): its words away, the logo given the whole stage. */
+  readied: 0,
   /** Every shader is built and the first frame is up (HeroCanvas). */
   ready: false,
   /** Until this moment (performance.now()) a frame may carry a picture's upload: the governor looks away. */
   busyUntil: 0,
+}
+
+/**
+ * How near the pointer is to a point of the frame (−1…1, y up), within `radius` (a fraction of the
+ * frame's height): 1 on it, 0 beyond — for the things that answer the pointer, tested on screen.
+ */
+export function pointerNear(x: number, y: number, radius: number) {
+  const p = live.pointer
+  if (p.on < 0.001) return 0
+  const dx = ((p.x - x) * live.aspect) / 2
+  const dy = (p.y - y) / 2
+  const k = Math.max(0, 1 - Math.hypot(dx, dy) / radius)
+  return p.on * k * k * (3 - 2 * k)
 }
 
 export type View = { pos: Vector3; look: Vector3; fov: number; shift: [number, number] }
@@ -135,7 +152,13 @@ function wholeView(kind: 'title' | 'close', tall: boolean, aspect: number, creep
   fit(box, band, 0, 0, LOGO_Z, tall, aspect, creep * 0.6, out)
 }
 
-function shotView(shot: Shot, tall: boolean, aspect: number, creep: number, out: View) {
+/** The title on the tour, its words away: the logo given the whole stage (frame.ts tourLayout). */
+export function readyView(tall: boolean, aspect: number, out: View) {
+  const { band, box } = wholeFrame('title', tall, aspect, tourLayout(heroState.layout))
+  fit(box, band, 0, 0, LOGO_Z, tall, aspect, 0, out)
+}
+
+export function shotView(shot: Shot, tall: boolean, aspect: number, creep: number, out: View) {
   if (shot === 0) wholeView('title', tall, aspect, creep, out)
   else if (shot === 4) wholeView('close', tall, aspect, creep, out)
   else stationView(shot, tall, aspect, creep, out)

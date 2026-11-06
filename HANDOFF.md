@@ -9,6 +9,64 @@ climbs to **the Suite**, then pulls back to the whole line for the close: *Run
 the production. Keep the record.* Each space arrives in its own light, ringed
 by its own screens and tools.
 
+## Revision 3, 2026-11-06: a living universe, a tour you start yourself, a cinema in every space
+
+The owner's review of the one-screen hero asked for:
+- only the logo, its particles and the film things to answer the mouse;
+- far-off cinema objects in the form of planets that pop and reveal something;
+- the era change to travel to a new galaxy;
+- the tour to start with a scroll, not a dive;
+- a cinema with a real film in every space, each from a different era;
+- a new Crew artifact and Crew copy;
+- a Client/Stakeholders artifact that turns with the face;
+- the Suite without its aperture, with a new floor and a deck of film cards.
+
+The plan was approved, then built F1 to F9, each researched, built and checked before the next (`~/.claude/plans/happy-dancing-star.md`).
+
+| What | How |
+|---|---|
+| **The pointer** (*"the whole homepage reacts to the mouse … makes it unreal"*) | The camera no longer leans, the stars no longer push, and the screens no longer lean together. **The line** goes white-hot under the pointer, with light rippling out along it (`LINE_LIGHT underPointer`). **Its particles** gather and spark round it (`FLOW_VERT`). **Touch counts**: a finger holds the effect 1.5 s after lifting, and a lifting finger's `pointerleave` is ignored. `rig.ts pointerNear()` is the shared screen-space test. |
+| **The universe** (`scene/universe.ts`) | **Four galaxies**, one per era: today (title), silver nitrate (Crew), Technicolor (Client), digital (Suite). **A travel** moves between them: the old sky swells past and fades, the new grows in from far, and the stars stream forward (they wrap inside their field). **On the tour the scroll drives it**; on the one-screen hero it runs every ~40 s. **More deep space**: dust lanes, five far spiral galaxies per galaxy, and bright stars drawn through a star filter (`SKYOBJ_*`). |
+| **The far worlds** (`scene/far.tsx`, `FAR_*`) | Three film things in the form of planets, at infinity, placed per galaxy in its home shot's frame (and the close's own), clear of the words. **The Reel World**: a gold world whose face is a turning film reel, ringed by a film strip; revealed, its windows glow and the ring's frames show the films' stills. **The Can Moon**: a film can; its lid slides off a glowing reel. **The Projector Star**: a far lamp whose faint beam throws a frame. Each pops on a spring under the pointer or a finger. Stars hide behind their bodies. |
+| **The tour starts by scrolling** | The click keeps its choreography. The title steps aside and the camera eases round to give the logo the whole stage (`frame.ts tourLayout`, `rig.ts readyView`), while the far worlds hold their places. **"Scroll to begin"** rises under the logo (new copy, the owner's request): a light runs down a line. It is also a button, Enter's way in. It fades on the first scroll, and focus then moves to Exit. The title's hold is now 14vh. A click on a space's tile still flies there. |
+| **The films** (`scene/films.ts`, `scene/cinema.tsx`, `FILM_*`) | **Nothing loads before the tour**; each film loads as its space nears, and **one plays at a time**. A still shows first; the footage takes over once a few frames have played. **Never played**: under reduced motion, on Save-Data (the footage is never fetched), in a hidden tab, or where autoplay is refused. **Era looks**: silent (flicker, gate weave, scratches, dust), Technicolor (halation), today. **Watch mode**: the pointer on a film steps that space's screens back. The film's colour (`filmTone`, a 4 × 3 read five times a second) lights the palace's beam, glow and floor. |
+| **Crew: the silent era** | **Copy** (the owner asked for new words): the line names the roles and collaborators, and eight items: team chat, productions, tasks & assignments, reviews & sign-off, meetings with live co-review, Control Tower, Jotter, people. Names only on phones. The Spaces section carries the same line. **The clapperboard** replaces the reel: a chalk slate, gold-and-black sticks that clap on arrival with a flash and a puff of chalk dust, opening under the pointer. **The silent cinema**: a framed canvas hung by ropes at the back right, *A Trip to the Moon* on it, its beam flickering at 16 fps. |
+| **Client: the picture palace** | **The ticket** (ADMIT ONE, crimson, gold foil) turns with the tile into **the pass** (ALL ACCESS, premiere, "marketing · legal · the exec office"). Under the pointer the stub tears along its perforation and a sheen crosses the foil. **The great screen** plays *Gulliver's Travels* at the Academy shape, with masking either side. **The lights**: the corona is cut back, the house lights dim as you arrive, the beam carries the film's colour, and the searchlights rise from above the screen. |
+| **Suite: today** | **The lens is gone**: iris, focus ring and flare, with their shaders and textures. **The floor** is a light table from script to screen: script lines, then storyboards, then frames generating out of noise, then finished letterboxed stills, with a wave of light moving each frame on. **The deck**: four film cards fanned into the distance. The front card plays its clip, then swipes off, burning from its trailing edge, and the next comes forward; it leans toward the pointer, and a click sends it on. |
+
+**The films are placeholders** (the owner will replace them). `scripts/make-hero-films.ts` cuts them; change its `CLIPS` and run it again (`FILMS_SRC=<dir>` reads local copies). It writes `public/hero/films/*` (6.3 MB in all, H.264 and VP9) and `content/hero-films.ts`, whose `FILM_CREDIT` the close carries.
+
+| Film | Space | Licence |
+|---|---|---|
+| A Trip to the Moon (Méliès, 1902) | Crew | public domain |
+| Gulliver's Travels (Fleischer, 1939) | Client | public domain in the US only |
+| Spring (2019) | Suite | CC BY 4.0 |
+| Sintel (2010) | Suite | CC BY 3.0 |
+| Sprite Fright (2021) | Suite | CC BY 4.0 |
+| Big Buck Bunny (2008) | Suite | CC BY 3.0 |
+
+None shows a living actor. Remove the `FILM_CREDIT` line when the placeholders go.
+
+**Two register calls, both the owner's words:**
+- **JOT-01 (the Jotter)** is added to `content/features.ts`. S-F-A predates it; the app ships it LIVE (`gl-sp35 lib/studio/spaces.ts`). The next S-F-A transcription should carry it.
+- **"Control Tower"** is removed from `content/claims.ts`'s forbidden names (FA-11). The owner named it among the Crew's best features. The item claims only its live parts (MON-06, MON-03); MON-07 stays unclaimed.
+
+**Checking by hand.** `?galaxy=0–3` holds a galaxy. `?drift=<s>` shortens the drift's hold. `?shot=` holds a shot, now in that shot's galaxy.
+
+**Measured** (production build, this Mac):
+- the 3D chunk is 236.6 KB gzipped (budget 250);
+- 60 fps at every quality, through the tour, with a film playing in each space and the deck swiping;
+- on a software renderer at quality 0: 31–38 fps;
+- Lighthouse mobile, Home: performance 92, accessibility 100, best practices 100 (SEO 69 is the preview's noindex);
+- labels: 26 pages, 0 failures; links: 0 failures; axe: 0 issues;
+- posters regenerated (the busiest steps its quality down to stay under 120 KB);
+- under reduced motion, only stills are fetched.
+
+**Not done here.**
+- What follows the tour (the owner's next topic).
+- The owner's own films.
+- Not tested on real Windows hardware or Firefox.
+
 ## Revision, 2026-11-06: a one-screen hero, the tour, dark only, a century of cinema
 
 An audit found the hero held the page for 9.5 screens before a buyer saw

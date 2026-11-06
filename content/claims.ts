@@ -29,7 +29,11 @@ export const FORBIDDEN: readonly Forbidden[] = [
   { pattern: /coming soon/i, reason: '§2.4 — "being built" or "on the roadmap", never "coming soon"' },
   // W-10 (no Suite names) was overruled by the owner on 2026-10-01: the Suite is the
   // headline argument and its parts are named. Hidden Crew features stay unnamed.
-  { pattern: /Provider mesh|Control Tower/, reason: 'FA-11 — hidden features are not published' },
+  // The owner, 2026-11-06, named the Control Tower among the Crew space's best features ("control tower to
+  // manage all subscriptions and ai usage and allocate credits all in one place"): the home tour names it,
+  // claiming only its live parts (MON-03 credits, MON-06 budgets per member). The one-view summary of spend,
+  // burn and margin (MON-07, partial) stays unclaimed. The provider mesh stays unnamed.
+  { pattern: /Provider mesh/, reason: 'FA-11 — hidden features are not published' },
   // Owner, 2026-10-01, overriding §3.1's allowance below: "there's nothing like shoot days in AI
   // filmmaking … no physical shoot days or call sheets … everything must conform to the AI
   // production cycle". The app keeps the features (CRW-06, CRW-08); the site does not show them.

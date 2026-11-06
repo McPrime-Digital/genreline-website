@@ -107,357 +107,299 @@ export function softTexture() {
   return t
 }
 
-// ── THE FAR WORLDS ──────────────────────────────────────────────────────────
+// ── THE CREW'S CLAPPERBOARD ─────────────────────────────────────────────────
 //
-// Very far off, behind everything, faint as a matte painting (the owner, 2026-11-06: "distant milkyway
-// planets in a very distant with film related things around it"): a planet whose ring is a strip of
-// 35 mm film, its moon a film reel, and a small cool planet beyond. Drawn once, on canvases.
+// The slate the crew marks every take with (the owner, 2026-11-06: behind the Crew's tile, something that
+// is "film and movie and crew at the same time"): a chalk slate in an oiled-wood frame, its fields chalked
+// in, and the sticks — black and gold — that clap. The tile covers the middle of the slate: the fields sit
+// round it. Words on it are the slate's own (its fields) and the studio's name.
 
-/** A planet lit from the upper left: its night side falls into the sky, its rim keeps a thread of light. */
-function drawPlanet(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, day: string, night: string, rim: string) {
-  const body = g.createRadialGradient(cx - r * 0.45, cy - r * 0.5, r * 0.05, cx, cy, r)
-  body.addColorStop(0, day)
-  body.addColorStop(0.55, night)
-  body.addColorStop(1, 'rgba(4,5,12,1)')
-  g.fillStyle = body
-  g.beginPath()
-  g.arc(cx, cy, r, 0, Math.PI * 2)
-  g.fill()
-  // bands of weather, faint
-  g.save()
-  g.beginPath()
-  g.arc(cx, cy, r, 0, Math.PI * 2)
-  g.clip()
-  g.globalAlpha = 0.12
-  for (let i = -4; i <= 4; i++) {
-    g.fillStyle = i % 2 ? 'rgba(255,230,190,1)' : 'rgba(0,0,0,1)'
-    g.fillRect(cx - r, cy + i * r * 0.2 - r * 0.04, r * 2, r * 0.07)
-  }
-  g.restore()
-  // the terminator's rim light
-  g.strokeStyle = rim
-  g.lineWidth = r * 0.03
-  g.beginPath()
-  g.arc(cx, cy, r * 0.985, Math.PI * 0.85, Math.PI * 1.6)
-  g.stroke()
-}
-
-/** The ringed planet: its ring a strip of film — perforations along both edges, frames between them. */
-export function filmPlanetTexture() {
-  const W = 1024
-  const H = 640
+/** Chalk: drawn on its own sheet, worn by tiny erasures, then laid on the slate (so the slate stays whole). */
+function chalk(W: number, H: number, draw: (g: CanvasRenderingContext2D) => void) {
   const [c, g] = canvas(W, H)
-  const cx = W / 2
-  const cy = H / 2
-  const r = 140
-  const tilt = 0.34
-  const ring = (front: boolean) => {
-    g.save()
-    g.translate(cx, cy)
-    g.rotate(-0.22)
-    g.scale(1, tilt)
-    const R0 = 268
-    const R1 = 396
-    const from = front ? 0 : Math.PI
-    const to = front ? Math.PI : Math.PI * 2
-    // the film: a dark strip (the back half fainter, behind the planet)
-    g.globalAlpha = front ? 1 : 0.55
-    g.beginPath()
-    g.arc(0, 0, R1, from, to)
-    g.arc(0, 0, R0, to, from, true)
-    g.closePath()
-    g.fillStyle = 'rgba(34,24,16,0.9)'
-    g.fill()
-    // the picture area between the perforations, warmer, and its frame lines
-    g.beginPath()
-    g.arc(0, 0, R1 - 30, from, to)
-    g.arc(0, 0, R0 + 30, to, from, true)
-    g.closePath()
-    g.fillStyle = 'rgba(120,80,40,0.55)'
-    g.fill()
-    const n = 56
-    for (let i = 0; i < n; i++) {
-      const a = from + ((i + 0.5) / n) * (to - from)
-      const ca = Math.cos(a)
-      const sa = Math.sin(a)
-      // the perforations, lit as if a projector's lamp shone through them
-      for (const R of [R0 + 15, R1 - 15]) {
-        g.save()
-        g.translate(ca * R, sa * R)
-        g.rotate(a + Math.PI / 2)
-        g.fillStyle = 'rgba(255,214,150,0.85)'
-        g.beginPath()
-        g.roundRect(-8, -6, 16, 12, 3)
-        g.fill()
-        g.restore()
-      }
-      if (i % 3 === 0) {
-        const b = from + (i / n) * (to - from)
-        g.strokeStyle = 'rgba(20,12,6,0.85)'
-        g.lineWidth = 3
-        g.beginPath()
-        g.moveTo(Math.cos(b) * (R0 + 30), Math.sin(b) * (R0 + 30))
-        g.lineTo(Math.cos(b) * (R1 - 30), Math.sin(b) * (R1 - 30))
-        g.stroke()
-      }
-    }
-    // a thread of light along its outer edge
-    g.strokeStyle = 'rgba(255,214,150,0.6)'
-    g.lineWidth = 3
-    g.beginPath()
-    g.arc(0, 0, R1, from, to)
-    g.stroke()
-    g.restore()
-  }
-  ring(false)
-  drawPlanet(g, cx, cy, r, 'rgba(196,150,108,1)', 'rgba(52,38,64,1)', 'rgba(255,220,170,0.55)')
-  ring(true)
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
-}
-
-/** A film reel, its moon: the rim, five windows round the hub. */
-export function reelTexture() {
-  const [c, g] = canvas(256, 256)
-  const cx = 128
-  const r = 118
-  const grd = g.createRadialGradient(cx - 40, cx - 46, 8, cx, cx, r)
-  grd.addColorStop(0, 'rgba(226,220,206,1)')
-  grd.addColorStop(1, 'rgba(92,90,98,1)')
-  g.fillStyle = grd
-  g.beginPath()
-  g.arc(cx, cx, r, 0, Math.PI * 2)
-  g.fill()
+  g.fillStyle = 'rgba(238,234,222,0.92)'
+  g.strokeStyle = 'rgba(238,234,222,0.8)'
+  draw(g)
   g.globalCompositeOperation = 'destination-out'
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2 - Math.PI / 2
-    g.beginPath()
-    g.arc(cx + Math.cos(a) * r * 0.55, cx + Math.sin(a) * r * 0.55, r * 0.26, 0, Math.PI * 2)
-    g.fill()
-  }
-  g.beginPath()
-  g.arc(cx, cx, r * 0.1, 0, Math.PI * 2)
-  g.fill()
-  g.globalCompositeOperation = 'source-over'
-  g.strokeStyle = 'rgba(255,240,215,0.6)'
-  g.lineWidth = 3
-  g.beginPath()
-  g.arc(cx, cx, r - 2, Math.PI * 0.95, Math.PI * 1.55)
-  g.stroke()
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
-}
-
-/** A small cool planet, beyond. */
-export function farPlanetTexture() {
-  const [c, g] = canvas(256, 256)
-  drawPlanet(g, 128, 128, 112, 'rgba(150,182,214,1)', 'rgba(28,40,70,1)', 'rgba(200,225,255,0.5)')
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
-}
-
-// ── THE CREW'S REEL ─────────────────────────────────────────────────────────
-
-/**
- * A 35 mm reel in gold, behind the Crew's tile (in place of the rings that read as science — the owner,
- * 2026-11-06): its flange with six windows round the hub, the spokes between them, a bright rim. The
- * tile covers the hub; what shows round it is the reel turning.
- */
-export function crewReelTexture(theme: HeroTheme) {
-  const S = 1024
-  const [c, g] = canvas(S, S)
-  const m = S / 2
-  const R = S * 0.47
-  // the flange: brushed gold, translucent
-  const plate = g.createRadialGradient(m - R * 0.3, m - R * 0.35, R * 0.1, m, m, R)
-  plate.addColorStop(0, theme.css.goldTop)
-  plate.addColorStop(1, theme.css.goldBottom)
-  g.globalAlpha = 0.16
-  g.fillStyle = plate
-  g.beginPath()
-  g.arc(m, m, R, 0, Math.PI * 2)
-  g.fill()
-  g.globalAlpha = 1
-  // the windows, cut through
-  const windows = (draw: () => void) => {
-    for (let i = 0; i < 6; i++) {
-      const a0 = (i / 6) * Math.PI * 2 + 0.16
-      const a1 = a0 + (Math.PI * 2) / 6 - 0.32
-      g.beginPath()
-      g.arc(m, m, R * 0.86, a0, a1)
-      g.arc(m, m, R * 0.36, a1, a0, true)
-      g.closePath()
-      draw()
-    }
-  }
-  g.globalCompositeOperation = 'destination-out'
-  windows(() => g.fill())
-  g.globalCompositeOperation = 'source-over'
-  // their edges, the rim, the hub: lines of light
-  g.strokeStyle = theme.css.goldTop
-  g.lineWidth = 3
-  windows(() => g.stroke())
-  g.lineWidth = 6
-  g.beginPath()
-  g.arc(m, m, R - 3, 0, Math.PI * 2)
-  g.stroke()
-  g.lineWidth = 2
-  g.globalAlpha = 0.6
-  g.beginPath()
-  g.arc(m, m, R * 0.93, 0, Math.PI * 2)
-  g.stroke()
-  // the rim's knurling: fine ticks round the edge, the way a reel's flange is pressed
-  g.globalAlpha = 0.5
-  g.lineWidth = 2
-  for (let i = 0; i < 120; i++) {
-    const a = (i / 120) * Math.PI * 2
-    g.beginPath()
-    g.moveTo(m + Math.cos(a) * R * 0.94, m + Math.sin(a) * R * 0.94)
-    g.lineTo(m + Math.cos(a) * R * 0.975, m + Math.sin(a) * R * 0.975)
-    g.stroke()
+  let seed = 9
+  const rnd = () => ((seed = (seed * 9301 + 49297) % 233280), seed / 233280)
+  for (let i = 0; i < 9000; i++) {
+    g.globalAlpha = 0.25 + rnd() * 0.5
+    g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2.2, 1 + rnd() * 1.4)
   }
   g.globalAlpha = 1
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
+  g.globalCompositeOperation = 'source-over'
+  return c
+}
+
+/** The slate and its two sticks, as textures. */
+export async function clapperTextures(anisotropy: number) {
+  const W = 1024
+  const H = 704
+  const label = await displayFont(25, 600)
+  const big = await displayFont(84, 800)
+  const mid = await displayFont(58, 700)
+  const [c, g] = canvas(W, H)
+  // the frame: oiled wood, lit from above
+  const wood = g.createLinearGradient(0, 0, 0, H)
+  wood.addColorStop(0, '#6a4828')
+  wood.addColorStop(1, '#2c1b0e')
+  g.fillStyle = wood
+  g.beginPath()
+  g.roundRect(0, 0, W, H, 26)
+  g.fill()
+  // the slate: black, its chalk dust in soft clouds
+  const inset = 22
+  g.fillStyle = '#111315'
+  g.fillRect(inset, inset, W - inset * 2, H - inset * 2)
+  let seed = 3
+  const rnd = () => ((seed = (seed * 9301 + 49297) % 233280), seed / 233280)
+  for (let i = 0; i < 26; i++) {
+    const x = inset + rnd() * (W - inset * 2)
+    const y = inset + rnd() * (H - inset * 2)
+    const r = 40 + rnd() * 160
+    const smudge = g.createRadialGradient(x, y, 0, x, y, r)
+    smudge.addColorStop(0, 'rgba(220,216,205,0.045)')
+    smudge.addColorStop(1, 'rgba(220,216,205,0)')
+    g.fillStyle = smudge
+    g.fillRect(x - r, y - r, r * 2, r * 2)
+  }
+  // the light from the lamps above, falling off down the slate
+  const light = g.createLinearGradient(0, 0, 0, H)
+  light.addColorStop(0, 'rgba(255,214,150,0.08)')
+  light.addColorStop(1, 'rgba(0,0,0,0.25)')
+  g.fillStyle = light
+  g.fillRect(inset, inset, W - inset * 2, H - inset * 2)
+  // the fields, chalked in: the tile hides the middle, so they sit round it
+  const sheet = chalk(W, H, (k) => {
+    k.lineWidth = 4
+    const rule = (x0: number, y0: number, x1: number, y1: number) => {
+      k.beginPath()
+      k.moveTo(x0, y0 + (rnd() - 0.5) * 2)
+      k.lineTo(x1, y1 + (rnd() - 0.5) * 2)
+      k.stroke()
+    }
+    rule(inset + 14, 176, W - inset - 14, 176)
+    rule(inset + 14, 528, W - inset - 14, 528)
+    rule(330, 176, 330, 528)
+    rule(694, 176, 694, 528)
+    rule(360, 528, 360, H - inset - 14)
+    rule(680, 528, 680, H - inset - 14)
+    k.textBaseline = 'alphabetic'
+    k.font = label.font
+    for (const [t, x, y] of [['PROD.', 48, 62], ['ROLL', 48, 214], ['SCENE', 48, 372], ['TAKE', 724, 214], ['SOUND', 724, 372], ['DIRECTOR', 48, 568], ['CAMERA', 390, 568], ['DATE', 710, 568]] as const) {
+      k.fillText(t, x, y)
+    }
+    k.font = big.font
+    k.fillText('GENRELINE', 48, 150)
+    k.font = mid.font
+    for (const [t, x, y] of [['A001', 48, 300], ['1', 48, 458], ['1', 724, 300], ['SYNC', 724, 458], ['1902', 710, 652]] as const) {
+      k.fillText(t, x, y)
+    }
+    // the director's and the camera's names, in a hand too quick to read from here
+    k.lineWidth = 5
+    for (const [x0, w] of [[48, 270], [390, 260]] as const) {
+      k.beginPath()
+      let x = x0
+      k.moveTo(x, 640)
+      while (x < x0 + w) {
+        x += 14 + rnd() * 16
+        k.quadraticCurveTo(x - 8, 616 + rnd() * 30, x, 640 + (rnd() - 0.5) * 16)
+      }
+      k.stroke()
+    }
+  })
+  g.drawImage(sheet, 0, 0)
+  const board = finish(new CanvasTexture(c), anisotropy)
+
+  // the sticks: black and gold at 45°, the two slanting opposite ways (a chevron when they meet)
+  const stick = (flip: boolean) => {
+    const SW = 1024
+    const SH = 112
+    const [sc, sg] = canvas(SW, SH)
+    sg.save()
+    sg.beginPath()
+    sg.roundRect(0, 0, SW, SH, 10)
+    sg.clip()
+    sg.fillStyle = '#121212'
+    sg.fillRect(0, 0, SW, SH)
+    const gold = sg.createLinearGradient(0, 0, 0, SH)
+    gold.addColorStop(0, '#f1d58f')
+    gold.addColorStop(0.5, '#d4ad5c')
+    gold.addColorStop(1, '#9c7634')
+    sg.fillStyle = gold
+    const step = 96
+    for (let x = -SH; x < SW + SH; x += step * 2) {
+      sg.beginPath()
+      if (flip) {
+        sg.moveTo(x, 0)
+        sg.lineTo(x + step, 0)
+        sg.lineTo(x + step - SH, SH)
+        sg.lineTo(x - SH, SH)
+      } else {
+        sg.moveTo(x, 0)
+        sg.lineTo(x + step, 0)
+        sg.lineTo(x + step + SH, SH)
+        sg.lineTo(x + SH, SH)
+      }
+      sg.fill()
+    }
+    // its edge catching the light, and its hinge at the left end
+    sg.fillStyle = 'rgba(255,240,210,0.35)'
+    sg.fillRect(0, 0, SW, 5)
+    sg.fillStyle = 'rgba(0,0,0,0.45)'
+    sg.fillRect(0, SH - 7, SW, 7)
+    sg.restore()
+    sg.fillStyle = '#c9ccd1'
+    sg.beginPath()
+    sg.arc(SH * 0.55, SH / 2, SH * 0.3, 0, Math.PI * 2)
+    sg.fill()
+    sg.fillStyle = '#6d7076'
+    sg.beginPath()
+    sg.arc(SH * 0.55, SH / 2, SH * 0.12, 0, Math.PI * 2)
+    sg.fill()
+    return finish(new CanvasTexture(sc), anisotropy)
+  }
+  return { board, arm: stick(false), base: stick(true) }
 }
 
 // ── THE CLIENT'S HALO ───────────────────────────────────────────────────────
 
 /**
- * An art-deco sunburst in gold, round the Client's tile (in place of the rings): fine rays between two
- * stepped circles, a diamond at each quarter — the ornament of a picture palace's ceiling.
+ * THE CLIENT'S TICKET, THE STAKEHOLDERS' PASS — behind the Client station's tile, turning with it (the owner,
+ * 2026-11-06: something "very much related to client space or stakeholders space and must change when it
+ * changes"): the client is admitted to their own room — a cinema ticket, ADMIT ONE, its stub perforated —
+ * and the stakeholders hold a premiere pass, ALL ACCESS, for the departments the portal serves (the
+ * In-house segment's words: marketing, legal, the exec office). The tile hides the middle: the words sit
+ * either side of it. Both 14.2 × 6.4 (the stub, the last 17%).
  */
-export function decoHaloTexture(theme: HeroTheme) {
-  const S = 1024
-  const [c, g] = canvas(S, S)
-  const m = S / 2
-  g.strokeStyle = theme.css.goldTop
-  g.fillStyle = theme.css.goldTop
-  // the rays, long and short in turn
-  for (let i = 0; i < 72; i++) {
-    const a = (i / 72) * Math.PI * 2
-    const long = i % 2 === 0
-    g.globalAlpha = long ? 0.75 : 0.4
-    g.lineWidth = long ? 3 : 2
-    g.beginPath()
-    g.moveTo(m + Math.cos(a) * S * 0.3, m + Math.sin(a) * S * 0.3)
-    g.lineTo(m + Math.cos(a) * S * (long ? 0.46 : 0.41), m + Math.sin(a) * S * (long ? 0.46 : 0.41))
-    g.stroke()
+export async function ticketTextures(anisotropy: number) {
+  const W = 1024
+  const H = 462
+  const stubX = Math.round(W * 0.83)
+  const huge = await displayFont(84, 800)
+  const small = await displayFont(24, 700)
+  const tiny = await displayFont(19, 700)
+  const foil = (g: CanvasRenderingContext2D, y0: number, y1: number) => {
+    const f = g.createLinearGradient(0, y0, 0, y1)
+    f.addColorStop(0, '#fbe6a8')
+    f.addColorStop(0.5, '#d9b162')
+    f.addColorStop(1, '#a37a33')
+    return f
   }
-  // the stepped circles
-  g.globalAlpha = 0.9
-  for (const [r, w] of [[0.29, 4], [0.275, 1.5], [0.47, 3], [0.485, 1.5]] as const) {
-    g.lineWidth = w
-    g.beginPath()
-    g.arc(m, m, S * r, 0, Math.PI * 2)
-    g.stroke()
+  const spaced = (g: CanvasRenderingContext2D, text: string, cx: number, y: number, spacing: number) => {
+    const widths = [...text].map((ch) => g.measureText(ch).width)
+    const total = widths.reduce((a, b) => a + b, 0) + spacing * (text.length - 1)
+    let x = cx - total / 2
+    ;[...text].forEach((ch, i) => {
+      g.fillText(ch, x, y)
+      x += widths[i] + spacing
+    })
   }
-  // a diamond at each quarter
-  g.globalAlpha = 1
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2
-    const x = m + Math.cos(a) * S * 0.47
-    const y = m + Math.sin(a) * S * 0.47
-    g.beginPath()
-    g.moveTo(x, y - 18)
-    g.lineTo(x + 12, y)
-    g.lineTo(x, y + 18)
-    g.lineTo(x - 12, y)
-    g.closePath()
-    g.fill()
+  const notch = (g: CanvasRenderingContext2D) => {
+    // the semicircle notches at either end of the perforation, and the perforation itself
+    g.save()
+    g.globalCompositeOperation = 'destination-out'
+    for (const y of [0, H]) {
+      g.beginPath()
+      g.arc(stubX, y, 22, 0, Math.PI * 2)
+      g.fill()
+    }
+    for (let y = 40; y < H - 30; y += 22) {
+      g.beginPath()
+      g.arc(stubX, y, 4.2, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.restore()
   }
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
+
+  // the ticket: deep crimson, gold foil
+  const [tc, t] = canvas(W, H)
+  const red = t.createLinearGradient(0, 0, W, H)
+  red.addColorStop(0, '#8c1a26')
+  red.addColorStop(1, '#4a0b13')
+  t.fillStyle = red
+  t.beginPath()
+  t.roundRect(0, 0, W, H, 18)
+  t.fill()
+  // a fine engraved pattern, as a ticket's security print
+  t.strokeStyle = 'rgba(255,210,150,0.07)'
+  t.lineWidth = 1
+  for (let i = -H; i < W; i += 9) {
+    t.beginPath()
+    t.moveTo(i, 0)
+    t.lineTo(i + H * 0.6, H)
+    t.stroke()
+  }
+  t.strokeStyle = foil(t, 0, H)
+  t.lineWidth = 4
+  t.strokeRect(20, 20, stubX - 34, H - 40)
+  t.lineWidth = 1.5
+  t.strokeRect(30, 30, stubX - 54, H - 60)
+  t.strokeRect(stubX + 16, 20, W - stubX - 36, H - 40)
+  t.fillStyle = foil(t, 150, 330)
+  t.font = huge.font
+  t.textBaseline = 'middle'
+  t.textAlign = 'center'
+  t.fillText('ADMIT', W * 0.2, H / 2 + 4)
+  t.fillText('ONE', W * 0.728, H / 2 + 4)
+  t.font = small.font
+  t.fillStyle = foil(t, 60, 100)
+  spaced(t, 'GENRELINE', stubX / 2, 78, 9)
+  spaced(t, 'NO 001939', stubX / 2, H - 76, 6)
+  // the stub: ADMIT ONE up its length, and its number
+  t.save()
+  t.translate(stubX + (W - stubX) / 2, H / 2)
+  t.rotate(-Math.PI / 2)
+  t.font = small.font
+  t.fillStyle = foil(t, -40, 40)
+  spaced(t, 'ADMIT ONE', 0, -22, 7)
+  t.font = tiny.font
+  spaced(t, 'NO 001939', 0, 26, 5)
+  t.restore()
+  notch(t)
+
+  // the pass: black, a holographic strip, gold foil
+  const [pc, pg] = canvas(W, H)
+  pg.fillStyle = '#0d0d12'
+  pg.beginPath()
+  pg.roundRect(0, 0, W, H, 18)
+  pg.fill()
+  const holo = pg.createLinearGradient(0, 0, W, 0)
+  ;['#ff6ec7', '#7ee8fa', '#c3f584', '#ffd36e', '#b38bff', '#7ee8fa'].forEach((c, i, a) => holo.addColorStop(i / (a.length - 1), c))
+  pg.globalAlpha = 0.55
+  pg.fillStyle = holo
+  pg.fillRect(0, 34, W, 22)
+  pg.globalAlpha = 1
+  pg.strokeStyle = foil(pg, 0, H)
+  pg.lineWidth = 3
+  pg.strokeRect(20, 20, W - 40, H - 40)
+  // its lanyard slot
+  pg.save()
+  pg.globalCompositeOperation = 'destination-out'
+  pg.beginPath()
+  pg.roundRect(W / 2 - 60, 74, 120, 18, 9)
+  pg.fill()
+  pg.restore()
+  pg.fillStyle = foil(pg, 150, 330)
+  pg.font = huge.font
+  pg.textBaseline = 'middle'
+  pg.textAlign = 'center'
+  pg.fillText('ALL', W * 0.2, H / 2 + 4)
+  pg.fillText('ACCESS', W * 0.8, H / 2 + 4)
+  pg.font = small.font
+  pg.fillStyle = foil(pg, 100, 140)
+  spaced(pg, 'PREMIERE', W / 2, 122, 10)
+  pg.font = tiny.font
+  pg.fillStyle = 'rgba(232,214,170,0.85)'
+  spaced(pg, 'MARKETING · LEGAL · THE EXEC OFFICE', W / 2, H - 70, 4)
+
+  return { ticket: finish(new CanvasTexture(tc), anisotropy), pass: finish(new CanvasTexture(pc), anisotropy) }
 }
 
 // ── THE SUITE'S LENS ────────────────────────────────────────────────────────
 
-/**
- * A cine lens's focus ring, seen face on: the distance scale engraved round it (feet, ∞ to 3), fine ticks
- * between, and the witness mark the focus puller reads. It turns back and forth round the iris — a focus
- * pull — so the numbers pass the mark.
- */
-export function focusRingTexture(theme: HeroTheme) {
-  const S = 1024
-  const [c, g] = canvas(S, S)
-  const m = S / 2
-  const R0 = S * 0.4
-  const R1 = S * 0.49
-  // the ring itself: a dark band with a bright edge either side
-  g.fillStyle = 'rgba(12,12,18,0.55)'
-  g.beginPath()
-  g.arc(m, m, R1, 0, Math.PI * 2)
-  g.arc(m, m, R0, 0, Math.PI * 2, true)
-  g.fill()
-  g.strokeStyle = theme.css.goldTop
-  for (const [r, w, a] of [[R0, 2.5, 0.8], [R1 - 2, 3, 0.9]] as const) {
-    g.globalAlpha = a
-    g.lineWidth = w
-    g.beginPath()
-    g.arc(m, m, r, 0, Math.PI * 2)
-    g.stroke()
-  }
-  // the scale: ticks all round, longer at each engraved distance
-  const marks = ['∞', '30', '15', '10', '7', '5', '4', '3']
-  const span = Math.PI * 1.25
-  const start = -Math.PI / 2 - span / 2
-  g.globalAlpha = 0.75
-  g.lineWidth = 2
-  for (let i = 0; i <= 56; i++) {
-    const a = start + (i / 56) * span
-    const long = i % 8 === 0
-    g.beginPath()
-    g.moveTo(m + Math.cos(a) * (R1 - 8), m + Math.sin(a) * (R1 - 8))
-    g.lineTo(m + Math.cos(a) * (R1 - (long ? 26 : 16)), m + Math.sin(a) * (R1 - (long ? 26 : 16)))
-    g.stroke()
-  }
-  g.globalAlpha = 0.9
-  g.fillStyle = theme.css.goldTop
-  g.font = `600 ${Math.round(S * 0.03)}px ${getComputedStyle(document.body).getPropertyValue('--font-display').trim() || 'ui-sans-serif, system-ui, sans-serif'}`
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  marks.forEach((t, i) => {
-    const a = start + (i / (marks.length - 1)) * span
-    const rr = (R0 + R1) / 2 - 6
-    g.save()
-    g.translate(m + Math.cos(a) * rr, m + Math.sin(a) * rr)
-    g.rotate(a + Math.PI / 2)
-    g.fillText(t, 0, 0)
-    g.restore()
-  })
-  g.globalAlpha = 1
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
-}
 
-/** An anamorphic flare: a long, thin horizontal streak, blue-white at its heart. */
-export function anamorphicTexture() {
-  const [c, g] = canvas(1024, 64)
-  const v = g.createLinearGradient(0, 0, 0, 64)
-  v.addColorStop(0, 'rgba(120,170,255,0)')
-  v.addColorStop(0.5, 'rgba(190,220,255,1)')
-  v.addColorStop(1, 'rgba(120,170,255,0)')
-  g.fillStyle = v
-  g.fillRect(0, 0, 1024, 64)
-  g.globalCompositeOperation = 'destination-in'
-  const h = g.createLinearGradient(0, 0, 1024, 0)
-  h.addColorStop(0, 'rgba(0,0,0,0)')
-  h.addColorStop(0.35, 'rgba(0,0,0,0.5)')
-  h.addColorStop(0.5, 'rgba(0,0,0,1)')
-  h.addColorStop(0.65, 'rgba(0,0,0,0.5)')
-  h.addColorStop(1, 'rgba(0,0,0,0)')
-  g.fillStyle = h
-  g.fillRect(0, 0, 1024, 64)
-  const t = new CanvasTexture(c)
-  t.colorSpace = SRGBColorSpace
-  return t
-}
 
 // ── THE TILES: THE LOGO'S GLYPHS ────────────────────────────────────────────
 //

@@ -12,17 +12,21 @@
 import * as React from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, DoubleSide, Float32BufferAttribute, NormalBlending, PlaneGeometry, Vector3, type PerspectiveCamera,
-  type Group, type Mesh, type MeshBasicMaterial, type ShaderMaterial, type Sprite, type SpriteMaterial, type Texture,
+  AdditiveBlending, BufferAttribute, BufferGeometry, DoubleSide, Float32BufferAttribute, NormalBlending, PlaneGeometry, Vector3, type Color, type PerspectiveCamera,
+  type Group, type LineBasicMaterial, type Mesh, type MeshBasicMaterial, type ShaderMaterial, type Sprite, type SpriteMaterial, type Texture,
 } from 'three'
 import { hero, type HeroPanel } from '@/content/home'
 import { heroState, presence, skyWeight } from '@/components/hero/state'
 import { CHIPS, FACE, NODES, PANEL, SLOTS, TALL_KEEP, TILE, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
-import { live } from '@/components/hero/scene/rig'
+import { live, pointerNear } from '@/components/hero/scene/rig'
+import { FilmScreen, watching } from '@/components/hero/scene/cinema'
+import { filmPicture, filmPlaying, filmProgress, filmTone, prefetchFilm, rewindFilm, wantFilm } from '@/components/hero/scene/films'
+import { farAtlas } from '@/components/hero/scene/far'
+import { HERO_FILMS } from '@/content/hero-films'
 import {
-  BEAM_FRAG, BEAM_VERT, IRIS_FRAG, IRIS_VERT, MOTE_FRAG, MOTE_VERT, PALACE_FRAG, PALACE_VERT, PANEL_FRAG, PANEL_VERT, PROJECTOR_FRAG, PROJECTOR_VERT, SKY_FRAG, SKY_VERT, STRUCTURE_FRAG, STRUCTURE_VERT,
+  BEAM_FRAG, BEAM_VERT, FILM_FRAG, FILM_VERT, MOTE_FRAG, MOTE_VERT, PALACE_FRAG, PALACE_VERT, PANEL_FRAG, PANEL_VERT, PROJECTOR_FRAG, PROJECTOR_VERT, PUFF_FRAG, PUFF_VERT, SKY_FRAG, SKY_VERT, STRUCTURE_FRAG, STRUCTURE_VERT, TICKET_FRAG, TICKET_VERT,
 } from '@/components/hero/scene/shaders'
-import { anamorphicTexture, chipTexture, crewReelTexture, decoHaloTexture, focusRingTexture, getScreenTexture, hsl, labelTexture, tileTexture, uploadSoon, type HeroSources, type HeroTheme, type TileKind } from '@/components/hero/scene/textures'
+import { chipTexture, clapperTextures, getScreenTexture, hsl, labelTexture, ticketTextures, tileTexture, uploadSoon, type HeroSources, type HeroTheme, type TileKind } from '@/components/hero/scene/textures'
 
 export type StationId = 'crew' | 'client' | 'suite'
 const SHOT_OF: Record<StationId, Shot> = { crew: 1, client: 2, suite: 3 }
@@ -107,7 +111,7 @@ const STRUCTURE: Record<StationId, { mode: number; size: [number, number]; at: V
   // the picture palace's floor, below the screens, the great screen standing at its far side
   client: { mode: 1, size: [110, 80], at: [0, -10.5, -14], flat: true, opacity: [0.4, 0.3] },
   // the cutting room's floor: an edit timeline running to the horizon, below the tools
-  suite: { mode: 2, size: [110, 80], at: [0, -10.5, -14], flat: true, opacity: [0.5, 0.3] },
+  suite: { mode: 2, size: [110, 80], at: [0, -10.5, -14], flat: true, opacity: [0.62, 0.3] },
 }
 
 function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
@@ -120,6 +124,7 @@ function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
     () => ({
       uSize: { value: [s.size[0], s.size[1]] }, uColor: { value: theme.dark ? theme.glow.clone() : theme.core.clone() },
       uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: theme.dark ? s.opacity[0] : s.opacity[1] }, uFace: { value: 0 },
+      uHouse: { value: 1 }, uSpill: { value: hsl(214, 30, 86) }, uAtlas: { value: null as Texture | null }, uHasAtlas: { value: 0 },
     }),
     [s, theme],
   )
@@ -131,7 +136,18 @@ function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
     mesh.current.visible = w > 0.002
     m.uniforms.uWeight.value = w
     m.uniforms.uTime.value = live.time
-    if (id === 'client') m.uniforms.uFace.value = damp(m.uniforms.uFace.value, heroState.face, 2.2, Math.min(dt, 0.1))
+    if (id === 'suite' && m.uniforms.uAtlas.value !== farAtlas.texture) {
+      // the floor's finished frames: the films' stills, once they are here
+      m.uniforms.uAtlas.value = farAtlas.texture
+      m.uniforms.uHasAtlas.value = farAtlas.texture ? 1 : 0
+    }
+    if (id === 'client') {
+      m.uniforms.uFace.value = damp(m.uniforms.uFace.value, heroState.face, 2.2, Math.min(dt, 0.1))
+      // the house lights go down as the camera arrives and the film plays; its light falls on the floor
+      m.uniforms.uHouse.value = 1 - 0.7 * presence(live.place, 2)
+      const tone = filmTone('client')
+      if (tone) (m.uniforms.uSpill.value as Color).copy(tone)
+    }
   })
   return (
     <mesh
@@ -224,6 +240,38 @@ function Tile({ id, theme, soft, anisotropy }: { id: StationId; theme: HeroTheme
   )
 }
 
+// ── A PROJECTOR'S BEAM ──────────────────────────────────────────────────────
+
+/** A beam from a lamp (a small square there) to a screen's four corners: four faces, divided along their length (aT 0 at the lamp, 1 at the screen). */
+function beamGeometry(lamp: Vec3, corners: readonly Vec3[]) {
+  const [lx, ly, lz] = lamp
+  const near = [[-0.5, -0.4], [0.5, -0.4], [0.5, 0.4], [-0.5, 0.4]]
+  const N = 14
+  const pos: number[] = []
+  const t: number[] = []
+  const idx: number[] = []
+  for (let f = 0; f < 4; f++) {
+    const base = pos.length / 3
+    for (let i = 0; i <= N; i++) {
+      const k = i / N
+      for (const corner of [f, (f + 1) % 4]) {
+        const [fx, fy, fz] = corners[corner]
+        pos.push(lx + near[corner][0] + (fx - lx - near[corner][0]) * k, ly + near[corner][1] + (fy - ly - near[corner][1]) * k, lz + (fz - lz) * k)
+        t.push(k)
+      }
+    }
+    for (let i = 0; i < N; i++) {
+      const q = base + i * 2
+      idx.push(q, q + 1, q + 3, q, q + 3, q + 2)
+    }
+  }
+  const g = new BufferGeometry()
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3))
+  g.setAttribute('aT', new Float32BufferAttribute(t, 1))
+  g.setIndex(idx)
+  return g
+}
+
 // ── THE CREW: THE STUDIO ERA ────────────────────────────────────────────────
 //
 // The soundstage, floating in the night: tungsten lamps above the deck, their beams falling through haze
@@ -307,27 +355,196 @@ function CrewLights({ theme }: { theme: HeroTheme }) {
   )
 }
 
-/** The reel behind the Crew's tile, turning slowly; nearer, brighter. */
-function CrewReel({ theme }: { theme: HeroTheme }) {
-  const map = React.useMemo(() => crewReelTexture(theme), [theme])
-  React.useEffect(() => () => map.dispose(), [map])
-  const mesh = React.useRef<Mesh>(null)
-  const mat = React.useRef<MeshBasicMaterial>(null)
-  const c = React.useMemo(() => new Vector3(...NODES.crew).add(new Vector3(0, 0, -1.4)), [])
-  useFrame(({ camera }) => {
-    const m = mesh.current
-    if (!m || !live.place) return
+/**
+ * The clapperboard behind the Crew's tile (in place of the reel — the owner, 2026-11-06: it must be "film
+ * and movie and crew at the same time"): the slate and its sticks. As the camera arrives the sticks lift
+ * and clap — a flash along them, a puff of chalk dust. Under the pointer (or a finger) they open and wait;
+ * as it leaves, they clap.
+ */
+const CLAPPER = { at: [0, -0.4, -3.9] as Vec3, board: [9.6, 6.6] as const, stick: 1.0, open: 0.46 } as const
+const PUFF = (() => {
+  const n = 70
+  const pos = new Float32Array(n * 3)
+  const dir = new Float32Array(n * 3)
+  let seed = 41
+  const rnd = () => ((seed = (seed * 9301 + 49297) % 233280), seed / 233280)
+  const top = CLAPPER.board[1] / 2 + CLAPPER.stick
+  for (let i = 0; i < n; i++) {
+    pos.set([(rnd() * 2 - 1) * (CLAPPER.board[0] / 2 - 0.3), top, 0.1], i * 3)
+    dir.set([(rnd() * 2 - 1) * 0.6, -0.2 + rnd() * 0.9, rnd() * 0.7], i * 3)
+  }
+  return { pos, dir }
+})()
+
+function Clapperboard({ anisotropy, soft }: { anisotropy: number; soft: Texture }) {
+  const [maps, setMaps] = React.useState<{ board: Texture; arm: Texture; base: Texture } | null>(null)
+  React.useEffect(() => {
+    let alive = true
+    let made: Texture[] = []
+    clapperTextures(anisotropy).then(async (m) => {
+      made = [m.board, m.arm, m.base]
+      if (!alive) return made.forEach((t) => t.dispose())
+      await Promise.all(made.map((t) => uploadSoon(t)))
+      if (alive) setMaps(m)
+    })
+    return () => {
+      alive = false
+      made.forEach((t) => t.dispose())
+    }
+  }, [anisotropy])
+  const puffGeo = React.useMemo(() => {
+    const g = new BufferGeometry()
+    g.setAttribute('position', new BufferAttribute(PUFF.pos, 3))
+    g.setAttribute('aDir', new BufferAttribute(PUFF.dir, 3))
+    return g
+  }, [])
+  React.useEffect(() => () => puffGeo.dispose(), [puffGeo])
+  const puffUniforms = React.useMemo(() => ({ uAge: { value: -1 }, uPixel: { value: 600 }, uColor: { value: hsl(40, 30, 92) }, uOpacity: { value: 0.8 } }), [])
+  const group = React.useRef<Group>(null)
+  const pivot = React.useRef<Group>(null)
+  const mats = React.useRef<(MeshBasicMaterial | null)[]>([])
+  const flashMat = React.useRef<SpriteMaterial>(null)
+  const puffMat = React.useRef<ShaderMaterial>(null)
+  const st = React.useRef({ arm: 0, phase: 'rest' as 'rest' | 'lift' | 'held' | 'clap', liftAt: 0, clapAt: -10, prev: 0 })
+  const centre = React.useMemo(() => new Vector3(...NODES.crew).add(new Vector3(...CLAPPER.at)), [])
+  const ndc = React.useMemo(() => new Vector3(), [])
+  const invalidate = useThree((s) => s.invalidate)
+  useFrame(({ camera, size, viewport }, dt) => {
+    const g = group.current
+    if (!g || !live.place) return
+    const d = Math.min(dt, 0.1)
+    const w = skyWeight(live.place, 1)
+    g.visible = w > 0.004 && !!maps
+    if (!g.visible) return
     const near = presence(live.place, 1)
-    m.quaternion.copy(camera.quaternion)
-    m.rotateZ(-live.time * 0.12)
-    m.scale.setScalar(9.6 * (0.82 + 0.18 * near))
-    if (mat.current) mat.current.opacity = 0.14 + 0.5 * near
+    const s = st.current
+    const reduced = heroState.reduced
+    // arriving: the sticks lift, then clap
+    if (!reduced && near > 0.9 && s.prev <= 0.9) {
+      s.phase = 'lift'
+      s.liftAt = live.time
+    }
+    s.prev = near
+    // the pointer on the slate: held open; leaving it, a clap
+    ndc.copy(centre).project(camera)
+    const hand = ndc.z < 1 ? pointerNear(ndc.x, ndc.y, 0.17) * near : 0
+    if (hand > 0.35 && s.phase !== 'held') s.phase = 'held'
+    else if (s.phase === 'held' && hand < 0.15) s.phase = 'clap'
+    if (s.phase === 'lift' && live.time - s.liftAt > 0.65) s.phase = 'clap'
+    if (s.phase === 'clap') {
+      s.arm -= d * 9
+      if (s.arm <= 0 || reduced) {
+        s.arm = 0
+        s.phase = 'rest'
+        s.clapAt = live.time
+      }
+    } else s.arm += ((s.phase === 'rest' ? 0 : CLAPPER.open) - s.arm) * Math.min(1, d * (s.phase === 'held' ? 6 : 8))
+    if (pivot.current) pivot.current.rotation.z = s.arm
+    for (const m of mats.current) if (m) m.opacity = w
+    const age = live.time - s.clapAt
+    if (flashMat.current) flashMat.current.opacity = w * Math.max(0, 1 - age * 4.5) * 0.9
+    const pm = puffMat.current
+    if (pm) {
+      pm.uniforms.uAge.value = age < 2 ? age : -1
+      pm.uniforms.uOpacity.value = 0.8 * w
+      pm.uniforms.uPixel.value = (size.height * viewport.dpr) / (2 * Math.tan(((camera as PerspectiveCamera).fov / 2) * (Math.PI / 180)))
+    }
+    if (s.phase !== 'rest' || age < 2) invalidate()
+  })
+  const [bw, bh] = CLAPPER.board
+  const top = bh / 2
+  const mat = (i: number, map: Texture | null) => (
+    <meshBasicMaterial ref={(el) => void (mats.current[i] = el)} map={map} transparent toneMapped={false} />
+  )
+  return (
+    <group ref={group} position={centre} visible={false}>
+      <mesh renderOrder={7}>
+        <planeGeometry args={[bw, bh]} />
+        {mat(0, maps?.board ?? null)}
+      </mesh>
+      <mesh position={[0, top + CLAPPER.stick / 2, 0.01]} renderOrder={7}>
+        <planeGeometry args={[bw, CLAPPER.stick]} />
+        {mat(1, maps?.base ?? null)}
+      </mesh>
+      {/* the arm, hinged at its left end on the stick below */}
+      <group ref={pivot} position={[-bw / 2, top + CLAPPER.stick, 0.03]}>
+        <mesh position={[bw / 2, CLAPPER.stick / 2, 0]} renderOrder={7}>
+          <planeGeometry args={[bw, CLAPPER.stick]} />
+          {mat(2, maps?.arm ?? null)}
+        </mesh>
+      </group>
+      <sprite position={[0, top + CLAPPER.stick, 0.2]} scale={[bw * 1.15, 1.4, 1]} renderOrder={8}>
+        <spriteMaterial ref={flashMat} map={soft} transparent opacity={0} depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
+      </sprite>
+      <points geometry={puffGeo} frustumCulled={false} renderOrder={9}>
+        <shaderMaterial ref={puffMat} vertexShader={PUFF_VERT} fragmentShader={PUFF_FRAG} uniforms={puffUniforms} transparent depthWrite={false} blending={AdditiveBlending} />
+      </points>
+    </group>
+  )
+}
+
+/**
+ * The Crew's cinema: the silent era (the owner, 2026-11-06: "every space should have a different type of
+ * cinema … each from a different era"). A canvas screen in a wooden frame, hung by two ropes at the back of
+ * the soundstage, turned toward the stage; A Trip to the Moon on it in a silent print's look (cinema.tsx,
+ * films.ts); its projector out of frame, up and to the left like a booth, its beam flickering through the
+ * haze at sixteen frames a second.
+ */
+const SILENT = { at: [14, 6, -26] as Vec3, size: [20, 15] as const, turn: -0.25, lamp: [-26, 16, 16] as Vec3 } as const
+function SilentCinema() {
+  const [w, h] = SILENT.size
+  const corners = React.useMemo(() => {
+    const c = Math.cos(SILENT.turn)
+    const sn = Math.sin(SILENT.turn)
+    const [ax, ay, az] = SILENT.at
+    return ([[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]] as const).map(([x, y]) => [ax + x * c, ay + y, az - x * sn] as Vec3)
+  }, [w, h])
+  const beamGeo = React.useMemo(() => beamGeometry(SILENT.lamp, corners), [corners])
+  const ropes = React.useMemo(() => {
+    const g = new BufferGeometry()
+    g.setAttribute('position', new Float32BufferAttribute([-w / 2 + 1, h / 2 + 0.4, -0.1, -w / 2 + 1.6, h / 2 + 40, -0.1, w / 2 - 1, h / 2 + 0.4, -0.1, w / 2 - 1.6, h / 2 + 40, -0.1], 3))
+    return g
+  }, [w, h])
+  React.useEffect(() => () => { beamGeo.dispose(); ropes.dispose() }, [beamGeo, ropes])
+  const beamUniforms = React.useMemo(() => ({ uColor: { value: hsl(42, 30, 88) }, uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: 0.075 } }), [])
+  const group = React.useRef<Group>(null)
+  const beamMat = React.useRef<ShaderMaterial>(null)
+  const frameMat = React.useRef<MeshBasicMaterial>(null)
+  const ropeMat = React.useRef<LineBasicMaterial>(null)
+  useFrame(() => {
+    const g = group.current
+    if (!g || !live.place) return
+    const sw = skyWeight(live.place, 1)
+    g.visible = sw > 0.004
+    if (!g.visible) return
+    if (frameMat.current) frameMat.current.opacity = sw
+    if (ropeMat.current) ropeMat.current.opacity = sw * 0.55
+    const bm = beamMat.current
+    if (bm) {
+      // the hand-cranked lamp's flicker, sixteen frames a second
+      const f = Math.floor(live.time * 16)
+      const flick = 0.82 + 0.18 * (((Math.sin(f * 12.9898) * 43758.5453) % 1) + 1) % 1
+      bm.uniforms.uWeight.value = sw * (heroState.reduced ? 1 : flick)
+      bm.uniforms.uTime.value = live.time
+    }
   })
   return (
-    <mesh ref={mesh} position={c} renderOrder={7}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial ref={mat} map={map} transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
-    </mesh>
+    <group ref={group} position={NODES.crew} visible={false}>
+      <mesh geometry={beamGeo} renderOrder={-6} frustumCulled={false}>
+        <shaderMaterial ref={beamMat} vertexShader={PROJECTOR_VERT} fragmentShader={PROJECTOR_FRAG} uniforms={beamUniforms} transparent depthWrite={false} side={DoubleSide} blending={AdditiveBlending} />
+      </mesh>
+      <group position={SILENT.at} rotation-y={SILENT.turn}>
+        {/* the wooden frame, a hand's width round the canvas */}
+        <mesh position={[0, 0, -0.08]} renderOrder={-7}>
+          <planeGeometry args={[w + 0.9, h + 0.9]} />
+          <meshBasicMaterial ref={frameMat} color="#3a2716" transparent toneMapped={false} />
+        </mesh>
+        <lineSegments geometry={ropes} renderOrder={-7}>
+          <lineBasicMaterial ref={ropeMat} color="#8a7356" transparent />
+        </lineSegments>
+        <FilmScreen film="crew" era={0} station="crew" size={[w, h]} weight={crewWeight} renderOrder={-6} />
+      </group>
+    </group>
   )
 }
 
@@ -343,66 +560,46 @@ const PALACE = { size: [64, 34] as [number, number], z: -16, lamp: [0, 15, 16] a
 function Palace({ theme }: { theme: HeroTheme }) {
   const c = NODES.client
   const geo = React.useMemo(() => new PlaneGeometry(1, 1), [])
-  // the beam: four faces from a small square at the lamp to the screen's edges, divided along their length
+  // the beam: from the lamp to the screen's edges
   const beamGeo = React.useMemo(() => {
-    const [lx, ly, lz] = PALACE.lamp
     const { y, hw, hh } = PALACE.screen
-    const near = [[-0.5, -0.4], [0.5, -0.4], [0.5, 0.4], [-0.5, 0.4]]
-    const far = [[-hw, y - hh], [hw, y - hh], [hw, y + hh], [-hw, y + hh]]
-    const N = 14
-    const pos: number[] = []
-    const t: number[] = []
-    const idx: number[] = []
-    for (let f = 0; f < 4; f++) {
-      const a = f
-      const b = (f + 1) % 4
-      const base = pos.length / 3
-      for (let i = 0; i <= N; i++) {
-        const k = i / N
-        for (const corner of [a, b]) {
-          pos.push(lx + near[corner][0] + (far[corner][0] - lx - near[corner][0]) * k, ly + near[corner][1] + (far[corner][1] - ly - near[corner][1]) * k, lz + (PALACE.z - lz) * k)
-          t.push(k)
-        }
-      }
-      for (let i = 0; i < N; i++) {
-        const q = base + i * 2
-        idx.push(q, q + 1, q + 3, q, q + 3, q + 2)
-      }
-    }
-    const g = new BufferGeometry()
-    g.setAttribute('position', new Float32BufferAttribute(pos, 3))
-    g.setAttribute('aT', new Float32BufferAttribute(t, 1))
-    g.setIndex(idx)
-    return g
+    const z = PALACE.z
+    return beamGeometry(PALACE.lamp, [[-hw, y - hh, z], [hw, y - hh, z], [hw, y + hh, z], [-hw, y + hh, z]])
   }, [])
   React.useEffect(() => () => { geo.dispose(); beamGeo.dispose() }, [geo, beamGeo])
   const screenUniforms = React.useMemo(
     () => ({
       uSize: { value: PALACE.size }, uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: 0.5 }, uFace: { value: 0 },
-      uSilver: { value: hsl(214, 30, 86) }, uGold: { value: theme.glow.clone() }, uVelvet: { value: hsl(350, 70, 34) },
+      uSilver: { value: hsl(214, 30, 86) }, uGold: { value: theme.glow.clone() }, uVelvet: { value: hsl(350, 70, 34) }, uSpill: { value: hsl(214, 30, 86) },
     }),
     [theme],
   )
-  const beamUniforms = React.useMemo(() => ({ uColor: { value: hsl(210, 40, 88) }, uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: 0.07 } }), [])
+  const beamUniforms = React.useMemo(() => ({ uColor: { value: hsl(210, 40, 88) }, uTime: { value: 0 }, uWeight: { value: 0 }, uOpacity: { value: 0.085 } }), [])
   const screenMat = React.useRef<ShaderMaterial>(null)
   const beamMat = React.useRef<ShaderMaterial>(null)
+  const maskMat = React.useRef<MeshBasicMaterial>(null)
   const group = React.useRef<Group>(null)
   useFrame((_, dt) => {
     if (!live.place || !group.current) return
     const w = skyWeight(live.place, 2)
     group.current.visible = w > 0.002
     if (!group.current.visible) return
+    const tone = filmTone('client')
     const sm = screenMat.current
     if (sm) {
       sm.uniforms.uWeight.value = w
       sm.uniforms.uTime.value = live.time
       sm.uniforms.uFace.value = damp(sm.uniforms.uFace.value, heroState.face, 2.2, Math.min(dt, 0.1))
+      if (tone) (sm.uniforms.uSpill.value as Color).copy(tone)
     }
+    // the projector's beam carries the film's light
     const bm = beamMat.current
     if (bm) {
-      bm.uniforms.uWeight.value = w * presence(live.place, 2)
+      bm.uniforms.uWeight.value = w * (0.35 + 0.65 * presence(live.place, 2))
       bm.uniforms.uTime.value = live.time
+      if (tone) (bm.uniforms.uColor.value as Color).copy(tone)
     }
+    if (maskMat.current) maskMat.current.opacity = w
   })
   return (
     <group ref={group} position={c} visible={false}>
@@ -412,6 +609,12 @@ function Palace({ theme }: { theme: HeroTheme }) {
       <mesh geometry={beamGeo} renderOrder={-6} frustumCulled={false}>
         <shaderMaterial ref={beamMat} vertexShader={PROJECTOR_VERT} fragmentShader={PROJECTOR_FRAG} uniforms={beamUniforms} transparent depthWrite={false} side={DoubleSide} blending={AdditiveBlending} />
       </mesh>
+      {/* the screen's masking: black velvet across the whole wide screen; the film at its own (Academy) shape in the middle */}
+      <mesh position={[0, PALACE.screen.y, PALACE.z + 0.02]} renderOrder={-7}>
+        <planeGeometry args={[PALACE.screen.hw * 2, PALACE.screen.hh * 2]} />
+        <meshBasicMaterial ref={maskMat} color="#050507" transparent toneMapped={false} />
+      </mesh>
+      <FilmScreen film="client" era={1} station="client" size={[PALACE.screen.hh * 2 * (4 / 3), PALACE.screen.hh * 2]} position={[0, PALACE.screen.y, PALACE.z + 0.05]} weight={clientWeight} renderOrder={-6} />
       <Searchlights />
     </group>
   )
@@ -448,7 +651,8 @@ function Searchlights() {
       const L = 70
       m.rotation.z = tilt
       // (a plane turned by `tilt` has its narrow end — the lamp — at its local top: the centre sits half a length back from it)
-      m.position.set(b.x + Math.sin(tilt) * (L / 2), -6 - Math.cos(tilt) * (L / 2), PALACE.z - 4)
+      // (they rise from behind the top of the screen: never across the picture)
+      m.position.set(b.x + Math.sin(tilt) * (L / 2), PALACE.screen.y + PALACE.screen.hh + 2 - Math.cos(tilt) * (L / 2), PALACE.z - 4)
       mat.uniforms.uWeight.value = w
       mat.uniforms.uTime.value = live.time
     })
@@ -464,84 +668,234 @@ function Searchlights() {
   )
 }
 
-/** The sunburst round the Client's tile (in place of the rings). */
-function DecoHalo({ theme }: { theme: HeroTheme }) {
-  const map = React.useMemo(() => decoHaloTexture(theme), [theme])
-  React.useEffect(() => () => map.dispose(), [map])
-  const mesh = React.useRef<Mesh>(null)
-  const mat = React.useRef<MeshBasicMaterial>(null)
-  const c = React.useMemo(() => new Vector3(...NODES.client).add(new Vector3(0, 0, -1.4)), [])
-  useFrame(({ camera }) => {
-    const m = mesh.current
-    if (!m || !live.place) return
-    const near = presence(live.place, 2)
-    m.quaternion.copy(camera.quaternion)
-    m.rotateZ(live.time * 0.03)
-    m.scale.setScalar(10.5 * (0.82 + 0.18 * near))
-    if (mat.current) mat.current.opacity = 0.12 + 0.5 * near
+/**
+ * Behind the Client's tile: a cinema ticket, ADMIT ONE, that turns over — with the tile, every three
+ * seconds — into the Stakeholders' premiere pass, ALL ACCESS (textures.ts ticketTextures). Under the
+ * pointer (or a finger) the ticket's stub tears a little along its perforation, and a sheen crosses the foil.
+ */
+const TICKET = { at: [0, -0.3, -3.9] as Vec3, size: [14.2, 6.4] as const, stub: 0.83 } as const
+function Ticket({ anisotropy }: { anisotropy: number }) {
+  const [maps, setMaps] = React.useState<{ ticket: Texture; pass: Texture } | null>(null)
+  React.useEffect(() => {
+    let alive = true
+    let made: Texture[] = []
+    ticketTextures(anisotropy).then(async (m) => {
+      made = [m.ticket, m.pass]
+      if (!alive) return made.forEach((t) => t.dispose())
+      await Promise.all(made.map((t) => uploadSoon(t)))
+      if (alive) setMaps(m)
+    })
+    return () => {
+      alive = false
+      made.forEach((t) => t.dispose())
+    }
+  }, [anisotropy])
+  const [W, H] = TICKET.size
+  const uniforms = React.useMemo(
+    () => [0, 1].map((part) => ({ uMap: { value: null as Texture | null }, uU: { value: part === 0 ? [0, TICKET.stub] : [TICKET.stub, 1] }, uSheen: { value: -1 }, uOpacity: { value: 0 } })),
+    [],
+  )
+  const group = React.useRef<Group>(null)
+  const turn = React.useRef<Group>(null)
+  const stub = React.useRef<Group>(null)
+  const mats = React.useRef<(ShaderMaterial | null)[]>([])
+  const st = React.useRef({ showing: -1, tear: 0, sheen: -1, held: false })
+  const centre = React.useMemo(() => new Vector3(...NODES.client).add(new Vector3(...TICKET.at)), [])
+  const ndc = React.useMemo(() => new Vector3(), [])
+  const invalidate = useThree((s) => s.invalidate)
+  useFrame(({ camera }, dt) => {
+    const g = group.current
+    if (!g || !live.place) return
+    const d = Math.min(dt, 0.1)
+    const w = skyWeight(live.place, 2)
+    g.visible = w > 0.004 && !!maps
+    if (!g.visible || !maps) return
+    const s = st.current
+    // turning with the tile, a beat behind it
+    const ft = faceTurn(0.05)
+    let fade = 1
+    if (heroState.reduced) fade = ft.fade
+    else if (turn.current) turn.current.rotation.y = ft.angle
+    if (ft.turning) invalidate()
+    if (ft.showing !== s.showing) {
+      s.showing = ft.showing
+      for (const m of mats.current) if (m) m.uniforms.uMap.value = ft.showing ? maps.pass : maps.ticket
+    }
+    // the hand on it: the ticket's stub tears a little; a sheen crosses the foil as it arrives
+    ndc.copy(centre).project(camera)
+    const hand = ndc.z < 1 ? pointerNear(ndc.x, ndc.y, 0.2) * presence(live.place, 2) : 0
+    const on = hand > 0.35
+    if (on && !s.held && !heroState.reduced) s.sheen = -0.4
+    s.held = on
+    s.tear += ((on && s.showing === 0 ? 1 : 0) - s.tear) * Math.min(1, d * (on ? 7 : 4))
+    if (s.sheen < 1.6) s.sheen += d * 1.6
+    if (stub.current) {
+      stub.current.rotation.z = -0.1 * s.tear
+      stub.current.position.x = -W / 2 + W * TICKET.stub + 0.32 * s.tear
+    }
+    for (const m of mats.current) {
+      if (!m) continue
+      m.uniforms.uOpacity.value = w * fade
+      m.uniforms.uSheen.value = s.sheen
+    }
+    if (s.tear > 0.002 && s.tear < 0.998) invalidate()
   })
+  const sw = W * (1 - TICKET.stub)
+  const bw = W * TICKET.stub
+  const face = (i: number) => (
+    <shaderMaterial ref={(el) => void (mats.current[i] = el)} vertexShader={TICKET_VERT} fragmentShader={TICKET_FRAG} uniforms={uniforms[i]} transparent toneMapped={false} side={DoubleSide} />
+  )
   return (
-    <mesh ref={mesh} position={c} renderOrder={7}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial ref={mat} map={map} transparent depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
-    </mesh>
+    <group ref={group} position={centre} visible={false}>
+      <group ref={turn}>
+        <mesh position={[-W / 2 + bw / 2, 0, 0]} renderOrder={7}>
+          <planeGeometry args={[bw, H]} />
+          {face(0)}
+        </mesh>
+        {/* the stub, hinged at the perforation */}
+        <group ref={stub} position={[-W / 2 + bw, 0, 0.01]}>
+          <mesh position={[sw / 2, 0, 0]} renderOrder={7}>
+            <planeGeometry args={[sw, H]} />
+            {face(1)}
+          </mesh>
+        </group>
+      </group>
+    </group>
   )
 }
 
-// ── THE SUITE: THE MODERN LENS ──────────────────────────────────────────────
+// ── THE SUITE: TODAY — A DECK OF FILM CARDS ─────────────────────────────────
 //
-// Behind the tile, a cine lens seen down its barrel: the iris opening as the camera arrives (IRIS_*),
-// the focus ring turning back and forth round it (a focus pull), and an anamorphic flare crossing the
-// frame through the tile. The floor is the edit timeline (STRUCTURE mode 2).
+// The Suite's cinema is not a screen but a deck (the owner, 2026-11-06: "multiple … videos … in a form of a
+// film card or strip in a distance that switches to play the next video … they swipe off and disappears for
+// the next to push a little forward and play"): four cards of film receding behind the station, the front
+// one playing its clip; as it ends it swipes off to the right, turning, burning away from its trailing edge,
+// and the next comes forward and plays; the spent card returns to the back of the deck. The front card
+// leans toward the pointer; a click or a tap sends it on. Its floor (STRUCTURE mode 2) is the Suite's own
+// work, from script to screen.
 
-function SuiteLens({ theme }: { theme: HeroTheme }) {
-  const maps = React.useMemo(() => ({ ring: focusRingTexture(theme), flare: anamorphicTexture() }), [theme])
-  React.useEffect(() => () => Object.values(maps).forEach((t) => t.dispose()), [maps])
-  const c = React.useMemo(() => new Vector3(...NODES.suite), [])
-  const irisUniforms = React.useMemo(() => ({ uOpen: { value: 0 }, uTime: { value: 0 }, uWeight: { value: 0 }, uGold: { value: theme.glow.clone() }, uLean: { value: [0, 0] } }), [theme])
-  const iris = React.useRef<Mesh>(null)
-  const irisMat = React.useRef<ShaderMaterial>(null)
-  const ring = React.useRef<Mesh>(null)
-  const ringMat = React.useRef<MeshBasicMaterial>(null)
-  const flare = React.useRef<Mesh>(null)
-  const flareMat = React.useRef<MeshBasicMaterial>(null)
-  useFrame(({ camera }) => {
+const DECK = { at: [-1.5, 5.6, -21] as Vec3, card: [17, 7.6] as const, step: [2.8, 1.1, -3.4] as Vec3, films: ['suite-1', 'suite-2', 'suite-3', 'suite-4'], swipe: 1.0, hold: 8.5 } as const
+
+function FilmDeck() {
+  const [W, H] = DECK.card
+  const specs = React.useMemo(() => DECK.films.map((id) => HERO_FILMS.find((f) => f.id === id)), [])
+  const uniforms = React.useMemo(
+    () =>
+      DECK.films.map((_, i) => ({
+        uMap: { value: null as Texture | null }, uHasMap: { value: 0 }, uTexel: { value: [1 / 854, 1 / 358] }, uTime: { value: 0 }, uWeight: { value: 0 }, uBright: { value: 1 },
+        uScreen: { value: W / (H * 0.74) }, uFilm: { value: specs[i]?.aspect ?? 2.39 }, uBurn: { value: 0 }, uSheen: { value: -1 },
+      })),
+    [W, H, specs],
+  )
+  const meshes = React.useRef<(Mesh | null)[]>([])
+  const mats = React.useRef<(ShaderMaterial | null)[]>([])
+  // the deck's order (front first), the swipe under way, and when the front card came forward
+  const st = React.useRef({ order: [0, 1, 2, 3], swipeAt: -1, shownAt: 0, appearAt: [0, 0, 0, 0], tiltX: 0, tiltY: 0, prevW: 0 })
+  const base = React.useMemo(() => new Vector3(...NODES.suite).add(new Vector3(...DECK.at)), [])
+  const ndc = React.useMemo(() => new Vector3(), [])
+  const invalidate = useThree((s) => s.invalidate)
+  const send = React.useCallback(() => {
+    const s = st.current
+    if (s.swipeAt < 0) s.swipeAt = live.time
+    invalidate()
+  }, [invalidate])
+  useFrame(({ camera }, dt) => {
     if (!live.place) return
-    const near = presence(live.place, 3)
+    const d = Math.min(dt, 0.1)
     const w = skyWeight(live.place, 3)
-    for (const m of [iris.current, ring.current, flare.current]) {
-      if (!m) continue
-      m.visible = w > 0.002
-      m.quaternion.copy(camera.quaternion)
+    const s = st.current
+    const reduced = heroState.reduced
+    if (w > 0.004 && s.prevW <= 0.004) s.shownAt = live.time
+    s.prevW = w
+    const front = DECK.films[s.order[0]]
+    if (w > 0.004) {
+      wantFilm(front, w)
+      if (w > 0.3) prefetchFilm(DECK.films[s.order[1]])
     }
-    if (!iris.current?.visible) return
-    const im = irisMat.current
-    if (im) {
-      // the iris opens as the camera arrives, and breathes a little while it holds
-      im.uniforms.uOpen.value = near * (0.86 + 0.08 * Math.sin(live.time * 0.4))
-      im.uniforms.uTime.value = live.time
-      im.uniforms.uWeight.value = w * (0.35 + 0.65 * near)
-      im.uniforms.uLean.value = [live.pointer.x * live.pointer.on, live.pointer.y * live.pointer.on]
+    // the front card's clip has ended (or, where nothing plays, it has held a while): it moves on
+    const ended = filmPlaying(front) ? filmProgress(front) > 0.975 : live.time - s.shownAt > DECK.hold
+    if (s.swipeAt < 0 && w > 0.5 && ended && !reduced) s.swipeAt = live.time
+    let k = s.swipeAt < 0 ? 0 : (live.time - s.swipeAt) / DECK.swipe
+    if (k >= 1 || (reduced && s.swipeAt >= 0)) {
+      const out = s.order.shift()!
+      s.order.push(out)
+      rewindFilm(DECK.films[out])
+      s.appearAt[out] = live.time
+      s.swipeAt = -1
+      s.shownAt = live.time
+      k = 0
     }
-    // the focus pull: the ring turns slowly one way and back, the distances passing the mark
-    if (ring.current) ring.current.rotateZ(Math.sin(live.time * 0.22) * 0.45)
-    if (ringMat.current) ringMat.current.opacity = w * (0.25 + 0.6 * near)
-    if (flareMat.current) flareMat.current.opacity = w * near * (0.4 + 0.1 * Math.sin(live.time * 0.9))
+    const e = k * k * (3 - 2 * k)
+    // the pointer on the front card: it leans toward it
+    ndc.copy(base).project(camera)
+    const hx = live.pointer.x - ndc.x
+    const hy = live.pointer.y - ndc.y
+    const near = ndc.z < 1 ? pointerNear(ndc.x, ndc.y, 0.26) * presence(live.place, 3) : 0
+    s.tiltX += (-hy * 0.5 * near - s.tiltX) * Math.min(1, d * 6)
+    s.tiltY += (hx * 0.35 * near - s.tiltY) * Math.min(1, d * 6)
+    s.order.forEach((card, slot) => {
+      const m = meshes.current[card]
+      const mat = mats.current[card]
+      if (!m || !mat) return
+      m.visible = w > 0.004
+      if (!m.visible) return
+      const leaving = slot === 0 && k > 0
+      // each card steps forward a place as the front one leaves
+      const at = leaving ? 0 : slot - e
+      m.position.set(base.x + DECK.step[0] * at, base.y + DECK.step[1] * at, base.z + DECK.step[2] * at)
+      m.scale.setScalar(Math.pow(0.9, at))
+      m.rotation.set(slot === 0 ? s.tiltX : 0, slot === 0 ? s.tiltY : 0, 0)
+      if (leaving) {
+        // off to the right, rising a little, turning away
+        m.position.x += 30 * e
+        m.position.y += 2.5 * e
+        m.position.z += 3 * e
+        m.rotation.z = -0.32 * e
+        m.rotation.y = -0.7 * e
+      }
+      const appear = Math.min(1, (live.time - s.appearAt[card]) / 0.6)
+      const u = mat.uniforms
+      const pic = filmPicture(DECK.films[card])
+      if (u.uMap.value !== pic) {
+        u.uMap.value = pic
+        u.uHasMap.value = pic ? 1 : 0
+      }
+      u.uTime.value = live.time
+      u.uWeight.value = w * appear * (1 - 0.22 * at) * (1 - 0.6 * watching.suite.now * (slot === 0 ? 0 : 1))
+      u.uBright.value = (slot === 0 ? 1 : 0.62) * (1 + 0.25 * watching.suite.now)
+      u.uBurn.value = leaving ? e : 0
+      u.uSheen.value = slot === 0 ? -0.5 + ((live.time - s.shownAt) * 0.6) % 3 : -1
+      m.renderOrder = -6 - slot * 0.1
+    })
+    if (k > 0) invalidate()
+  })
+  const handlers = (card: number) => ({
+    onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+      if (st.current.order[0] !== card) return
+      e.stopPropagation()
+      watching.suite.to = 1
+      document.body.style.cursor = 'pointer'
+      invalidate()
+    },
+    onPointerOut: () => {
+      watching.suite.to = 0
+      document.body.style.cursor = ''
+      invalidate()
+    },
+    onClick: (e: ThreeEvent<MouseEvent>) => {
+      if (st.current.order[0] !== card) return
+      e.stopPropagation()
+      send()
+    },
   })
   return (
     <group>
-      <mesh ref={iris} position={[c.x, c.y, c.z - 2.2]} scale={11} renderOrder={-4} visible={false}>
-        <planeGeometry args={[1, 1]} />
-        <shaderMaterial ref={irisMat} vertexShader={IRIS_VERT} fragmentShader={IRIS_FRAG} uniforms={irisUniforms} transparent depthWrite={false} />
-      </mesh>
-      <mesh ref={ring} position={[c.x, c.y, c.z - 2.0]} scale={13.4} renderOrder={-3} visible={false}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial ref={ringMat} map={maps.ring} transparent depthWrite={false} toneMapped={false} />
-      </mesh>
-      <mesh ref={flare} position={[c.x, c.y, c.z + 0.6]} scale={[46, 1.1, 1]} renderOrder={22} visible={false}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial ref={flareMat} map={maps.flare} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} toneMapped={false} />
-      </mesh>
+      {DECK.films.map((id, i) => (
+        <mesh key={id} ref={(el) => void (meshes.current[i] = el)} visible={false} {...handlers(i)}>
+          <planeGeometry args={[W, H]} />
+          <shaderMaterial ref={(el) => void (mats.current[i] = el)} vertexShader={FILM_VERT} fragmentShader={FILM_FRAG} defines={{ ERA: 2, CARD: 1 }} uniforms={uniforms[i]} transparent depthWrite={false} side={DoubleSide} />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -648,14 +1002,12 @@ function Panel({
     const focus = !anyHover || hovered[station] === index ? 1 : 0
     m.uniforms.uFocus.value = damp(m.uniforms.uFocus.value, focus, 7, d)
 
-    // gather from the tile out to the screen's place, then float there, leaning toward the pointer
+    // gather from the tile out to the screen's place, then float there (each answers the hand on its own,
+    // lifting under it; the screens never lean together with the pointer — the owner, 2026-11-06)
     const t = live.time
-    const px = live.pointer.x * live.pointer.on
-    const py = live.pointer.y * live.pointer.on
-    const depth = 0.5 + Math.max(0, slot[2] + 4) * 0.12
     g.position.set(
-      centre[0] + slot[0] * a + px * 0.35 * depth,
-      centre[1] + slot[1] * a + Math.sin(t * 0.55 + index * 1.3) * 0.14 * a + py * 0.22 * depth,
+      centre[0] + slot[0] * a,
+      centre[1] + slot[1] * a + Math.sin(t * 0.55 + index * 1.3) * 0.14 * a,
       centre[2] + slot[2] * a - (1 - a) * 2,
     )
     // under the hand: lift toward the camera
@@ -675,14 +1027,15 @@ function Panel({
       }
       if (turn.turning) invalidate()
     }
-    g.rotation.set(-slot[1] * 0.012 + py * 0.05 * a, -slot[0] * 0.03 + px * 0.07 * a + angle, 0)
+    g.rotation.set(-slot[1] * 0.012, -slot[0] * 0.03 + angle, 0)
 
-    m.uniforms.uOpacity.value = a * fade
+    // the space's film being watched (its cinema under the pointer): the screens step back from it
+    m.uniforms.uOpacity.value = a * fade * (1 - 0.72 * watching[station].now)
     m.uniforms.uHover.value = s.hover
     // the tools' work starts a few seconds in, so a still (reduced motion, a poster) shows it under way
     m.uniforms.uTime.value = t + 5 + index * 3.7
     // the glass catches the light once as the screen arrives, and follows the hand
-    m.uniforms.uSheen.value = -0.9 + 2.6 * a - s.hover * (0.9 - px * 0.4)
+    m.uniforms.uSheen.value = -0.9 + 2.6 * a - s.hover * 0.9
     if (s.hover > 0.001 && s.hover < 0.999) invalidate()
   })
 
@@ -767,6 +1120,12 @@ function Chips({ theme, sources, anisotropy, armed }: { theme: HeroTheme; source
   )
 }
 
+// ── THE CINEMAS' WEIGHTS ────────────────────────────────────────────────────
+
+/** How present each space's cinema is: with its own sky (it shows on the way in, before the screens gather). */
+const crewWeight = () => (live.place ? skyWeight(live.place, 1) : 0)
+const clientWeight = () => (live.place ? skyWeight(live.place, 2) : 0)
+
 // ── THE STATION ─────────────────────────────────────────────────────────────
 
 function facesFor(id: StationId): Face[][] {
@@ -800,15 +1159,16 @@ export function Station({
       {id === 'crew' ? (
         <>
           <CrewLights theme={theme} />
-          <CrewReel theme={theme} />
+          <Clapperboard anisotropy={anisotropy} soft={soft} />
+          <SilentCinema />
         </>
       ) : id === 'client' ? (
         <>
           <Palace theme={theme} />
-          <DecoHalo theme={theme} />
+          <Ticket anisotropy={anisotropy} />
         </>
       ) : (
-        <SuiteLens theme={theme} />
+        <FilmDeck />
       )}
       {keep.map((fi, slotIndex) => (
         <Panel

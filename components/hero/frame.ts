@@ -99,6 +99,14 @@ export function wholeFrame(kind: 'title' | 'close', tall: boolean, aspect: numbe
 }
 
 /**
+ * The title's layout on the tour, its words away (they step aside as the tour starts): the logo has the
+ * whole stage between the slate line and the track, its room for the cue kept under it.
+ */
+export function tourLayout(L: Layout): Layout {
+  return { ...L, titleTop: L.bottom + 0.03, titleRight: L.edge - 0.04 }
+}
+
+/**
  * Where the logo's line lands on the stage, as fractions (0 = top or left), for the title shot at
  * rest: its extent (the valley is its lowest point) and its horizontal middle. The camera
  * looks at the box's centre with its lens shifted to the band's centre, so each point of the line

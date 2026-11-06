@@ -138,9 +138,13 @@ export const VIEW = {
   ride: { wide: [0, 2.7, 10.5] as Vec3, tall: [0, 2.7, 15] as Vec3, lookAhead: 0.05, pitch: 0.5 },
   /** While holding a shot the camera keeps creeping forward, so the scene never freezes. */
   creep: 0.05,
-  /** The camera leans with the pointer, a little (scaled by its distance). */
-  pointer: { x: 0.9, y: 0.5, damping: 2.6 },
 } as const
+
+/**
+ * The pointer (a mouse, or a finger): how quickly the things that answer it follow it, and how long a
+ * touch holds after the finger lifts. The camera never follows it (the owner, 2026-11-06).
+ */
+export const POINTER = { damping: 7, touchHold: 1500 } as const
 // Every held shot is framed by rig.ts: its box of scene fitted into the room the words leave, measured from the page.
 
 // ── THE TIMELINE ────────────────────────────────────────────────────────────
@@ -154,8 +158,9 @@ export type Shot = 0 | 1 | 2 | 3 | 4
 export type Segment = { kind: 'hold'; shot: Shot; vh: number } | { kind: 'travel'; from: Shot; to: Shot; vh: number }
 
 export const STORY: readonly Segment[] = [
-  // short: the visitor has already seen the title on the one-screen hero, and the dive should start at once
-  { kind: 'hold', shot: 0, vh: 8 },
+  // short: the visitor has already seen the title; on taking the tour they start the journey by scrolling,
+  // and the first turn of the wheel shouldn't leap away (it fades the cue to scroll)
+  { kind: 'hold', shot: 0, vh: 14 },
   { kind: 'travel', from: 0, to: 1, vh: 85 },
   { kind: 'hold', shot: 1, vh: 90 },
   { kind: 'travel', from: 1, to: 2, vh: 140 },
