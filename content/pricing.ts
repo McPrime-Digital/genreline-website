@@ -275,7 +275,7 @@ export const UNITS = [
   {
     "id": "ai",
     "name": "AI",
-    "plain": "Prepaid, shown in dollars and cents, never free. Every model has a published price per unit — a token, a second, an image — shown before each action runs; a failed or refused generation is not charged. Top up whenever you need to, or let a monthly AI plan refill the balance."
+    "plain": "Two meters, never free. GENERATION — every image, clip, voice and piece of music — is bought as credits: a tier's month or a top-up. Every model has a published credit cost, shown before a generation runs and in its detail; a failed or refused generation costs nothing. PRIMEOS, the assistant, is a tier with a weekly usage limit — Pro, Max at five times Pro, Ultra at ten — resetting every Thursday at 10 pm; a studio's pool and its groups share theirs."
   }
 ] as const
 
@@ -291,7 +291,7 @@ export const TRIAL_AND_EXPLORE = {
 /** Kept for scripts/export-claims.ts: the one-paragraph statement about prepaid usage. */
 export const USAGE_CREDITS = {
   heading: 'AI, prepaid',
-  body: "Prepaid, shown in dollars and cents, never free. Every model has a published price per unit — a token, a second, an image — shown before each action runs; a failed or refused generation is not charged. Top up whenever you need to, or let a monthly AI plan refill the balance.",
+  body: "Two meters, never free. GENERATION — every image, clip, voice and piece of music — is bought as credits: a tier's month or a top-up. Every model has a published credit cost, shown before a generation runs and in its detail; a failed or refused generation costs nothing. PRIMEOS, the assistant, is a tier with a weekly usage limit — Pro, Max at five times Pro, Ultra at ten — resetting every Thursday at 10 pm; a studio's pool and its groups share theirs.",
 } as const
 
 export const PRICING_SOURCE = { repository: 'McPrime-Digital/McPrime_ClientsPortal', from: 'lib/billing/catalog.ts · lib/billing/plans.ts · lib/entitlements.ts', provisional: true, published: false } as const
