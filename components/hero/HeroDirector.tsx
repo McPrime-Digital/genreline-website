@@ -35,7 +35,7 @@
 import * as React from 'react'
 import dynamic from 'next/dynamic'
 import { cut, heroState, nearestShot, SHOT_AT, shotWeight, storyAt, timecode } from '@/components/hero/state'
-import { FACE, FOV, SCROLL_DAMPING, type Quality, type Shot } from '@/components/hero/scene/numbers'
+import { FACE, FOV, SCROLL, type Quality, type Shot } from '@/components/hero/scene/numbers'
 import { logoOnStage, PLAY_GAP, tourLayout } from '@/components/hero/frame'
 import type { HeroSources } from '@/components/hero/scene/textures'
 import type { PosterFrames } from '@/components/hero/HomeHero'
@@ -355,14 +355,31 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
     let raf = 0
     let last = 0
     let prev = s.current
+    // The camera follows the scroll on a critically damped spring (the owner, 2026-11-07: the 3D must not
+    // feel "wobbly"): its speed never jumps, so the notches of a wheel or the flicks of a trackpad blend
+    // into one glide, where a plain chase lurched at every notch and crawled between them. It settles as
+    // fast as the chase did, never overshoots, and stops dead when it arrives.
+    let vel = 0
     const tick = (now: number) => {
       raf = 0
       const dt = last ? Math.min((now - last) / 1000, 0.1) : 1 / 60
       last = now
       if (!s.reduced) {
-        s.current += (s.target - s.current) * Math.min(1, dt * SCROLL_DAMPING)
-        if (Math.abs(s.target - s.current) < 0.00005) s.current = s.target
-      } else s.current = cut(s.target)
+        const w = 2 / SCROLL.smooth
+        const x = w * dt
+        const decay = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x)
+        const gap = s.current - s.target
+        const pull = (vel + w * gap) * dt
+        vel = (vel - w * pull) * decay
+        s.current = s.target + (gap + pull) * decay
+        if (Math.abs(s.target - s.current) < 0.00003 && Math.abs(vel) < 0.0005) {
+          s.current = s.target
+          vel = 0
+        }
+      } else {
+        s.current = cut(s.target)
+        vel = 0
+      }
       s.speed = (s.current - prev) / dt
       prev = s.current
       paint()
@@ -481,7 +498,7 @@ export function HeroDirector({ sources, posterFrames }: { sources: HeroSources; 
           }
           // (the title's projector lamp is placed by the same scaling: heroState.posterMap — not while
           // a poster is being made, `?shot=`: the poster's own frame is the one they are defined in)
-          if (!s.tour && !held) heroState.posterMap = { tall: shape === 'tall', k: scale, x0: at.left * st.width - pf.left * pf.width * scale, y0: at.top * st.height - pf.top * pf.height * scale, w: st.width, h: st.height, pw: pf.width, ph: pf.height }
+          if (!s.tour && !held) heroState.posterMap = { tall: shape === 'tall', k: scale, x0: at.left * st.width - pf.left * pf.width * scale, y0: at.top * st.height - pf.top * pf.height * scale, w: st.width, h: st.height, pw: pf.width, ph: pf.height, s: pf.overscan ?? 1 }
           img.style.width = `${(pf.width * scale).toFixed(1)}px`
           img.style.height = `${(pf.height * scale).toFixed(1)}px`
           img.style.transform = `translate3d(${ox.toFixed(1)}px, ${oy.toFixed(1)}px, 0)`

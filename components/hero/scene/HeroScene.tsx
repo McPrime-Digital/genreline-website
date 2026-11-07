@@ -13,16 +13,17 @@
 import * as React from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, Color, DataTexture, FloatType, NearestFilter, NormalBlending, PerspectiveCamera,
-  PlaneGeometry, RGBAFormat, TubeGeometry, Vector2, Vector3, Vector4, type ShaderMaterial,
+  AdditiveBlending, BufferAttribute, BufferGeometry, DataTexture, FloatType, NearestFilter, NormalBlending, PerspectiveCamera,
+  PlaneGeometry, RGBAFormat, TubeGeometry, Vector2, Vector3, Vector4, type ShaderMaterial, type Texture,
 } from 'three'
 import { heroState, shotWeight, storyAt } from '@/components/hero/state'
 import { FLOW, FOV, LOGO_BOX, POINTER, QUALITY, STARS, TUBE, type Quality } from '@/components/hero/scene/numbers'
-import { cameraAt, LINE, LINE_LENGTH, live, makeView, readyView } from '@/components/hero/scene/rig'
+import { cameraAt, LINE, LINE_LENGTH, live, makeView, OVERSCAN, readyView } from '@/components/hero/scene/rig'
 import {
   FLOW_FRAG, FLOW_VERT, GALAXY_FRAG, GALAXY_VERT, LINE_CORE_FRAG, LINE_HALO_FRAG, LINE_VERT, METEOR_FRAG, METEOR_VERT, SKYOBJ_FRAG, SKYOBJ_VERT, STAR_FRAG, STAR_VERT, STREAK_FRAG, STREAK_VERT,
 } from '@/components/hero/scene/shaders'
-import { SKIES, skyMotion, universe, updateUniverse, WARP, type SkyMotion, type Universe } from '@/components/hero/scene/universe'
+import { SKIES, SKY_ASPECT, skyHeld, skyMotion, universe, updateUniverse, WARP, type SkyMotion, type Universe } from '@/components/hero/scene/universe'
+import { SkyBaker } from '@/components/hero/scene/skybake'
 import { Station } from '@/components/hero/scene/Station'
 import { hsl, readTheme, releaseFootage, setFootagePlaying, softTexture, uploads, type HeroSources, type HeroTheme } from '@/components/hero/scene/textures'
 import { TitleProjector } from '@/components/hero/scene/projector'
@@ -81,11 +82,10 @@ function pixelScale(height: number, dpr: number, fov: number) {
 
 const SPAN = STARS.box.max[2] - STARS.box.min[2]
 const WARP_VEL = new Vector3()
-const SIDE = new Vector3()
 /** The readying for the tour: how long the camera's move takes in, and back out (seconds). */
 const READY = { in: 1.2, out: 0.9 } as const
 /** This frame's change: how each sky moves, and how much of each shows (universe.ts skyMotion). */
-const MOTION: SkyMotion = { a: [0, 0, 1, 0], b: [0, 0, 1, 0], wa: 1, wb: 0 }
+const MOTION: SkyMotion = { a: [0, 0, 1, 0], b: [0, 0, 1, 0], fade: [1, 0], stars: [1, 0], blur: [0, 0], cond: 0, bloom: 0, t: 0 }
 
 function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
   const geos = React.useMemo(() => {
@@ -134,7 +134,8 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
       uInk: { value: theme.ink.clone() }, uDark: { value: theme.dark ? 1 : 0 }, uOpacity: { value: theme.dark ? 0.95 : 0.4 },
       uTravelled: { value: 0 }, uField: { value: [STARS.box.min[2], STARS.box.max[2]] }, uAspect: { value: 1 },
       // a change of sky runs across the stars too (CHANGE): the two skies' own stars, how much of each, the turn
-      uRoll: { value: 0 }, uStars: { value: new Vector2(11, 11) }, uShow: { value: new Vector2(1, 0) }, uK: { value: 0 }, uStyle: { value: 0 }, uDir: { value: new Vector2(1, 0) },
+      uRoll: { value: 0 }, uStars: { value: new Vector2(11, 11) }, uStarSize: { value: STARS.size },
+      uFade: { value: new Vector2(1, 0) }, uCond: { value: 0 }, uBloom: { value: 0 }, uT: { value: 0 },
     }),
     [theme],
   )
@@ -155,29 +156,21 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
       u.uPixel.value = pixelScale(size.height, viewport.dpr, (camera as PerspectiveCamera).fov)
       u.uTravelled.value = universe.travelled % SPAN
       u.uAspect.value = live.aspect
-      const { from, to, k } = universe
+      const { from, to } = universe
       skyMotion(MOTION)
-      u.uRoll.value = to ? from.roll + (to.roll - from.roll) * k : from.roll
+      u.uRoll.value = universe.roll
       ;(u.uStars.value as Vector2).set(from.stars, to ? to.stars : from.stars)
-      ;(u.uShow.value as Vector2).set(MOTION.wa, MOTION.wb)
-      u.uK.value = to ? k : 0
-      u.uStyle.value = universe.style
-      ;(u.uDir.value as Vector2).set(universe.dir[0], universe.dir[1])
+      ;(u.uFade.value as Vector2).set(MOTION.stars[0], MOTION.stars[1])
+      u.uCond.value = MOTION.cond
+      u.uBloom.value = MOTION.bloom
+      u.uT.value = MOTION.t
     }
     if (streakMat.current) {
-      // the camera's own velocity, and the universe streaming past on a journey between galaxies
+      // the camera's own velocity (a push or a pull drifts the stars too slowly ever to streak)
       const u = streakMat.current.uniforms
       ;(u.uVel.value as Vector3).copy(live.velocity).add(WARP_VEL.set(0, 0, -universe.warp * WARP.speed))
-      // a whip pan: the stars streak sideways with it
-      if (universe.sweep[0] || universe.sweep[1]) {
-        SIDE.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(universe.sweep[0] * WARP.speed * 1.6)
-        ;(u.uVel.value as Vector3).add(SIDE)
-        SIDE.setFromMatrixColumn(camera.matrixWorld, 1).multiplyScalar(universe.sweep[1] * WARP.speed * 1.6)
-        ;(u.uVel.value as Vector3).add(SIDE)
-      }
       u.uTravelled.value = universe.travelled % SPAN
-      const { from, to, k } = universe
-      u.uRoll.value = to ? from.roll + (to.roll - from.roll) * k : from.roll
+      u.uRoll.value = universe.roll
     }
   })
   return (
@@ -195,7 +188,7 @@ function Stars({ theme, quality }: { theme: HeroTheme; quality: Quality }) {
 
 // ── THE DEEP SKY: THE QUIET SKY BEHIND EVERY SPACE ──────────────────────────
 
-/** The deep sky's plane: far behind the logo, wider than any shot sees. */
+/** The deep sky's plane: far behind the logo, wider than any shot sees (its proportions are universe.ts SKY_ASPECT). */
 const SKY = { z: -162, scale: [640, 380] as const }
 const SKY_PLANE_Z = LOGO_BOX.center[2] + SKY.z
 
@@ -206,26 +199,39 @@ function gazeOnSky(camera: PerspectiveCamera, out: Vector3) {
   return out.multiplyScalar(t).add(camera.position)
 }
 const GAZE = new Vector3()
-const c3 = (v: readonly number[]) => hsl(v[0], v[1], v[2])
-/** Each sky's five colours, in the shader's order: the nebula's two, its accent, the Milky Way's core and edge. */
-const SKY_COLORS = SKIES.map((g) => [c3(g.a), c3(g.b), c3(g.accent), c3(g.band), c3(g.edge)])
+/** The fine stars' cells across the sky's height: about two pixels each at the title. */
+const FINE_ROWS = 760
+
+/** The showings to have painted: the ones on screen, and the ones next on either side. */
+function wantedSkies(): (Universe | null)[] {
+  const u = universe
+  if (!u.plan) return [u.from, u.to, u.next]
+  const at = u.plan.at
+  const i = at.indexOf(u.from)
+  const j = u.to ? at.indexOf(u.to) : i
+  return [u.from, u.to, at[Math.max(i, j) + 1] ?? null, at[Math.min(i, j) - 1] ?? null]
+}
 
 /**
- * The deep sky (universe.ts, shaders.ts GALAXY_*): a quiet nebula and a faint Milky Way — two at once during
- * a change, the leaving one and the arriving one, moved and masked by the change across the whole sky.
+ * The deep sky (universe.ts; painted by skybake.ts, shown by shaders.ts GALAXY_*): two at once during a
+ * change, the leaving one and the arriving one, moved and crossed by the change across the whole sky.
  */
-function DeepSky() {
-  const geo = React.useMemo(() => new PlaneGeometry(1, 1, 128, 76), [])
+function DeepSky({ quality }: { quality: Quality }) {
+  const geo = React.useMemo(() => new PlaneGeometry(1, 1, 64, 38), [])
   React.useEffect(() => () => geo.dispose(), [geo])
+  const baker = React.useMemo(() => new SkyBaker(quality), [quality])
+  React.useEffect(() => () => baker.dispose(), [baker])
   const mat = React.useRef<ShaderMaterial>(null)
   const uniforms = React.useMemo(
     () => ({
-      uTime: { value: 0 }, uCentre: { value: new Vector2(0.5, 0.5) }, uSkyAspect: { value: SKY.scale[0] / SKY.scale[1] },
-      uSA: { value: new Vector4() }, uSB: { value: new Vector4() }, uTA: { value: new Vector4(0, 0, 1, 0) }, uTB: { value: new Vector4(0, 0, 1, 0) },
-      uPA: { value: new Vector4() }, uPB: { value: new Vector4() }, uNeb: { value: new Vector2(1, 1) },
-      uColA: { value: SKY_COLORS[0].map((c) => c.clone()) }, uColB: { value: SKY_COLORS[0].map((c) => c.clone()) },
-      uWA: { value: 1 }, uWB: { value: 0 }, uStrength: { value: 0.72 }, uMilky: { value: 1.1 }, uRes: { value: new Vector2(1, 1) },
-      uK: { value: 0 }, uStyle: { value: 0 }, uDir: { value: new Vector2(1, 0) },
+      uCentre: { value: new Vector2(0.5, 0.5) }, uSkyAspect: { value: SKY_ASPECT },
+      uTA: { value: new Vector4(0, 0, 1, 0) }, uTB: { value: new Vector4(0, 0, 1, 0) },
+      uMapA: { value: null as Texture | null }, uMapB: { value: null as Texture | null }, uBlur: { value: new Vector2() },
+      uSeeds: { value: new Vector2() }, uGA: { value: Array.from({ length: 6 }, () => new Vector4()) }, uGB: { value: Array.from({ length: 6 }, () => new Vector4()) },
+      uGrid: { value: new Vector2(FINE_ROWS * SKY_ASPECT, FINE_ROWS) }, uRes: { value: new Vector2(1, 1) }, uDpr: { value: 1 },
+      uWarm: { value: hsl(38, 90, 78).convertLinearToSRGB() }, uCool: { value: hsl(212, 70, 80).convertLinearToSRGB() },
+      uFade: { value: new Vector2(1, 0) }, uCond: { value: 0 }, uBloom: { value: 0 }, uT: { value: 0 },
+      uTime: { value: 0 }, uLive: { value: 1 }, uFlow: { value: new Vector2(1, 1) },
     }),
     [],
   )
@@ -234,33 +240,38 @@ function DeepSky() {
     const m = mat.current
     if (!m) return
     const u = m.uniforms
-    const { from, to, k } = universe
-    const put = (sky: Universe, s: Vector4, p: Vector4, col: Color[]) => {
-      const look = SKIES[sky.sky]
-      s.set(sky.seed, sky.angle, sky.width, look.milky)
-      p.set(sky.nebAt[0], sky.nebAt[1], sky.bandAt[0], sky.bandAt[1])
-      SKY_COLORS[sky.sky].forEach((c, i) => col[i].copy(c))
-    }
-    put(from, u.uSA.value as Vector4, u.uPA.value as Vector4, u.uColA.value as Color[])
-    put(to ?? from, u.uSB.value as Vector4, u.uPB.value as Vector4, u.uColB.value as Color[])
-    ;(u.uNeb.value as Vector2).set(SKIES[from.sky].nebula, SKIES[(to ?? from).sky].nebula)
+    const { from, to } = universe
+    baker.want(wantedSkies())
+    // the skies on screen are always painted; the next ones a strip a frame
+    const a = baker.picture(from) ?? baker.now(gl, from)
+    const b = to ? (baker.picture(to) ?? baker.now(gl, to)) : a
+    baker.step(gl)
+    u.uMapA.value = a
+    u.uMapB.value = b
+    ;(u.uSeeds.value as Vector2).set(from.seed, (to ?? from).seed)
+    ;(u.uFlow.value as Vector2).set(SKIES[from.sky].flow ?? 1, SKIES[(to ?? from).sky].flow ?? 1)
+    ;(u.uGA.value as Vector4[]).forEach((g, i) => g.fromArray(from.glints, i * 4))
+    ;(u.uGB.value as Vector4[]).forEach((g, i) => g.fromArray((to ?? from).glints, i * 4))
     skyMotion(MOTION)
     ;(u.uTA.value as Vector4).set(...MOTION.a)
     ;(u.uTB.value as Vector4).set(...MOTION.b)
-    u.uWA.value = MOTION.wa
-    u.uWB.value = MOTION.wb
-    u.uK.value = to ? k : 0
-    u.uStyle.value = universe.style
-    ;(u.uDir.value as Vector2).set(universe.dir[0], universe.dir[1])
-    u.uTime.value = live.time
+    ;(u.uBlur.value as Vector2).set(MOTION.blur[0], MOTION.blur[1])
+    ;(u.uFade.value as Vector2).set(MOTION.fade[0], MOTION.fade[1])
+    u.uCond.value = MOTION.cond
+    u.uBloom.value = MOTION.bloom
+    u.uT.value = MOTION.t
+    // (a poster shows the clouds as they are at the first moment, when the live scene takes over from it)
+    u.uTime.value = skyHeld() ? 0 : live.time
+    u.uLive.value = heroState.reduced ? 0 : 1
     gl.getDrawingBufferSize(u.uRes.value as Vector2)
+    u.uDpr.value = gl.getPixelRatio()
     const g = gazeOnSky(camera as PerspectiveCamera, GAZE)
     ;(u.uCentre.value as Vector2).set((g.x - x) / SKY.scale[0] + 0.5, (g.y - y) / SKY.scale[1] + 0.5)
   })
   return (
     <mesh geometry={geo} position={[x, y, SKY_PLANE_Z]} scale={[SKY.scale[0], SKY.scale[1], 1]} renderOrder={-20} frustumCulled={false}>
-      {/* premultiplied light added to the dark: the colour space is done in the shader, per sky */}
-      <shaderMaterial ref={mat} vertexShader={GALAXY_VERT} fragmentShader={GALAXY_FRAG} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} premultipliedAlpha />
+      {/* light added to the dark, already in the display's own colour space (painted so) */}
+      <shaderMaterial ref={mat} vertexShader={GALAXY_VERT} fragmentShader={GALAXY_FRAG} uniforms={uniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
     </mesh>
   )
 }
@@ -307,10 +318,12 @@ function SkyObjects() {
     return g
   }, [x, y])
   React.useEffect(() => () => geo.dispose(), [geo])
-  const uniforms = React.useMemo(() => ({ uEraW: { value: new Vector4(1, 0, 0, 0) }, uEraZoom: { value: new Vector4(1, 1, 1, 1) }, uZoomCentre: { value: new Vector3() }, uTime: { value: 0 }, uOpacity: { value: 0.75 } }), [])
+  const uniforms = React.useMemo(() => ({ uEraW: { value: new Vector4(1, 0, 0, 0) }, uEraZoom: { value: new Vector4(1, 1, 1, 1) }, uZoomCentre: { value: new Vector3() }, uTime: { value: 0 }, uOpacity: { value: 0.75 }, uRoll: { value: 0 } }), [])
   const mat = React.useRef<ShaderMaterial>(null)
   useFrame(() => {
-    if (mat.current) mat.current.uniforms.uTime.value = live.time
+    if (!mat.current) return
+    mat.current.uniforms.uTime.value = live.time
+    mat.current.uniforms.uRoll.value = universe.roll
   })
   return (
     <mesh geometry={geo} frustumCulled={false} renderOrder={-18}>
@@ -627,9 +640,12 @@ function CameraRig() {
     const lens = camera as PerspectiveCamera
     const w = size.width
     const h = size.height
-    if (lens.fov !== v.fov || r.shift[0] !== v.shift[0] || r.shift[1] !== v.shift[1] || r.shift[2] !== w || r.shift[3] !== h) {
-      lens.fov = v.fov
-      lens.setViewOffset(w, h, -v.shift[0] * w, v.shift[1] * h, w, h)
+    // (a poster with overscan: the same framing, S times as much round it — rig.ts OVERSCAN)
+    const S = OVERSCAN
+    const fov = S === 1 ? v.fov : (Math.atan(S * Math.tan((v.fov * Math.PI) / 360)) * 360) / Math.PI
+    if (lens.fov !== fov || r.shift[0] !== v.shift[0] || r.shift[1] !== v.shift[1] || r.shift[2] !== w || r.shift[3] !== h) {
+      lens.fov = fov
+      lens.setViewOffset(w, h, (-v.shift[0] * w) / S, (v.shift[1] * h) / S, w, h)
       lens.updateProjectionMatrix()
       r.shift = [v.shift[0], v.shift[1], w, h]
     }
@@ -730,7 +746,7 @@ export function HeroScene({ sources, quality, reduced }: { sources: HeroSources;
       <Atmosphere theme={theme} />
       <CameraRig />
       <Uploader />
-      <DeepSky />
+      <DeepSky quality={startQuality} />
       <SkyObjects />
       <TitleProjector />
       <Meteors />

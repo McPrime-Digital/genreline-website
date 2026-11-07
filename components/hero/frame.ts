@@ -46,8 +46,9 @@ export const LINE_BOX: Box = (() => {
 export const LOGO_Z = LOGO_BOX.center[2]
 
 export const grow = (b: Box, m: number): Box => ({ xMin: b.xMin - m, xMax: b.xMax + m, yMin: b.yMin - m, yMax: b.yMax + m })
-/** Room for a tile at the line's ends: the tiles are drawn larger the farther the camera stands (TILE.minScreen). */
-export const tileRoom = (d: number) => Math.max(TILE.size, d * TILE.minScreen) / 2 + 0.8
+/** The tiles' size in the whole logo (numbers.ts TILE.logo), and the room they need round the line. */
+export const logoTile = (tall: boolean) => TILE.logo[tall ? 'tall' : 'wide']
+const logoRoom = (tall: boolean) => logoTile(tall) / 2 + 0.8
 export const clampBand = (b: Band): Band => ({ x0: b.x0, x1: Math.max(b.x1, b.x0 + 0.12), y0: b.y0, y1: Math.max(b.y1, b.y0 + 0.12) })
 export const lensTan = (tall: boolean) => Math.tan((((tall ? FOV.tall : FOV.wide) / 2) * Math.PI) / 180)
 
@@ -58,11 +59,9 @@ export function distanceFor(box: Box, band: Band, aspect: number, tanH: number) 
   return Math.max((box.yMax - box.yMin) / (2 * tanH * bh), (box.xMax - box.xMin) / (2 * tanH * aspect * bw))
 }
 
-/** The distance at which the logo, its tiles included, fills a band (the tiles' size depends on that distance: settled in three passes). */
-export function logoDistance(band: Band, aspect: number, tanH: number) {
-  let d = 60
-  for (let i = 0; i < 3; i++) d = distanceFor(grow(LINE_BOX, tileRoom(d)), band, aspect, tanH)
-  return d
+/** The distance at which the logo, its tiles included, fills a band. */
+export function logoDistance(band: Band, aspect: number, tanH: number, tall: boolean) {
+  return distanceFor(grow(LINE_BOX, logoRoom(tall)), band, aspect, tanH)
 }
 
 /**
@@ -89,16 +88,16 @@ export function wholeFrame(kind: 'title' | 'close', tall: boolean, aspect: numbe
     }
   }
   let band = clampBand(bands[0])
-  let d = logoDistance(band, aspect, tanH)
+  let d = logoDistance(band, aspect, tanH, tall)
   for (const b of bands.slice(1)) {
     const c = clampBand(b)
-    const cd = logoDistance(c, aspect, tanH)
+    const cd = logoDistance(c, aspect, tanH, tall)
     if (cd < d) {
       band = c
       d = cd
     }
   }
-  return { band, d, box: grow(LINE_BOX, tileRoom(d)) }
+  return { band, d, box: grow(LINE_BOX, logoRoom(tall)) }
 }
 
 /**

@@ -20,7 +20,7 @@ type LandingData = {
   pts: number[]
   logoZ: number
   fov: { wide: number; tall: number; tallBelowAspect: number }
-  tile: { size: number; minScreen: number }
+  tile: { wide: number; tall: number }
   frames: { wide?: PosterFrame; tall?: PosterFrame }
   playGap: number
 }
@@ -76,17 +76,14 @@ function land(d: LandingData) {
     }
     type Band = { x0: number; x1: number; y0: number; y1: number }
     const clamp = (b: Band): Band => ({ x0: b.x0, x1: Math.max(b.x1, b.x0 + 0.12), y0: b.y0, y1: Math.max(b.y1, b.y0 + 0.12) })
-    const room = (dist: number) => Math.max(d.tile.size, dist * d.tile.minScreen) / 2 + 0.8
+    // the tiles in the whole logo: in proportion to its line (frame.ts logoTile)
+    const room = (tall ? d.tile.tall : d.tile.wide) / 2 + 0.8
     const fit = (b: Band, m: number) => {
       const bw = Math.max(0.12, b.x1 - b.x0)
       const bh = Math.max(0.12, b.y1 - b.y0)
       return Math.max((yMax - yMin + 2 * m) / (2 * tanH * bh), (xMax - xMin + 2 * m) / (2 * tanH * aspect * bw))
     }
-    const distance = (b: Band) => {
-      let dist = 60
-      for (let i = 0; i < 3; i++) dist = fit(b, room(dist))
-      return dist
-    }
+    const distance = (b: Band) => fit(b, room)
     const right1 = 1 - L.edge
     const bands: Band[] = [{ x0: Math.max(0.04, L.edge), x1: right1, y0: L.top, y1: L.titleTop - 0.03 - L.play }]
     if (!tall) bands.push({ x0: L.titleRight + 0.04, x1: right1, y0: L.top, y1: L.bottom - L.play })
@@ -100,7 +97,7 @@ function land(d: LandingData) {
         dist = cd
       }
     }
-    const m = room(dist)
+    const m = room
     const cx = (xMin - m + xMax + m) / 2
     const cy = (yMin - m + yMax + m) / 2
     const sx0 = (band.x0 + band.x1) / 2
@@ -162,7 +159,7 @@ export function landingScript(frames: LandingData['frames'], playGap: number) {
     pts: LINE_POINTS.flatMap((p) => [+p[0].toFixed(3), +p[1].toFixed(3), +p[2].toFixed(3)]),
     logoZ: LOGO_Z,
     fov: { wide: FOV.wide, tall: FOV.tall, tallBelowAspect: FOV.tallBelowAspect },
-    tile: { size: TILE.size, minScreen: TILE.minScreen },
+    tile: { wide: TILE.logo.wide, tall: TILE.logo.tall },
     frames,
     playGap,
   }

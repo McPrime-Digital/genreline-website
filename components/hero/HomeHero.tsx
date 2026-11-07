@@ -72,7 +72,7 @@ function heroSources(): HeroSources {
  * the camera will put it at this screen's size — so the first paint, the play control under the logo
  * and the live scene all agree.
  */
-export type PosterFrames = Partial<Record<'wide' | 'tall', { left: number; right: number; top: number; bottom: number; width: number; height: number }>>
+export type PosterFrames = Partial<Record<'wide' | 'tall', { left: number; right: number; top: number; bottom: number; width: number; height: number; overscan?: number }>>
 function posterFrames(): PosterFrames {
   const f = join(process.cwd(), 'public', 'hero', 'posters.json')
   return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : {}

@@ -88,7 +88,13 @@ export const TUBE = {
 } as const
 
 /** The tiles: the logo's three glyphs (and the Stakeholders face), as camera-facing cards. */
-export const TILE = { size: 3.4, glow: 9, minScreen: 0.07 } as const
+/**
+ * The tiles: their least size, their glow, the least share of the frame they take at a station, and their
+ * size in the whole logo (the title and the close) — in proportion to its line, like the mark itself, so the
+ * title's poster, scaled to any screen, matches the live scene exactly when it takes over (the owner,
+ * 2026-11-07: nothing may arrive "buggy and edgy"; the tiles used to grow at the takeover).
+ */
+export const TILE = { size: 3.4, glow: 9, minScreen: 0.07, logo: { wide: 9.6, tall: 10.6 } } as const
 
 /** Particles streaming along the line, and the stars around it (the most any quality draws; QUALITY sets how many). */
 export const FLOW = { count: 5000, radius: 2.6, size: 0.075, speed: [0.006, 0.016] as const } as const
@@ -175,8 +181,8 @@ export const STORY: readonly Segment[] = [
 export const SCROLL_VH = STORY.reduce((s, x) => s + x.vh, 0)
 export const SHOTS = 5
 
-/** How fast the camera catches up with the scroll (per second). */
-export const SCROLL_DAMPING = 3.2
+/** How the camera follows the scroll: a critically damped spring's smoothing time (seconds; HeroDirector). */
+export const SCROLL = { smooth: 0.38 } as const
 /** The slate line's clock: the shots land on 0, 4, 8, 12 and 16 seconds, at 24 fps. */
 export const TIMECODE = { seconds: 16, fps: 24 } as const
 

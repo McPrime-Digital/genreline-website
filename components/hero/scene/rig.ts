@@ -35,6 +35,19 @@ export const NODE_U = {
 const STATION_OF: Record<1 | 2 | 3, keyof typeof NODES> = { 1: 'crew', 2: 'client', 3: 'suite' }
 
 /** The per-frame state the scene shares (written by the camera rig, read by everything else). */
+/**
+ * `?shot=…&overscan=S` (the title's poster only, scripts/make-hero-poster.ts): the camera keeps its framing in
+ * the middle of the picture and shows S times as much sky round it, so the poster, scaled to any screen's own
+ * framing, still covers the whole stage — no black margins while the page lands (the owner, 2026-11-07: no
+ * "part of the page arrive before the other"). Every point keeps its place, drawn S times nearer the centre.
+ */
+export const OVERSCAN = (() => {
+  if (typeof window === 'undefined') return 1
+  const q = new URLSearchParams(window.location.search)
+  const s = Number(q.get('overscan'))
+  return q.has('shot') && Number.isFinite(s) && s > 1 && s <= 2.5 ? s : 1
+})()
+
 export const live = {
   place: null as Place | null,
   tall: false,

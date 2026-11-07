@@ -19,7 +19,7 @@ import * as React from 'react'
 import { useFrame } from '@react-three/fiber'
 import { AdditiveBlending, BufferAttribute, BufferGeometry, Vector2, type Group, type ShaderMaterial, type Texture } from 'three'
 import { heroState, shotWeight } from '@/components/hero/state'
-import { live } from '@/components/hero/scene/rig'
+import { live, OVERSCAN } from '@/components/hero/scene/rig'
 import { FILM_FRAG, PROJ_BEAM_FRAG, PROJ_LAMP_FRAG, PROJ_VERT } from '@/components/hero/scene/shaders'
 import { filmPicture, loopFilm, prefetchFilm, rewindFilm, wantFilm } from '@/components/hero/scene/films'
 import { hsl } from '@/components/hero/scene/textures'
@@ -95,8 +95,10 @@ export function TitleProjector() {
 
     // the lamp, where the title's poster shows it
     const pm = heroState.posterMap
-    let lx: number = PROJECTOR.lamp[0]
-    let ly: number = PROJECTOR.lamp[1]
+    // (in a poster with overscan its framing is S times nearer the middle: the lamp with it — rig.ts OVERSCAN)
+    const os = held ? OVERSCAN : (pm?.s ?? 1)
+    let lx: number = PROJECTOR.lamp[0] / os
+    let ly: number = PROJECTOR.lamp[1] / os
     if (pm && !pm.tall) {
       lx = ((pm.x0 + ((lx + 1) / 2) * pm.pw * pm.k) / pm.w) * 2 - 1
       ly = 1 - ((pm.y0 + ((1 - ly) / 2) * pm.ph * pm.k) / pm.h) * 2
@@ -126,7 +128,7 @@ export function TitleProjector() {
     }
 
     // the lamp
-    const r = PROJECTOR.lampSize
+    const r = PROJECTOR.lampSize / (held ? OVERSCAN : 1)
     const lu = lm.uniforms
     ;(lu.uP0.value as Vector2).set(lx - r / aspect, ly - r)
     ;(lu.uP1.value as Vector2).set(lx + r / aspect, ly - r)

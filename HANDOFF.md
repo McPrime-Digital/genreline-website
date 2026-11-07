@@ -9,6 +9,48 @@ climbs to **the Suite**, then pulls back to the whole line for the close: *Run
 the production. Keep the record.* Each space arrives in its own light, ringed
 by its own screens and tools.
 
+## Revision 6, 2026-11-07: real skies, quiet changes, a sky that lives, and a page that lands whole
+
+The owner's review of round 5 asked for:
+- the "big circle pop" (the iris) and the "crossed lines" (the anamorphic wipe, with its horizontal flare) gone permanently;
+- changes that are "nothing noisy or loud or hard, just subtle like outer space";
+- skies that are not "full of nebula smudges and nothing different": better and more advanced, still only stars and a subtle nebula;
+- a sky that moves subtly and smoothly during its stay;
+- a different, subtle, animated universe for the stretch from Client to the Suite.
+
+Mid-run, they added: the 3D must not feel wobbly, no part of the page may arrive before the rest or feel buggy or edgy, and it must render properly on every device, size and OS, to an enterprise standard.
+
+Built S1 to S6 (`~/.claude/plans/happy-dancing-star.md`).
+
+| What | How |
+|---|---|
+| **The changes** (`universe.ts` `CHANGES`, `skyMotion`; shaders `CHANGE`) | **Banned for good**, in the code's own header: the iris, the wipe, the whip pan, hyperspace and the light leak, with no circle, line, flash or streak-rush in any change. **Ten quiet ones** in their place, 7–10 s each, dealt at random and never twice running: crossfade, a gentle push (zoom ≤ 1.22), pull, turn (≤ 18°, the stars with it), glide, rise, condense (the new clouds gather through a large soft cloud mask), bloom (each sky by its own light), dim (a breath down to a quarter) and focus (a rack focus by mip bias). They are branchless: `universe.ts` hands the shaders weights and two soft masks. A push drifts the stars at most 4.8 units a second, too slow ever to streak. |
+| **The skies** (`universe.ts` `SKIES`; `scene/skybake.ts`; shaders `SKYBAKE_FRAG`, `GALAXY_*`) | **The cause of the smudges**: the sky was computed per vertex on a 128×76 grid, about 32 px a cell, and only blur survives that. **Now each showing is painted once, per texel**, into a picture of the whole sky (1024/1536/2048 wide by quality, √light in eight bits, star density in alpha, with mipmaps), in strips over 8–24 frames during the previous sky's hold. It is shown with two texture reads and a fine-star layer. **One layered recipe**: clouds warped through themselves (blended with a soft broad body, so they billow rather than marble), filaments where a warped noise crosses zero (swept into arcs), the Milky Way edge-on with clumps and dust lanes, dark dust and one sinuous dark cloud, a far glow, and halos round bright stars. **Twelve different pictures**: night (the landing), Milky Way core, veil, dark cloud, hydrogen, reflection, deep field, edge-on, silver, cyanotype, ember and twin. **Fine stars** are drawn per pixel in the sky's own frame (sparse in the open, thick in star clouds, a steep power law, white on average), so they move with the sky. |
+| **A sky that lives** (`universe.ts` `LIFE`; `GALAXY_VERT`) | The whole sky (stars, clouds and star-filter stars) turns slowly one way and back (±0.08 rad over 4 min). Each showing drifts and grows a little, like a slow camera (bounded, so its edge never shows). The clouds churn and their light wanders. All of it starts from nothing at the first moment, so the poster and the live scene match, and all of it is still under reduced motion. |
+| **Client → Suite, and the tour's skies** (`universe.ts` `TOUR`) | Each space has its own kind, freshly drawn each visit: Crew a Milky Way core (or the dark cloud if the title shows a Milky Way), Client a reflection's blue haze, the Suite its own **violet-and-rose veil**, the close the night. The ride from Client to the Suite is a slow turn into it. The per-station nebula washes (`Station.tsx` `Sky`: the per-vertex violet smudge at the Suite) are deleted. Every floor now shows late and leaves early like the cinemas, so the rides are open space. |
+| **No wobble** | **Scroll**: the camera followed a first-order chase, so each wheel notch made its speed jump. It now rides a critically damped spring (`HeroDirector`, `SCROLL.smooth` 0.38 s): the worst frame-to-frame speed change is 6× smaller over a burst of notches, with the same settling time and no overshoot. **The station screens no longer float** (each bobbed on its own sine, text resampled every frame). **The Suite's tool chips** orbit cleanly without a bob. **Fine stars** are a touch wider than a pixel, so they never flicker as the sky turns. |
+| **The page lands whole** | **The tiles**: at the title they followed the camera's distance, while the poster is one picture scaled to each screen, so at the takeover they visibly grew. They are now in proportion to the logo's own line in the whole-logo shots (`TILE.logo` 9.6 wide, 10.6 tall), mirrored in `frame.ts`, `landing.ts` and `Station.tsx`. **The poster's coverage**: scaled to a screen's own framing, the title poster left black margins (69% of the stage covered at 1440×900, 36% at 375×667) until the 3D filled them. It is now drawn with **overscan** (`?overscan=1.6`, `rig.ts OVERSCAN`; the same framing with 1.6× the sky round it). It covers 100% of the stage from 360 px phones to 3440 ultrawide; only 375×667 is 75%, where its edges fade into the night (a CSS mask). **The header** waited on its own while the hero arrived 0.6 s later on a slow connection. It now lands with the stage under the same rule and deadline. **The play control** arrives inside the stage's fade. **The hero's pills** are solid from the first paint (they switched from glass at the takeover). **The header bar** eases between its states. |
+
+**Measured** (production build, this Mac):
+- **frame rate**: 60 fps at every quality through sky changes, the next sky's painting and the tour; the longest frame is 16.8 ms, apart from one 33 ms frame as the tour jumps to Crew at quality 0. On the software renderer: 25–32 fps;
+- **Lighthouse mobile, Home**: performance 88–89, LCP 3.6–3.7 s, TBT 0–10 ms, CLS 0 (unchanged);
+- **bundle**: the 3D chunk is 240.4 KB gzipped (+3.6 KB for the painter);
+- **posters**: the title poster is 37 KB wide and 24 KB tall;
+- **checks**: labels, links, axe 0, console clean; the development build confirms the landing script and the director place the poster identically at 1440, 1280, 390 and 2560.
+
+**Device matrix:**
+- **Chrome on Metal**: 16 sizes, from 360×740 to 3440×1440 at DPR 1–3, touch and mouse. All live at quality 2, 60 fps, with no word/logo overlap, nothing off-screen and no sideways scroll.
+- **WebKit** (the Safari and iOS engine): 390, 375, 820 and 1440. Live at quality 1, 60 fps, clean.
+- **Chrome on SwiftShader**: correctly takes the stills path, and the poster now covers the stage there too. On this Mac, `--use-angle=gl` also lands on SwiftShader, so a hardware OpenGL path (Linux) wasn't exercised.
+- **Not tested**: Firefox (its headless build can't create a profile inside this tool's sandbox) and real Windows hardware.
+
+**Checking by hand:**
+- `?sky=0–12` holds a sky (12 is the Suite's);
+- `?change=0–9` makes every change that one;
+- `?drift=<s>` shortens the hold;
+- `?seed=` fixes the draw;
+- `?shot=0&overscan=1.6` shows the title as its poster is drawn.
+
 ## Revision 5, 2026-11-06: a quiet sky, one projector, a tour start without a stall
 
 The owner's review of round 4 asked for:

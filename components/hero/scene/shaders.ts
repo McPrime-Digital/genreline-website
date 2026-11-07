@@ -24,61 +24,38 @@ const SOFT_POINT = /* glsl */ `
  * far end of the field as it passes the near one, fading in and out at the ends so none pops.
  */
 /**
- * A change of sky, at a point of the screen (s: 0–1 across it; a: its width over its height; n: a 0–1 noise
- * there, for the dissolve): how much of the leaving sky shows (x), of the arriving one (y), the light of the
- * change itself (z) and its kind (w: 0 a gold rim, 1 a warm leak, 2 a cool line, 3 white). The changes that
- * travel (push, pull, whip, spin, hyperspace) show both whole: their skies move instead (universe.ts
- * skyMotion). Shared by the sky and the stars, so an iris, a wipe or a dissolve sweeps across both.
+ * A change of sky (universe.ts skyMotion): how much of the leaving sky (x) and of the arriving one (y) shows
+ * at a point. Quiet by rule (the owner, 2026-11-07): no circles, no lines, no flash — only soft weights
+ * (uFade: a crossfade, a push, a glide, a breath of dark, a rack focus), and two soft masks: a condense, the
+ * new sky's clouds gathering out of the old through a large slow cloud of noise (n), and a bloom, each sky
+ * by its own light (lum: the new brightest-first, the old faintest-first). Shared by the sky and the stars,
+ * so the stars change with the clouds. Branchless: the change's numbers come from universe.ts.
  */
 const CHANGE = /* glsl */ `
-  uniform float uK;
-  uniform float uStyle;
-  uniform vec2 uDir;
-  vec4 changeAt(vec2 s, float a, float n) {
-    int st = int(uStyle + 0.5);
-    float k = uK;
-    vec2 p = (s - 0.5) * vec2(a, 1.0);
-    if (st == 4) {
-      // an iris, as the films closed a scene: it closes on the old to black, opens on the new, a gold rim round it
-      float R = 0.5 * length(vec2(a, 1.0)) * 1.02;
-      float d = length(p);
-      float r = k < 0.5 ? (1.0 - k * 2.0) * R : (k * 2.0 - 1.0) * R;
-      float inside = smoothstep(r + 0.004, r - 0.004, d);
-      float rim = exp(-pow((d - r) / 0.004, 2.0)) * smoothstep(0.0, 0.04, min(k, 1.0 - k)) * smoothstep(0.0, 0.03, abs(k - 0.5)) * 0.7;
-      return k < 0.5 ? vec4(inside, 0.0, rim, 0.0) : vec4(0.0, inside, rim, 0.0);
-    }
-    if (st == 5) {
-      // a dissolve through a fine grain, soft-edged, a faint shimmer where the new arrives
-      float old = smoothstep(k - 0.16, k + 0.16, n);
-      return vec4(old, 1.0 - old, exp(-pow((n - k) / 0.03, 2.0)) * sin(3.14159 * k) * 0.12, 3.0);
-    }
-    if (st == 6) {
-      // a light leak, as at the end of a roll: warm light washes across, and the new is there under it
-      float x = smoothstep(0.35, 0.65, k);
-      vec2 lp = p - uDir * vec2(a * 0.5, 0.5) * (1.7 - 3.4 * k);
-      float leak = exp(-dot(lp, lp) / 0.05) + 0.5 * exp(-dot(lp * vec2(0.45, 1.3), lp * vec2(0.45, 1.3)) / 0.12);
-      return vec4(1.0 - x, x, leak * sin(3.14159 * k) * 0.32, 1.0);
-    }
-    if (st == 7) {
-      // an anamorphic wipe: a line of light sweeps across, the new behind it, its flare streaking sideways
-      float sx = uDir.x >= 0.0 ? 1.0 : -1.0;
-      float e = sx * mix(-0.56 * a, 0.56 * a, k);
-      float swept = smoothstep(-0.003, 0.003, sx * (e - p.x));
-      float line = exp(-pow((p.x - e) / 0.004, 2.0)) * 0.8 + exp(-pow(p.y / 0.005, 2.0)) * exp(-abs(p.x - e) * 4.0) * 0.45;
-      return vec4(1.0 - swept, swept, line * sin(3.14159 * k), 2.0);
-    }
-    if (st == 8) {
-      // a fade through black: the old goes, a breath of dark, the new comes
-      return vec4(1.0 - smoothstep(0.0, 0.42, k), smoothstep(0.58, 1.0, k), 0.0, 0.0);
-    }
-    if (st == 9) {
-      // hyperspace: a white flash at its height
-      return vec4(1.0, 1.0, exp(-pow((k - 0.5) / 0.09, 2.0)) * 0.22, 3.0);
-    }
-    return vec4(1.0, 1.0, 0.0, 0.0);
+  uniform vec2 uFade;
+  uniform float uCond;
+  uniform float uBloom;
+  uniform float uT;
+  float ch21(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }
+  float cvn(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(ch21(i), ch21(i + vec2(1.0, 0.0)), u.x), mix(ch21(i + vec2(0.0, 1.0)), ch21(i + vec2(1.0, 1.0)), u.x), u.y);
   }
-  vec3 changeLight(float kind) {
-    return kind < 0.5 ? vec3(1.0, 0.82, 0.48) : kind < 1.5 ? vec3(1.0, 0.62, 0.32) : kind < 2.5 ? vec3(0.7, 0.85, 1.0) : vec3(0.95, 0.96, 1.0);
+  // the condense's cloud at a point of the screen (s: 0–1 across it; a: its width over its height): large, soft, slowly turning over
+  float changeCloud(vec2 s, float a) {
+    vec2 p = (s - 0.5) * vec2(a, 1.0);
+    return smoothstep(0.12, 0.88, cvn(p * 2.1 + vec2(3.1, uT * 0.5)) * 0.65 + cvn(p * 5.2 - vec2(uT * 0.4, 7.7)) * 0.35);
+  }
+  vec2 changeAt(float n, float lumA, float lumB) {
+    float t = uT * 1.7 - 0.35;
+    float stay = smoothstep(t - 0.35, t + 0.35, n);
+    float tb = 1.0 - 1.3 * uT;
+    float ta = 1.3 * uT - 0.3;
+    float mA = mix(1.0, stay, uCond) * mix(1.0, smoothstep(ta, ta + 0.3, lumA), uBloom);
+    float mB = mix(1.0, 1.0 - stay, uCond) * mix(1.0, smoothstep(tb, tb + 0.3, lumB), uBloom);
+    return uFade * vec2(mA, mB);
   }
 `
 const STREAM = /* glsl */ `
@@ -101,7 +78,7 @@ export const STAR_VERT = /* glsl */ `
   uniform float uAspect;
   uniform float uRoll;
   uniform vec2 uStars;
-  uniform vec2 uShow;
+  uniform float uStarSize;
   varying float vAlpha;
   varying float vTint;
   ${STREAM}
@@ -118,8 +95,10 @@ export const STAR_VERT = /* glsl */ `
     float depth = -mv.z;
     gl_Position = projectionMatrix * mv;
     vec2 scr = gl_Position.xy / max(gl_Position.w, 1e-4) * 0.5 + 0.5;
-    vec4 m = changeAt(scr, uAspect, fract(aPhase * 57.31));
-    float shown = min(1.0, own(uStars.x) * uShow.x * m.x + own(uStars.y) * uShow.y * m.y);
+    // a condense gathers the stars with the clouds; a bloom brings the bright ones first
+    float bright = clamp((aSize / uStarSize - 0.45) / 2.2, 0.0, 1.0);
+    vec2 m = changeAt(changeCloud(scr, uAspect), bright, bright);
+    float shown = min(1.0, own(uStars.x) * m.x + own(uStars.y) * m.y);
     // most twinkle; a few pulse, slow and deep (the owner: "some pulsating")
     float pulsing = step(0.93, fract(aPhase * 13.71));
     float twinkle = 0.72 + 0.28 * sin(uTime * (0.6 + aPhase * 1.7) + aPhase * 40.0);
@@ -147,6 +126,7 @@ export const SKYOBJ_VERT = /* glsl */ `
   uniform vec4 uEraZoom;
   uniform vec3 uZoomCentre;
   uniform float uTime;
+  uniform float uRoll;
   varying vec2 vC;
   varying vec4 vLook;
   varying float vW;
@@ -156,6 +136,10 @@ export const SKYOBJ_VERT = /* glsl */ `
     vW = dot(one, uEraW);
     vec3 c = uZoomCentre + (aCentre - uZoomCentre) * vec3(zoom, zoom, 1.0);
     vec4 mv = viewMatrix * vec4(c, 1.0);
+    // they turn with the sky (universe.ts); their spikes stay square, as a lens's filter draws them
+    float cr = cos(uRoll);
+    float sr = sin(uRoll);
+    mv.xy = mat2(cr, sr, -sr, cr) * mv.xy;
     mv.xy += aCorner * aSize * zoom;
     gl_Position = vW > 0.001 ? projectionMatrix * mv : vec4(4.0, 4.0, 0.0, 1.0);
     vC = aCorner;
@@ -738,13 +722,9 @@ export const LINE_HALO_FRAG = /* glsl */ `
   }
 `
 
-// ── THE SKIES: EACH SPACE'S OWN LIGHT ───────────────────────────────────────
+// ── A SOFT NOISE, FOR THE FLOORS AND THE CINEMA ─────────────────────────────
 
-/**
- * A nebula, computed per vertex on a finely divided plane (it is all low
- * frequencies, so the GPU interpolates it for free), with one fine octave and
- * a dither per pixel so the dark gradients never band.
- */
+/** Value noise and its fractal sum: low frequencies, cheap (the floors' and the cinema's textures). */
 const NOISE = /* glsl */ `
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vnoise(vec2 p) {
@@ -760,112 +740,230 @@ const NOISE = /* glsl */ `
     return s;
   }
 `
-export const SKY_VERT = /* glsl */ `
-  uniform float uTime;
-  uniform float uSeed;
-  varying vec2 vUv;
-  varying float vDensity;
-  varying float vMix;
-  varying float vAccent;
-  ${NOISE}
-  // a nebula's clouds at a point of the sky: their density, the mix of its two colours, its bright accent
-  vec3 nebula(vec2 uv, float seed, vec2 drift) {
-    vec2 q = uv * vec2(3.2, 2.0) + seed;
-    float n = fbm(q + drift + fbm(q * 0.7 - drift) * 1.4);
-    float m = fbm(q * 1.3 + 7.7 - drift * 1.5);
-    vec2 c = (uv - 0.5) * vec2(1.0, 1.25);
-    float r = length(c) * 2.0;
-    return vec3(smoothstep(1.0, 0.05, r) * smoothstep(0.28, 0.85, n), m, smoothstep(0.58, 0.85, n) * smoothstep(0.75, 0.0, r));
-  }
-  void main() {
-    vUv = uv;
-    vec2 drift = vec2(uTime * 0.006, -uTime * 0.004);
-      vec3 n = nebula(uv, uSeed, drift);
-      vDensity = n.x;
-      vMix = n.y;
-      vAccent = n.z;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-export const SKY_FRAG = /* glsl */ `
-  uniform vec3 uA;
-  uniform vec3 uB;
-  uniform vec3 uA2;
-  uniform vec3 uB2;
-  uniform vec3 uAccent;
-  uniform float uFace;
-  uniform float uWeight;
-  uniform float uStrength;
-  varying vec2 vUv;
-  varying float vDensity;
-  varying float vMix;
-  varying float vAccent;
-  float dither(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453) - 0.5; }
-  void main() {
-      vec3 ca = mix(uA, uA2, uFace);
-      vec3 cb = mix(uB, uB2, uFace);
-      vec3 c = mix(cb, ca, vMix) + uAccent * vAccent * 0.6;
-      float alpha = vDensity * uWeight * uStrength;
-    alpha += dither(gl_FragCoord.xy) * (1.5 / 255.0);
-    gl_FragColor = vec4(c, clamp(alpha, 0.0, 1.0));
-    ${OUT}
-  }
-`
-
-// ── THE DEEP SKY: A QUIET NEBULA AND A FAINT MILKY WAY ──────────────────────
+// ── THE DEEP SKY: PAINTED ONCE A SHOWING, SHOWN ALIVE ───────────────────────
 
 /**
- * The sky behind every space (universe.ts): a subtle nebula and, very far, a faint Milky Way — round 3's sky,
- * which the owner preferred, advanced: twelve film stocks, each showing drawn afresh (its clouds' seed, its
- * band's slope and place). Two skies at once during a change: the one leaving (A) and the one arriving (B),
- * each moved by the change (uT*: offset, zoom, turn about the gaze) — computed per vertex on a fine grid, as
- * round 3 did, so the sky stays cheap — and masked per pixel (CHANGE), so an iris, a wipe or a dissolve
- * sweeps across it.
+ * The deep sky (universe.ts, skybake.ts), round 6 (the owner, 2026-11-07: the skies were "full of nebula smudges
+ * and nothing different … give me better and more advanced backgrounds"). Each showing is painted once, per
+ * texel, into a picture of the whole sky — too costly to draw every frame on a laptop's graphics, nothing at
+ * once — and shown every frame from it, two texture reads and a layer of fine stars.
+ *
+ * The painting is the same layers for every sky, weighted by its recipe (no branches: one program for all):
+ * clouds warped through themselves (domain warping, after Inigo Quilez), thin threads where a warped noise
+ * crosses zero (filaments), the Milky Way edge-on (its light in clumps of unresolved stars, lanes of dust down
+ * its middle), dark dust and one sinuous dark cloud that hide what is behind them, a far glow from one side,
+ * halos round a few bright stars. It stores √light (so the darks do not band in eight bits) and, in alpha,
+ * how thick the fine stars are there.
+ */
+const SKY_NOISE = /* glsl */ `
+  vec2 h22(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+  }
+`
+export const SKYBAKE_VERT = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = vec4(position.xy * 2.0, 0.0, 1.0);
+  }
+`
+export const SKYBAKE_FRAG = /* glsl */ `
+  uniform vec3 uCol[6];
+  uniform vec4 uL1;
+  uniform vec4 uL2;
+  uniform vec4 uShape;
+  uniform vec4 uBandP;
+  uniform vec4 uNebP;
+  uniform vec4 uMore;
+  uniform vec4 uGlints[6];
+  uniform float uAspect;
+  varying vec2 vUv;
+  ${SKY_NOISE}
+  // gradient noise, quintic, about −0.7…0.7
+  float gn(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+    float a = dot(h22(i) * 2.0 - 1.0, f);
+    float b = dot(h22(i + vec2(1.0, 0.0)) * 2.0 - 1.0, f - vec2(1.0, 0.0));
+    float c = dot(h22(i + vec2(0.0, 1.0)) * 2.0 - 1.0, f - vec2(0.0, 1.0));
+    float d = dot(h22(i + vec2(1.0, 1.0)) * 2.0 - 1.0, f - vec2(1.0, 1.0));
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  }
+  const mat2 ROT = mat2(0.8, 0.6, -0.6, 0.8);
+  // fractal sums, scaled to about −1…1
+  float fbm(vec2 p, int n) {
+    float s = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 7; i++) {
+      if (i >= n) break;
+      s += a * gn(p);
+      p = ROT * p * 2.03 + vec2(1.7, 9.2);
+      a *= 0.5;
+    }
+    return s * 3.2;
+  }
+  // the same, softer: each finer octave weaker, so the clouds billow rather than marble
+  float fbmSoft(vec2 p, int n) {
+    float s = 0.0;
+    float a = 0.55;
+    for (int i = 0; i < 7; i++) {
+      if (i >= n) break;
+      s += a * gn(p);
+      p = ROT * p * 2.03 + vec2(4.1, 2.7);
+      a *= 0.42;
+    }
+    return s * 3.4;
+  }
+  vec3 srgb(vec3 c) {
+    return mix(c * 12.92, 1.055 * pow(max(c, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
+  }
+  void main() {
+    // the sky's own frame: x across −0.84…0.84, y up −0.5…0.5
+    vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
+    float seed = uNebP.w;
+    float clouds = uL1.x;
+    float threads = uL1.y;
+    float milky = uL1.z;
+    float dusty = uL1.w;
+    float glowing = uL2.x;
+    float ribbon = uL2.y;
+    float streaks = uL2.z;
+    float halos = uL2.w;
+    float cover = uShape.x;
+    float scale = uShape.y;
+    float starsAt = uShape.z;
+    float split = uMore.x;
+
+    // CLOUDS: warped through themselves, twice
+    vec2 q = p * (3.0 / scale) + vec2(seed * 1.7, seed * 0.9);
+    vec2 w1 = vec2(fbm(q, 4), fbm(q + vec2(5.2, 1.3), 4));
+    vec2 w2 = vec2(fbm(q + 0.6 * w1 + vec2(1.7, 9.2), 4), fbm(q + 0.6 * w1 + vec2(8.3, 2.8), 4));
+    // a broad soft body, its edges and its insides worked by the warped detail
+    float body = fbmSoft(q * 0.45 + 3.3, 3);
+    float h = mix(fbmSoft(q + 0.6 * w2, 5), body, 0.45);
+    // where they lie: about their place, unevenly, over more or less of the sky
+    vec2 c = (p - uNebP.xy) * vec2(0.8, 1.15);
+    float region = fbm(p * 1.4 + seed * 0.37 + 11.0, 3) * 0.35 + (0.4 - length(c)) * 2.4 + (cover - 0.5) * 1.6;
+    float lie = smoothstep(-0.5, 0.6, region);
+    float dens = smoothstep(-0.35, 1.0, h) * lie;
+    float core = smoothstep(0.55, 1.3, h) * lie;
+    // fine streaks of dust through them (a reflection nebula)
+    float sa = seed * 2.3;
+    vec2 sp = mat2(cos(sa), sin(sa), -sin(sa), cos(sa)) * p;
+    float st = fbm(sp * vec2(3.0, 34.0) + seed + w1 * 1.5, 4);
+    dens *= mix(1.0, 0.45 + 0.55 * smoothstep(-0.7, 0.7, st), streaks);
+    vec2 side = vec2(cos(uBandP.x + 1.2), sin(uBandP.x + 1.2));
+    float mixAB = mix(smoothstep(-0.9, 0.9, w2.x + 0.5 * w1.y), smoothstep(-0.25, 0.25, dot(p - uNebP.xy, side)), split);
+    vec3 cc = srgb(mix(uCol[1], uCol[0], mixAB));
+    vec3 L = cc * dens * clouds * 1.0 + srgb(uCol[2]) * core * clouds * 0.45;
+
+    // THREADS: where a warped noise crosses zero — long, fine, sinuous; they come and go along their length
+    vec2 fq = p * (1.4 / scale) + seed * 0.61 + 0.45 * w1;
+    // a slope under the noise draws its zero out into long sweeping arcs, not closed loops
+    vec2 sweep = vec2(cos(seed * 1.9), sin(seed * 1.9));
+    float n1 = fbm(fq, 3) + dot(p, sweep) * 2.2;
+    float n2 = fbm(fq * 1.5 + 4.4, 3) + dot(p, sweep) * 2.6;
+    float th = exp(-abs(n1) * 20.0) + 0.4 * exp(-abs(n2 - 0.25) * 26.0);
+    float along = smoothstep(-0.1, 1.0, fbm(p * 1.8 + seed + 21.0, 3));
+    float thLie = smoothstep(-0.6, 0.5, region + 0.3);
+    th *= along * thLie;
+    L += srgb(mix(uCol[0], uCol[1], smoothstep(-0.6, 0.6, n2) * (1.0 - split * 0.5) + split * mixAB * 0.5)) * th * threads * 0.5;
+    L += srgb(uCol[2]) * th * th * threads * 0.1;
+
+    // THE MILKY WAY, edge-on: a band of unresolved stars in clumps, its core warmer, dust down its middle
+    vec2 dir = vec2(cos(uBandP.x), sin(uBandP.x));
+    vec2 bp = p - uBandP.zw;
+    float al = dot(bp, dir);
+    float ac = dot(bp, vec2(-dir.y, dir.x)) + fbm(vec2(al * 2.4, 3.1) + seed, 3) * 0.035;
+    float bw = 0.1 * uBandP.y;
+    float prof = exp(-pow(ac / bw, 2.0));
+    float inner = exp(-pow(ac / (bw * 0.42), 2.0));
+    float bulge = exp(-pow((al - uMore.y) / 0.42, 2.0));
+    float clumps = smoothstep(-0.6, 1.0, fbm(vec2(al * 7.0, ac * 18.0) + seed * 1.3, 6));
+    float lanes = smoothstep(-0.05, 0.45, fbm(vec2(al * 4.2, ac * 15.0) + seed * 2.1 + 7.0, 6)) * exp(-pow((ac - 0.008) / (bw * 0.55), 2.0));
+    float band = prof * (0.2 + 0.8 * clumps) * (0.5 + 0.5 * bulge) * (1.0 - 0.88 * lanes);
+    L += srgb(mix(uCol[4], uCol[3], inner * (0.35 + 0.65 * bulge))) * band * milky * 0.4;
+
+    // the fine stars: thicker in star clouds, thickest along the band
+    float sc = fbm(p * 4.0 + seed * 0.5 + 50.0, 4);
+    float starD = starsAt * (0.35 + 0.65 * smoothstep(-0.9, 0.9, sc)) + band * milky * 1.1 + dens * clouds * 0.25;
+
+    // HALOS: blue light scattered round a few bright stars
+    for (int i = 0; i < 6; i++) {
+      vec4 g = uGlints[i];
+      vec2 d = (vUv - g.xy) * vec2(uAspect, 1.0);
+      L += srgb(uCol[2]) * exp(-dot(d, d) / 0.0016) * g.z * g.w * halos * 0.35;
+    }
+
+    // DUST: dark clouds, and one sinuous dark cloud, hiding the light and the stars behind them
+    vec2 dq = p * (2.6 / scale) + seed * 0.83 + 0.6 * w2;
+    float dn = fbm(dq, 6);
+    float dust = smoothstep(0.2, 0.85, dn) * dusty;
+    float rn = fbm(p * 1.35 + seed * 0.29 + 31.0, 4);
+    float wisp = smoothstep(-0.4, 0.7, fbm(p * 9.0 + seed + 4.0, 4));
+    float rib = smoothstep(0.26, 0.05, abs(rn)) * (0.55 + 0.45 * wisp) * ribbon;
+    dust = max(dust, rib);
+    float rim = (smoothstep(0.36, 0.26, abs(rn)) - smoothstep(0.26, 0.16, abs(rn))) * ribbon;
+    L *= 1.0 - 0.9 * dust;
+    starD *= 1.0 - 0.94 * dust;
+    L += srgb(uCol[2]) * rim * (0.4 + 0.6 * wisp) * 0.06;
+
+    // THE FAR GLOW: a wide soft light from one side (the galaxy's own, or the zodiac's)
+    float gx = dot(p, vec2(cos(uNebP.z), sin(uNebP.z)));
+    L += srgb(uCol[5]) * pow(smoothstep(-0.25, 0.95, gx), 2.2) * glowing * 0.2 * (1.0 - 0.6 * dust);
+
+    L *= uShape.w;
+    gl_FragColor = vec4(sqrt(clamp(L, 0.0, 1.0)), clamp(starD, 0.0, 1.0));
+  }
+`
+
+/**
+ * Showing the painted skies: the leaving one (A) and the arriving one (B), each moved by the change and by its
+ * own slow life (universe.ts skyMotion; uT*: offset, zoom, turn about the gaze, per vertex — a straight move,
+ * so the grid carries it exactly), softened by a rack focus (mip bias), each with its fine stars and its bright
+ * stars, drawn in the sky's own frame so they move with it, and crossed by the change (CHANGE).
  */
 export const GALAXY_VERT = /* glsl */ `
-  uniform float uTime;
   uniform vec2 uCentre;
   uniform float uSkyAspect;
-  uniform vec4 uSA;
-  uniform vec4 uSB;
   uniform vec4 uTA;
   uniform vec4 uTB;
-  uniform vec4 uPA;
-  uniform vec4 uPB;
-  varying vec3 vNebA;
-  varying vec3 vNebB;
-  varying vec3 vMilkyA;
-  varying vec3 vMilkyB;
-  varying float vDustA;
-  varying float vDustB;
-  ${NOISE}
-  // a nebula's clouds: their density, the mix of its two colours, its bright accent
-  vec3 nebula(vec2 uv, float seed, vec2 at, vec2 drift) {
-    vec2 q = uv * vec2(3.2, 2.0) + seed;
-    float n = fbm(q + drift + fbm(q * 0.7 - drift) * 1.4);
-    float m = fbm(q * 1.3 + 7.7 - drift * 1.5);
-    vec2 c = (uv - 0.5 - at) * vec2(1.0, 1.25);
-    float r = length(c) * 2.0;
-    return vec3(smoothstep(1.0, 0.05, r) * smoothstep(0.28, 0.85, n), m, smoothstep(0.58, 0.85, n) * smoothstep(0.75, 0.0, r));
+  uniform vec2 uSeeds;
+  uniform vec2 uFlow;
+  uniform float uTime;
+  uniform float uLive;
+  varying vec2 vUvA;
+  varying vec2 vUvB;
+  varying vec2 vCloudA;
+  varying vec2 vCloudB;
+  varying vec2 vLight;
+  float lh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float ln(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(lh(i), lh(i + vec2(1.0, 0.0)), f.x), mix(lh(i + vec2(0.0, 1.0)), lh(i + vec2(1.0, 1.0)), f.x), f.y);
   }
-  // the Milky Way, very far: a band across the sky, its light in clouds, its core cut by lanes of dust
-  vec3 milky(vec2 uv, float seed, float slope, float width, vec2 at, vec2 drift) {
-    vec2 a = (uv - vec2(0.5, 0.52) - at) * vec2(1.69, 1.0);
-    vec2 along = normalize(vec2(1.0, slope));
-    float across = dot(a, vec2(-along.y, along.x));
-    float s = dot(a, along);
-    float warp = (fbm(vec2(s * 3.0, 4.1) + seed) - 0.5) * 0.09;
-    float w = 0.075 * width;
-    float band = exp(-pow((across + warp) / w, 2.0));
-    float clouds = fbm(vec2(s * 9.0, across * 22.0) + 2.3 + seed - drift * 0.5);
-    float lanes = smoothstep(0.5, 0.72, fbm(vec2(s * 14.0, across * 34.0) + 8.1 + seed));
-    return vec3(
-      band * smoothstep(0.3, 0.78, clouds) * smoothstep(0.95, 0.4, abs(s)),
-      exp(-pow((across + warp) / (w * 0.47), 2.0)),
-      lanes * exp(-pow((across + warp) / (w * 0.6), 2.0))
-    );
+  // the clouds' slow churn: where on its picture each point of the sky reads its clouds, drifting a few pixels,
+  // a large slow swell and a finer one (the stars do not churn: they read the sky where it is)
+  vec2 swell(vec2 q, float seed, float t) {
+    vec2 a = vec2(ln(q * 3.5 + seed + vec2(t * 0.03, 0.0)), ln(q * 3.5 + seed + vec2(5.2, 1.3 - t * 0.026)));
+    vec2 b = vec2(ln(q * 8.0 + seed + vec2(9.1, t * 0.045)), ln(q * 8.0 + seed + vec2(2.7 - t * 0.04, 6.6)));
+    return a * 0.01 + b * 0.004;
   }
-  // a sky moved by a change: shifted, zoomed and turned about the gaze (turned in true proportion)
+  // (both start from nothing: at the first moment the clouds are exactly as painted — and as the poster shows)
+  vec2 churn(vec2 uv, float seed, float flow) {
+    vec2 q = uv * vec2(uSkyAspect, 1.0);
+    return (swell(q, seed, uTime * flow) - swell(q, seed, 0.0)) * uLive * flow;
+  }
+  // the clouds' light wandering: a large soft swell of more and less passing slowly across them
+  float wander(vec2 uv, float seed) {
+    vec2 q = uv * vec2(uSkyAspect, 1.0) * 1.7 + seed * 0.3;
+    return 1.0 + (ln(q + vec2(uTime * 0.011, -uTime * 0.008)) - ln(q)) * 0.38 * uLive;
+  }
   vec2 moved(vec2 uv, vec4 t) {
     vec2 d = (uv - uCentre) * vec2(uSkyAspect, 1.0) / t.z;
     float c = cos(t.w);
@@ -874,68 +972,71 @@ export const GALAXY_VERT = /* glsl */ `
     return uCentre + d / vec2(uSkyAspect, 1.0) - t.xy;
   }
   void main() {
-    vec2 drift = vec2(uTime * 0.006, -uTime * 0.004);
-    vec2 ua = moved(uv, uTA);
-    vec2 ub = moved(uv, uTB);
-    vNebA = nebula(ua, uSA.x, uPA.xy, drift);
-    vNebB = nebula(ub, uSB.x, uPB.xy, drift);
-    vMilkyA = milky(ua, uSA.x, uSA.y, uSA.z, uPA.zw, drift);
-    vMilkyB = milky(ub, uSB.x, uSB.y, uSB.z, uPB.zw, drift);
-    // dark nebulae: dust drifting across the bright clouds
-    vDustA = smoothstep(0.55, 0.8, fbm(ua * vec2(5.0, 3.2) + uSA.x * 1.7 + 31.0));
-    vDustB = smoothstep(0.55, 0.8, fbm(ub * vec2(5.0, 3.2) + uSB.x * 1.7 + 31.0));
+    vUvA = moved(uv, uTA);
+    vUvB = moved(uv, uTB);
+    vCloudA = vUvA + churn(vUvA, uSeeds.x, uFlow.x);
+    vCloudB = vUvB + churn(vUvB, uSeeds.y, uFlow.y);
+    vLight = vec2(wander(vUvA, uSeeds.x), wander(vUvB, uSeeds.y));
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `
 export const GALAXY_FRAG = /* glsl */ `
-  uniform vec3 uColA[5];
-  uniform vec3 uColB[5];
-  uniform vec4 uSA;
-  uniform vec4 uSB;
-  uniform vec2 uNeb;
-  uniform float uWA;
-  uniform float uWB;
-  uniform float uStrength;
-  uniform float uMilky;
+  uniform sampler2D uMapA;
+  uniform sampler2D uMapB;
+  uniform vec2 uBlur;
+  uniform vec2 uSeeds;
+  uniform vec4 uGA[6];
+  uniform vec4 uGB[6];
+  uniform vec2 uGrid;
   uniform vec2 uRes;
-  varying vec3 vNebA;
-  varying vec3 vNebB;
-  varying vec3 vMilkyA;
-  varying vec3 vMilkyB;
-  varying float vDustA;
-  varying float vDustB;
+  uniform float uDpr;
+  uniform vec3 uWarm;
+  uniform vec3 uCool;
+  varying vec2 vUvA;
+  varying vec2 vUvB;
+  varying vec2 vCloudA;
+  varying vec2 vCloudB;
+  varying vec2 vLight;
   ${CHANGE}
-  float h21(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.743); }
-  float vn(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), u.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), u.x), u.y);
+  ${SKY_NOISE}
+  float inside(vec2 uv) {
+    vec2 e = smoothstep(vec2(0.0), vec2(0.05), uv) * smoothstep(vec2(1.0), vec2(0.95), uv);
+    return e.x * e.y;
   }
-  // one sky's light here — its colour (in display space, as round 3 drew it) and how much of it: the nebula
-  // (its two colours and accent, the dust across it) and the band's light, made of stars (a fine granular
-  // cloud, pinpoints along it, a warmer core)
-  vec4 sky(vec3 neb, vec3 mw, float dust, vec3 col[5], float nebula, float band, float granular, float pin) {
-    vec3 c = mix(col[1], col[0], neb.y) + col[2] * neb.z * 0.6;
-    float alpha = neb.x * uStrength * nebula * (1.0 - dust * 0.55);
-    float light = mw.x * granular * (1.0 - mw.z * 0.85) * uMilky * band;
-    vec3 bc = mix(col[4], col[3], clamp(mw.y * 1.3, 0.0, 1.0));
-    c = mix(c, bc, clamp(light * 2.2, 0.0, 1.0));
-    alpha = max(alpha, light * 0.34) + pin * mw.x * uMilky * band * 0.55;
-    return vec4(linearToOutputTexel(vec4(c, 1.0)).rgb, clamp(alpha, 0.0, 1.0));
+  // the fine stars: one at most in each small cell of the sky, most faint, a few bright (a steep power law),
+  // white on average, some warm, some cool; a point of light about a pixel across, whatever the zoom
+  vec3 fine(vec2 uv, float density, float seed) {
+    vec2 g = uv * uGrid;
+    vec2 id = floor(g);
+    vec2 r = h22(id + seed * 17.0);
+    vec2 r2 = h22(id + seed * 17.0 + 91.7);
+    vec2 px = (fract(g) - (0.2 + 0.6 * r2)) / max(fwidth(g), vec2(1e-5));
+    float b = 0.1 + 0.9 * pow(r.y, 7.0);
+    vec3 tint = mix(mix(uCool, vec3(1.0), 0.5), mix(uWarm, vec3(1.0), 0.4), fract(r.y * 13.7 + r2.x));
+    // (a touch wider than a pixel, so a star gliding with the sky never flickers on the pixel grid)
+    return tint * step(r.x, density * (0.02 + 0.16 * density)) * b * exp(-dot(px, px) / (0.95 * uDpr * uDpr)) * 0.62;
+  }
+  // the bright stars: a point and a little glow
+  vec3 bright(vec2 uv, vec4 g[6]) {
+    vec2 perPx = max(fwidth(uv), vec2(1e-6));
+    vec3 l = vec3(0.0);
+    for (int i = 0; i < 6; i++) {
+      vec2 d = (uv - g[i].xy) / perPx / uDpr;
+      float r2 = dot(d, d);
+      l += vec3(0.95, 0.97, 1.0) * g[i].z * (exp(-r2 / 0.9) * 0.85 + exp(-sqrt(r2) / 3.0) * 0.07);
+    }
+    return l;
   }
   void main() {
-    vec2 px = gl_FragCoord.xy;
-    float granular = 0.45 + 0.55 * vn(px / 2.6) * vn(px / 7.0 + 13.0);
-    float pin = step(0.9975, h21(floor(px))) * (0.4 + 0.6 * h21(floor(px) + 7.0));
-    vec2 s = px / uRes;
-    float a = uRes.x / uRes.y;
-    vec4 m = changeAt(s, a, vn(s * vec2(150.0 * a, 150.0)) * 0.55 + vn(s * vec2(23.0 * a, 23.0)) * 0.45);
-    vec4 A = sky(vNebA, vMilkyA, vDustA, uColA, uNeb.x, uSA.w, granular, pin);
-    vec4 B = sky(vNebB, vMilkyB, vDustB, uColB, uNeb.y, uSB.w, granular, pin);
-    // premultiplied, added to the dark (the colour space is done above: not again on the sum)
-    vec3 L = A.rgb * A.a * uWA * m.x + B.rgb * B.a * uWB * m.y + changeLight(m.w) * m.z;
-    L += (h21(px + 3.1) - 0.5) * (1.5 / 255.0);
+    vec4 a = texture(uMapA, vCloudA, uBlur.x);
+    vec4 b = texture(uMapB, vCloudB, uBlur.y);
+    vec2 s = gl_FragCoord.xy / uRes;
+    vec2 m = changeAt(changeCloud(s, uRes.x / uRes.y), clamp(dot(a.rgb, vec3(0.3, 0.5, 0.2)) * 4.0, 0.0, 1.0), clamp(dot(b.rgb, vec3(0.3, 0.5, 0.2)) * 4.0, 0.0, 1.0));
+    vec3 A = a.rgb * a.rgb * vLight.x + (fine(vUvA, a.a, uSeeds.x) + bright(vUvA, uGA)) * (1.0 - smoothstep(0.6, 2.2, uBlur.x));
+    vec3 B = b.rgb * b.rgb * vLight.y + (fine(vUvB, b.a, uSeeds.y) + bright(vUvB, uGB)) * (1.0 - smoothstep(0.6, 2.2, uBlur.y));
+    vec3 L = A * m.x * inside(vUvA) + B * m.y * inside(vUvB);
+    // a whisper of noise against banding (a hash without sin: sin of large numbers stripes on some GPUs)
+    L += (h22(gl_FragCoord.xy).x - 0.5) * (1.5 / 255.0);
     gl_FragColor = vec4(max(L, 0.0), 1.0);
   }
 `

@@ -16,14 +16,15 @@ import {
   type Group, type Mesh, type MeshBasicMaterial, type ShaderMaterial, type Sprite, type SpriteMaterial, type Texture,
 } from 'three'
 import { hero, type HeroPanel } from '@/content/home'
-import { cinemaWeight, heroState, presence, skyWeight } from '@/components/hero/state'
+import { cinemaWeight, heroState, presence, shotWeight, skyWeight } from '@/components/hero/state'
+import { logoTile } from '@/components/hero/frame'
 import { CHIPS, FACE, NODES, PANEL, SLOTS, TALL_KEEP, TILE, type Shot, type Vec3 } from '@/components/hero/scene/numbers'
 import { live, pointerNear } from '@/components/hero/scene/rig'
 import { FilmScreen, watching } from '@/components/hero/scene/cinema'
 import { filmAtlas, filmPicture, filmPlaying, filmProgress, filmTone, loopFilm, prefetchFilm, rewindFilm, wantAtlas, wantFilm } from '@/components/hero/scene/films'
 import { DECK_FILMS, HERO_FILMS } from '@/content/hero-films'
 import {
-  BEAM_FRAG, BEAM_VERT, COMET_FRAG, FILM_FRAG, FILM_VERT, MOTE_FRAG, MOTE_VERT, HALL_FRAG, HALL_VERT, PANEL_FRAG, PANEL_VERT, POOL_FRAG, PROJECTOR_FRAG, PROJECTOR_VERT, SKY_FRAG, SKY_VERT, STRUCTURE_FRAG, STRUCTURE_VERT,
+  BEAM_FRAG, BEAM_VERT, COMET_FRAG, FILM_FRAG, FILM_VERT, MOTE_FRAG, MOTE_VERT, HALL_FRAG, HALL_VERT, PANEL_FRAG, PANEL_VERT, POOL_FRAG, PROJECTOR_FRAG, PROJECTOR_VERT, STRUCTURE_FRAG, STRUCTURE_VERT,
 } from '@/components/hero/scene/shaders'
 import { chipTexture, getScreenTexture, hsl, labelTexture, tileTexture, uploadSoon, type HeroSources, type HeroTheme, type TileKind } from '@/components/hero/scene/textures'
 
@@ -46,65 +47,11 @@ function faceTurn(delay: number) {
   return { angle, showing, fade: Math.abs(1 - 2 * f), turning: true }
 }
 
-// ── THE SKY AND THE STRUCTURE ───────────────────────────────────────────────
-
-type HSL = [number, number, number]
-type Palette = { a: HSL; b: HSL; a2?: HSL; b2?: HSL; accent: HSL }
-const SKIES: Record<StationId, { dark: Palette; light: Palette }> = {
-  // the Crew: tungsten — the warm light of a studio floor
-  crew: { dark: { a: [30, 60, 30], b: [14, 46, 13], accent: [40, 70, 42] }, light: { a: [36, 85, 84], b: [26, 70, 91], accent: [40, 80, 74] } },
-  // the Client: steel and teal, turning to a deep violet for the Stakeholders
-  client: {
-    dark: { a: [199, 46, 28], b: [222, 44, 13], a2: [250, 36, 32], b2: [270, 34, 14], accent: [190, 50, 40] },
-    light: { a: [200, 70, 86], b: [215, 60, 92], a2: [252, 60, 89], b2: [268, 50, 93], accent: [195, 70, 78] },
-  },
-  // the Suite: violet and rose, the colours of a grading suite at night
-  suite: { dark: { a: [284, 34, 30], b: [326, 36, 14], accent: [40, 70, 42] }, light: { a: [282, 55, 89], b: [330, 55, 92], accent: [40, 80, 76] } },
-}
-
-function Sky({ id, theme }: { id: StationId; theme: HeroTheme }) {
-  const geo = React.useMemo(() => new PlaneGeometry(1, 1, 96, 60), [])
-  React.useEffect(() => () => geo.dispose(), [geo])
-  const mat = React.useRef<ShaderMaterial>(null)
-  const mesh = React.useRef<Mesh>(null)
-  const p = theme.dark ? SKIES[id].dark : SKIES[id].light
-  const uniforms = React.useMemo(
-    () => ({
-      uA: { value: hsl(...p.a) }, uB: { value: hsl(...p.b) },
-      uA2: { value: hsl(...(p.a2 ?? p.a)) }, uB2: { value: hsl(...(p.b2 ?? p.b)) },
-      uAccent: { value: hsl(...p.accent) },
-      // a faint wash of the space's own light: the universe behind (universe.ts) gives each space its sky now
-      // (the owner, 2026-11-06: the dusty nebula "is just the only thing used throughout the whole spaces")
-      uFace: { value: 0 }, uWeight: { value: 0 }, uStrength: { value: theme.dark ? 0.38 : 0.75 },
-      uTime: { value: 0 }, uSeed: { value: { crew: 1.7, client: 6.3, suite: 11.1 }[id] },
-    }),
-    [p, id, theme.dark],
-  )
-  const c = NODES[id]
-  useFrame((_, dt) => {
-    const m = mat.current
-    if (!m || !mesh.current || !live.place) return
-    const w = skyWeight(live.place, SHOT_OF[id])
-    mesh.current.visible = w > 0.002
-    m.uniforms.uWeight.value = w
-    m.uniforms.uTime.value = live.time
-    m.uniforms.uFace.value = damp(m.uniforms.uFace.value, id === 'client' ? heroState.face : 0, 2.2, Math.min(dt, 0.1))
-  })
-  return (
-    <mesh ref={mesh} geometry={geo} position={[c[0], c[1] + 2, c[2] - 46]} scale={[200, 124, 1]} renderOrder={-10} frustumCulled={false}>
-      <shaderMaterial
-        ref={mat}
-        vertexShader={SKY_VERT}
-        fragmentShader={SKY_FRAG}
-        uniforms={uniforms}
-        transparent
-        depthWrite={false}
-        depthTest={false}
-        blending={theme.dark ? AdditiveBlending : NormalBlending}
-      />
-    </mesh>
-  )
-}
+// ── THE STRUCTURE ───────────────────────────────────────────────────────────
+//
+// (Each space's own nebula wash is gone: the universe behind gives each space its sky, painted in full
+// detail — universe.ts TOUR — and the washes were the per-vertex smudge the owner called "not nice at all",
+// 2026-11-07.)
 
 const STRUCTURE: Record<StationId, { mode: number; size: [number, number]; at: Vec3; flat: boolean; opacity: [number, number] }> = {
   // the studio floor, below the screens, receding into the distance
@@ -136,7 +83,9 @@ function Structure({ id, theme }: { id: StationId; theme: HeroTheme }) {
     const m = mat.current
     if (!m || !mesh.current || !live.place) return
     // (the Client's floor is its cinema's: it shows with the cinema, late in the journey)
-    const w = id === 'client' ? cinemaWeight(live.place, 2) : presence(live.place, SHOT_OF[id]) * 0.65 + skyWeight(live.place, SHOT_OF[id]) * 0.35
+    // every floor shows late on arrival and goes early, like the cinemas: the rides between spaces are open
+    // space (the owner, 2026-11-07, of the ride to the Suite)
+    const w = cinemaWeight(live.place, SHOT_OF[id])
     mesh.current.visible = w > 0.002
     m.uniforms.uWeight.value = w
     m.uniforms.uTime.value = live.time
@@ -203,8 +152,11 @@ function Tile({ id, theme, soft, anisotropy }: { id: StationId; theme: HeroTheme
     const h = hover.current
     h.now = heroState.reduced ? h.to : damp(h.now, h.to, 10, d)
     const near = presence(live.place, shot)
-    // never smaller on screen than a set share of the frame, so the logo reads in the wide shots
-    const size = Math.max(TILE.size, camera.position.distanceTo(c) * TILE.minScreen) * (1 + 0.08 * h.now)
+    // at a station never smaller on screen than a set share of the frame; in the whole logo (the title, the
+    // close) in proportion to its line, as the poster shows it, so the live scene takes over without a jump
+    const own = Math.max(TILE.size, camera.position.distanceTo(c) * TILE.minScreen)
+    const whole = Math.min(1, shotWeight(live.place, 0) + shotWeight(live.place, 4))
+    const size = (own + (logoTile(live.tall) - own) * whole) * (1 + 0.08 * h.now)
     m.quaternion.copy(camera.quaternion)
     let fade = 1
     if (id === 'client') {
@@ -1023,14 +975,11 @@ function Panel({
     const focus = !anyHover || hovered[station] === index ? 1 : 0
     m.uniforms.uFocus.value = damp(m.uniforms.uFocus.value, focus, 7, d)
 
-    // gather from the tile out to the screen's place, then float there (each answers the hand on its own,
-    // lifting under it; the screens never lean together with the pointer — the owner, 2026-11-06)
+    // gather from the tile out to the screen's place, and stand there, steady: no float, so the product's
+    // screens read crisp and still (the owner, 2026-11-07: the 3D must not feel "wobbly"). Each answers
+    // the hand on its own, lifting under it; the screens never lean together with the pointer (2026-11-06).
     const t = live.time
-    g.position.set(
-      centre[0] + slot[0] * a,
-      centre[1] + slot[1] * a + Math.sin(t * 0.55 + index * 1.3) * 0.14 * a,
-      centre[2] + slot[2] * a - (1 - a) * 2,
-    )
+    g.position.set(centre[0] + slot[0] * a, centre[1] + slot[1] * a, centre[2] + slot[2] * a - (1 - a) * 2)
     // under the hand: lift toward the camera
     LIFT.copy(camera.position).sub(g.position).normalize().multiplyScalar(1.1 * s.hover)
     g.position.add(LIFT)
@@ -1124,7 +1073,8 @@ function Chips({ theme, sources, anisotropy, armed }: { theme: HeroTheme; source
       const r = CHIPS.radius * (0.4 + 0.6 * a)
       const x = Math.cos(ang) * r
       const z = Math.sin(ang) * r
-      s.position.set(c[0] + x, c[1] + z * Math.sin(CHIPS.tilt) + Math.sin(live.time * 0.8 + i) * 0.12, c[2] + z * Math.cos(CHIPS.tilt))
+      // a clean orbit, no bob on top of it (the owner, 2026-11-07: nothing "wobbly")
+      s.position.set(c[0] + x, c[1] + z * Math.sin(CHIPS.tilt), c[2] + z * Math.cos(CHIPS.tilt))
       s.scale.setScalar(CHIPS.size * (0.4 + 0.6 * a) * (0.86 + 0.14 * (z / CHIPS.radius + 1) / 2))
       s.renderOrder = z > 0 ? 21 : 15
       ;(s.material as SpriteMaterial).opacity = a * (0.55 + 0.45 * (z / CHIPS.radius + 1) / 2)
@@ -1175,7 +1125,6 @@ export function Station({
   const width = tall ? PANEL.tallWidth : id === 'suite' ? PANEL.toolWidth : PANEL.width
   return (
     <>
-      <Sky id={id} theme={theme} />
       <Structure id={id} theme={theme} />
       {id === 'crew' ? (
         <>

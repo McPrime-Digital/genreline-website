@@ -38,7 +38,7 @@ export const heroState = {
    * poster's own stage pixels (pw × ph, posters.json), lands at x0 + x·k, y0 + y·k on this stage (w × h).
    * The title's projector lamp stands by it, so the scene takes over from the poster without a jump.
    */
-  posterMap: null as null | { tall: boolean; k: number; x0: number; y0: number; w: number; h: number; pw: number; ph: number },
+  posterMap: null as null | { tall: boolean; k: number; x0: number; y0: number; w: number; h: number; pw: number; ph: number; s: number },
   /** The scene asks for one frame (demand mode); a no-op until the scene mounts. */
   invalidate: () => {},
   /** Scroll the page to a shot (0–4); set by the director. */

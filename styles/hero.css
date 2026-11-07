@@ -38,6 +38,11 @@
 .hero-stage[data-landed='true'] { animation: hero-landed 320ms var(--ease-out) forwards; }
 @keyframes hero-land { from { visibility: visible; opacity: 0.2; } to { visibility: visible; opacity: 1; } }
 @keyframes hero-landed { from { visibility: visible; opacity: 0.2; } to { visibility: visible; opacity: 1; } }
+/* …and the whole page with it (the owner, 2026-11-07: no "part of the page arrive before the other"): on the
+   home page the header's bar waits for the stage under the same rule — its deadline included — and lands in
+   the same frame, rather than standing alone on a black page while the hero's picture arrives. */
+body:has(.hero-stage) .site-header-bar { visibility: hidden; animation: hero-land 320ms var(--ease-out) 1200ms forwards; }
+body:has(.hero-stage[data-landed='true']) .site-header-bar { animation: hero-landed 320ms var(--ease-out) forwards; }
 .hero-poster { position: absolute; inset: 64px 0 0; z-index: 0; opacity: 0; transition: opacity 600ms var(--ease-out); }
 .hero-stage .hero-poster[data-want='false'] { display: none; }
 .hero-poster[data-on='true'] { opacity: 1; }
@@ -47,6 +52,14 @@
    when the live scene takes over. It lands inside the stage's own fade, with the words; only where it
    arrives after the stage has shown (past the CSS's deadline: 'late') does it fade up on its own. */
 .hero-poster[data-poster='title'] img { opacity: 0; will-change: opacity; }
+/* its outermost edge fades into the night, so on a screen far from its shape (a 21:9 monitor, a short phone)
+   no picture's edge shows while the page lands (it is drawn with overscan: make-hero-poster.ts) */
+.hero-poster[data-poster='title'] img {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+  mask-composite: intersect;
+}
 .hero-stage[data-landed='late'] .hero-poster[data-poster='title'] img { transition: opacity 200ms var(--ease-out); }
 .hero-poster[data-poster='title'] img[data-aligned='true'] {
   opacity: 1; max-width: none; object-fit: fill;
@@ -80,9 +93,13 @@
    every frame has to be re-blurred every frame, and on many GPUs — Windows' integrated graphics
    above all — that alone can halve the frame rate. The header lies on the hero's own top shade. */
 :root[data-hero-live='true'] .site-header-bar { -webkit-backdrop-filter: none; backdrop-filter: none; background: hsl(var(--background) / 0.5); }
+/* …and it eases between the two, never snapping as the live scene takes over or the hero scrolls away */
+.site-header-bar { transition: background-color 600ms var(--ease-out), -webkit-backdrop-filter 600ms var(--ease-out), backdrop-filter 600ms var(--ease-out); }
 /* The title's running film stock repaints its letters every frame: only the shot on screen runs it. */
 .hero-shot:not([data-active='true']) .film-line { animation-play-state: paused; }
-:root[data-hero-live='true'] .hero .liquid-pill { -webkit-backdrop-filter: none; backdrop-filter: none; background: hsl(var(--card) / 0.94); }
+/* The hero's own pills are solid from the first paint, as they are over the live scene — so nothing about
+   them changes at the takeover (they used to switch from glass to solid as the scene arrived). */
+.hero .liquid-pill { -webkit-backdrop-filter: none; backdrop-filter: none; background: hsl(var(--card) / 0.94); }
 
 /* 3 · the slate line, under the header */
 .hero-top { position: absolute; top: calc(64px + 22px); left: 0; right: 0; z-index: 3; }
@@ -167,6 +184,9 @@
   pointer-events: none; will-change: transform, opacity;
 }
 .hero-play-wrap[data-placed='true'] { opacity: 1; }
+/* placed as the stage lands, it arrives inside the stage's own fade, with everything else (its own fade only
+   where it is placed after the stage has shown) */
+.hero-stage[data-landed='true'] .hero-play-wrap:not([data-glide='true']) { transition: none; }
 /* taking or leaving the tour: the place glides with the camera (only then — never on load or a resize) */
 .hero-play-wrap[data-glide='true'] { transition: opacity 700ms var(--ease-out), transform 1200ms var(--ease-in-out); }
 .hero-play {

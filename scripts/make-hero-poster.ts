@@ -40,6 +40,15 @@ const SHAPES = [
   // a phone: 414 × 896 at 2x
   { shape: 'tall', viewport: { width: 414, height: 896 }, scale: 2 },
 ] as const
+/**
+ * The title's poster is drawn with overscan (rig.ts OVERSCAN): its framing in the middle, S times as much
+ * sky round it, so scaled to any screen's own framing it still covers the whole stage while the page lands
+ * (the owner, 2026-11-07: no "part of the page arrive before the other"; at 1440 × 900 the plain poster left
+ * a third of the stage black). Its pixels: the middle as sharp as before (the phone's at the 1.5 the scene
+ * draws at there).
+ */
+const OVERSCAN = { wide: 1.6, tall: 1.6 } as const
+const TITLE_SCALE = { wide: 1, tall: 1.5 } as const
 
 const GL =
   process.env.GL === 'swiftshader'
@@ -57,16 +66,24 @@ async function main() {
     for (const { shape, viewport, scale } of SHAPES) {
       const ctx = await browser.newContext({ viewport, deviceScaleFactor: scale, colorScheme: theme, reducedMotion: 'reduce' })
       await ctx.addInitScript((t) => localStorage.setItem('theme', t), theme)
+      const S = OVERSCAN[shape]
+      const titleCtx = await browser.newContext({ viewport, deviceScaleFactor: TITLE_SCALE[shape] * S, colorScheme: theme, reducedMotion: 'reduce' })
       for (const shot of SHOTS) {
-        const page = await ctx.newPage()
-        await page.goto(`${BASE}/?hero=live&shot=${shot}`, { waitUntil: 'load', timeout: 90_000 })
+        const page = await (shot === 'title' ? titleCtx : ctx).newPage()
+        await page.goto(`${BASE}/?hero=live&shot=${shot}${shot === 'title' ? `&overscan=${S}` : ''}`, { waitUntil: 'load', timeout: 90_000 })
         await page.mouse.move(8, 8) // the scene wakes on the visitor's first move
         await page.waitForSelector('.hero-scene[data-ready="true"]', { timeout: 90_000 })
-        await page.addStyleTag({ content: 'header, .hero-top, .hero-shots, .hero-track, .hero-shade, .hero-play-wrap, nextjs-portal { visibility: hidden !important } .hero-scene { transition: none !important }' })
+        // (the header's bar too: its landing animation would otherwise show it inside the hidden header)
+        await page.addStyleTag({ content: 'header, header *, .hero-top, .hero-shots, .hero-track, .hero-shade, .hero-play-wrap, nextjs-portal { visibility: hidden !important; animation: none !important } .hero-scene { transition: none !important }' })
         await page.waitForTimeout(4000) // the screens' captures and labels load and decode
         if (shot === 'title') {
           const logo = await page.locator('[data-hero-stage]').getAttribute('data-logo')
-          if (logo) frames[shape] = JSON.parse(logo)
+          if (logo) {
+            // where the logo is in the overscanned picture: every point S times nearer its middle
+            const f = JSON.parse(logo) as Record<string, number>
+            const at = (v: number) => 0.5 + (v - 0.5) / S
+            frames[shape] = { ...f, left: at(f.left), right: at(f.right), top: at(f.top), bottom: at(f.bottom), centerX: at(f.centerX), overscan: S }
+          }
         }
         const png = await page.locator('[data-hero-stage]').screenshot({ type: 'png' })
         const base = join(OUT, `poster-${theme}-${shot}-${shape}`)
@@ -86,6 +103,7 @@ async function main() {
         await page.close()
       }
       await ctx.close()
+      await titleCtx.close()
     }
   }
   await browser.close()

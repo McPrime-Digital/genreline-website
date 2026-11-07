@@ -23,7 +23,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { WebGLRenderer } from 'three'
 import { HeroScene } from '@/components/hero/scene/HeroScene'
 import { FOV, GOVERNOR, LEVEL_OF_QUALITY, LEVELS, QUALITY, type Quality } from '@/components/hero/scene/numbers'
-import { live } from '@/components/hero/scene/rig'
+import { live, OVERSCAN } from '@/components/hero/scene/rig'
 import type { HeroSources } from '@/components/hero/scene/textures'
 
 /**
@@ -145,7 +145,8 @@ function dprFor(level: number, width: number, height: number) {
   const { quality, scale } = LEVELS[level]
   const q = QUALITY[quality]
   const fit = Math.sqrt(q.pixels / Math.max(1, width * height))
-  return Math.max(0.6, Math.min(window.devicePixelRatio || 1, q.dpr, fit) * scale)
+  // (a poster with overscan draws S times as many pixels each way, so its middle is as sharp as ever)
+  return Math.max(0.6, Math.min(window.devicePixelRatio || 1, q.dpr * OVERSCAN, fit * OVERSCAN) * scale)
 }
 
 function useViewport() {
