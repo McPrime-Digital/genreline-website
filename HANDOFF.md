@@ -9,6 +9,61 @@ climbs to **the Suite**, then pulls back to the whole line for the close: *Run
 the production. Keep the record.* Each space arrives in its own light, ringed
 by its own screens and tools.
 
+## The link preview, 2026-11-08: a shared link shows the site as it is
+
+The owner: when someone types or pastes https://genreline.com anywhere, the preview was "very outdated", and
+they didn't like its background. It was October's card: flat navy, the old headline, the renderer's default
+font. Three more faults turned up in the live tags:
+
+- **X showed no picture at all.** robots.txt had `Disallow: /og/`, and X's crawler obeys robots.txt for
+  images: "If an image URL is blocked, no thumbnail or photo will be shown" (developer.x.com/cards/overview).
+- **Every page was missing `og:site_name`, `og:type` and `og:locale`.** A page's `openGraph` replaces the
+  layout's whole object, so the layout's values never reached a page.
+- **The image's address never changed** (`/og/home`), so a platform that had kept the old card went on
+  showing it.
+
+**What changed:**
+
+- **The card** (`app/og/[slug]/route.tsx`, one per page at build):
+  - The background is the hero itself: the landing sky and the gold logo, drawn by the scene
+    (`scripts/make-social-card.ts` writes `public/hero/card-sky.jpg`), with a soft dark pool under the
+    words.
+  - The words are in the site's own faces: the header's mark and name, the hero's slate line, and the title
+    in Cinzel capitals cut from film stock, silver over gold.
+  - Home carries the hero's title, "Every space of production. One operating system."; every other page
+    its own title and description.
+  - It is a JPEG of 33–55 KB. WhatsApp drops a preview image much over 300 KB.
+  - The card faces are TrueType copies, used at build only (`fonts/README.md`).
+- **The tags** (`lib/meta.ts`):
+  - Site name, type and locale are now on every page.
+  - `og:title` is the page's own document title, brand included, because iMessage and WhatsApp show only
+    the title and the domain.
+  - The image's address carries a version (`/og/home?v=…`, `content/og.ts` `cardVersion`). It changes
+    whenever a card's words, sky or layout change.
+- **robots.txt** no longer blocks `/og/`.
+
+**Typed bare:** `genreline.com`, `http://` and `www` all redirect (308) to `https://genreline.com/`. They
+get the same tags and the same card.
+
+**To redo the sky** (after the hero's look changes), start a production server on :3001, then run:
+
+```
+npx tsx scripts/make-social-card.ts
+```
+
+Then rebuild. The script also writes the sky's fingerprint to `content/og-sky.json`, which gives every card
+a new address. A layout change in the route needs `CARD.look` changed by hand.
+
+**After a deploy, platforms that keep old previews:**
+
+- **Meta** (Facebook, Messenger, Instagram): https://developers.facebook.com/tools/debug/ → the URL →
+  "Scrape Again".
+- **LinkedIn:** https://www.linkedin.com/post-inspector/
+- **X** fetches the new address by itself.
+- **iMessage, WhatsApp, Slack, Telegram and Discord** fetch on each new share.
+
+A preview already sent in an old message keeps its picture.
+
 ## Revision 6, 2026-11-07: real skies, quiet changes, a sky that lives, and a page that lands whole
 
 The owner's review of round 5 asked for:

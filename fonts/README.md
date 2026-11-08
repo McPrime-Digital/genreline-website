@@ -24,3 +24,19 @@ on Cinzel's vertical metrics — ascent 0.969em, descent 0.375em, cap height 0.7
 moves the capitals and the pattern must be re-placed with it.
 
 Archivo (the previous title face, 2026-10-01) is retired and its files are removed.
+
+## The social card's faces (build only)
+
+The social card (`app/og/[slug]/route.tsx`, the picture a shared link shows) is drawn at build by a renderer
+that reads TrueType but not woff2, so it gets its own copies. None of these is ever sent to a browser.
+
+- `cinzel-title-700.ttf`, `cinzel-title-800.ttf`: the same Cinzel instances and the same subset as the
+  woff2 files above, from the same Google Fonts subsetter, requested without a browser's user agent so the
+  response is TrueType.
+- `geist-400.ttf`: Geist Regular, the site's body face (next/font loads it on the site), for the card's
+  description line. © 2024 The Geist Project Authors, SIL Open Font License 1.1 (`OFL-Geist.txt`).
+- `schibsted-grotesk-700-wordmark.ttf`: Schibsted Grotesk Bold cut to the letters of "Genreline", the
+  header's name beside the mark. © 2023 The Schibsted-Grotesk Project Authors, SIL Open Font License 1.1
+  (`OFL-SchibstedGrotesk.txt`).
+
+Neither licence declares a Reserved Font Name.
