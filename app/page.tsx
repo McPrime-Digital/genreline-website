@@ -136,7 +136,7 @@ export default function Home() {
       {/* 6 — EVERYONE ON THE PRODUCTION */}
       <section id="people" className="py-24 sm:py-32">
         <div className="container-wide">
-          <Heading icon="Network" kicker="Collaboration" title="Everyone on the production. Each with exactly what they need." lead="Your staff, your freelancers, your clients’ teams, the artist you bring in for one job, the agency producer watching a screener, the performer signing a likeness release. One system, and none of them sees more than their part." />
+          <Heading icon="Network" kicker="Collaboration" title="Everyone on the production. Each with exactly what they need." lead="Your staff, your collaborators, your clients’ teams, the artist you bring in for one job, the agency producer watching a screener, the performer signing a likeness release. One system, and none of them sees more than their part." />
           <div className="mt-16"><CollaboratorMap people={COLLABORATORS} /></div>
         </div>
       </section>

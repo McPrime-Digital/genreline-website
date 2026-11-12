@@ -28,10 +28,10 @@ export const SEGMENTS: readonly Segment[] = [
     headline: 'Run every job, from the first page to the final invoice.',
     name: 'Production companies',
     short: 'Commercial, film and TV, documentary and music-video houses',
-    who: 'A production house with a core team and a freelance bench that changes with every job — making commercials, branded films, documentaries, series or music videos for clients who need to see the cut and sign it off.',
+    who: 'A production house with a core team and a bench of collaborators that changes with every job — making commercials, branded films, documentaries, series or music videos for clients who need to see the cut and sign it off.',
     examples: ['Commercial production houses', 'Film and TV production companies', 'Documentary companies', 'Music-video and branded-content houses', 'Post-production and finishing houses'],
     spaces: [
-      { name: 'Crew', on: true, note: 'Your staff, your freelancers, your schedule' },
+      { name: 'Crew', on: true, note: 'Your staff, your collaborators, your schedule' },
       { name: 'Client', on: true, note: 'Every client company, in your brand' },
       { name: 'The Suite', on: true, note: 'Script, boards and the library' },
     ],
@@ -59,7 +59,7 @@ export const SEGMENTS: readonly Segment[] = [
     examples: ['Advertising agencies and their production arms', 'Branded-content and social-first studios', 'Design and motion studios', 'Content studios inside holding groups'],
     spaces: [
       { name: 'Client', on: true, note: 'One company per brand, each with its own team and rooms' },
-      { name: 'Crew', on: true, note: 'Your producers, editors and freelancers' },
+      { name: 'Crew', on: true, note: 'Your producers, editors and collaborators' },
       { name: 'The Suite', on: true, note: 'Scripts, boards and every asset' },
     ],
     invite: [
@@ -107,7 +107,7 @@ export const SEGMENTS: readonly Segment[] = [
     name: 'Independents',
     short: 'Independent filmmakers and creatives who produce their own work and are brought onto other studios’ productions',
     who: 'A director, producer, editor, colorist or writer who makes their own films, shorts and commercials to build a portfolio — and is brought onto production companies’ and agencies’ productions as a collaborator. One account: your own studio for your work, and a seat in each studio that brings you in, switching between them.',
-    examples: ['Independent filmmakers', 'Freelance editors, colorists and VFX artists', 'Writer-directors developing their own projects', 'Producers running their own slate'],
+    examples: ['Independent filmmakers', 'Independent editors, colorists and VFX artists', 'Writer-directors developing their own projects', 'Producers running their own slate'],
     spaces: [
       { name: 'Crew', on: true, note: 'Your productions, your collaborators, your schedule' },
       { name: 'Partners', on: true, note: 'Financiers, co-producers, sales agents, distributors and festivals, each with a portal in your name' },

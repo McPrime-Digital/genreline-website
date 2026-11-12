@@ -18,7 +18,7 @@ const SPACES: SpacePanel[] = [
       feat('MON-06', 'A budget per person for AI spend'),
       feat('IDN-04', 'Roles, project roles, seats, grants and denials with expiry'),
     ],
-    people: ['Producers', 'Coordinators', 'Editors', 'Freelancers, scoped to their jobs', 'Finance'],
+    people: ['Producers', 'Coordinators', 'Editors', 'Collaborators, scoped to their jobs', 'Finance'],
     shots: shots([['crew-tasks', 'Tasks'], ['crew-chat', 'Crew rooms'], ['crew-directory', 'Directory'], ['crew-calendar', 'Calendar']]),
   },
   {

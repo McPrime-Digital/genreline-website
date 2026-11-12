@@ -250,7 +250,7 @@ export const UNITS = [
   {
     "id": "collaborator",
     "name": "Collaborator-month",
-    "plain": "A freelancer you bring in for a job. You pay for them only in a calendar month in which they are on at least one live job or task — a colourist on your project for two weeks in March and nothing in April is one collaborator-month, charged for March."
+    "plain": "A collaborator you bring in for a job. You pay for them only in a calendar month in which they are on at least one live job or task — a colourist on your project for two weeks in March and nothing in April is one collaborator-month, charged for March."
   },
   {
     "id": "company",

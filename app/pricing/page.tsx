@@ -22,7 +22,7 @@ const QUESTIONS = [
   { q: 'What happens when the trial ends?', a: TRIAL_AND_EXPLORE.explore },
   { q: 'How is AI paid for?', a: aiUnit.plain },
   { q: 'What happens when we go beyond the plan?', a: 'What your seats include is pooled across the studio. Beyond it, meetings, recording, video and the archive are metered at the prices on this page and billed on the month’s invoice — never from your AI balance — under a monthly ceiling you set. At the ceiling the metered services pause until the month turns or you raise it; nothing is deleted and everything included keeps working. Storage beyond the plan is bought in 250 GB blocks; an upload past them is refused, never deleted.' },
-  { q: 'Do our clients’ teams count as seats?', a: `No. A seat is a person who works for your studio. Your clients are counted as companies — each with up to ${PLANS[0].peoplePerCompany} of its own people logging in — and your freelancers as collaborator-months, only in the months they are on a job.` },
+  { q: 'Do our clients’ teams count as seats?', a: `No. A seat is a person who works for your studio. Your clients are counted as companies — each with up to ${PLANS[0].peoplePerCompany} of its own people logging in — and the collaborators you bring aboard as collaborator-months, only in the months they are on a job.` },
   { q: 'Is there an annual price?', a: PRICES_PUBLISHED ? 'Yes — two months free, billed yearly per seat. Enterprise is annual and by contract.' : 'Yes — every plan is billed monthly or yearly, per seat. Enterprise is annual and by contract.' },
 ]
 
@@ -31,7 +31,7 @@ export default function Pricing() {
     <>
       <PageHero motif="ledger"
         title="Per seat, with the rest metered beside its cost."
-        lead="A production company carries a bench. Pricing that charged for every freelancer would punish exactly that, so plans count staff seats and client companies, freelancers count only in the months they work, and everything we pay a provider for per use — meetings, recording, video, the archive, AI — is metered at a price beside its cost."
+        lead="A production company carries a bench. Pricing that charged for every collaborator would punish exactly that, so plans count staff seats and client companies, and collaborators count only in the months they work, and everything we pay a provider for per use — meetings, recording, video, the archive, AI — is metered at a price beside its cost."
         size="md"
       >
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">

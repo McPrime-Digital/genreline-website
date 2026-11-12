@@ -68,7 +68,7 @@ export default function Production() {
       </Section>
       <Section id="security" width="measure">
         <SecurityNote>
-          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> A freelancer scoped to one production sees that production and nothing else.</p>
+          <p><Feature id="FND-01">Studio isolation is enforced in the database and proven by {HARNESS_ASSERTIONS} automated security checks.</Feature> A collaborator scoped to one production sees that production and nothing else.</p>
         </SecurityNote>
       </Section>
       <CtaBand />

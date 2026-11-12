@@ -87,7 +87,7 @@ export const hero = {
   nodes: [
     {
       // The owner, 2026-11-06, asked for new words here: the whole crew by its real roles and the
-      // collaborators it brings aboard ("not freelancers"), and its best features. Each item names a
+      // collaborators it brings aboard (the owner’s word), and its best features. Each item names a
       // feature of the register; the Control Tower's item claims only the live part of it (MON-06,
       // budgets per member), the Jotter is JOT-01 (see content/features.ts).
       id: 'crew', timecode: '00:00:04:00', label: 'Crew space',
